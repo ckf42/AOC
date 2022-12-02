@@ -11,7 +11,7 @@ def getInput(d: _typing.Optional[int] = None,
              y: int = 2022,
              force: bool = False) -> str:
     if force or not _pathlib.Path('input').is_file():
-        with open('session', 'rt') as sessKey:
+        with open('../session', 'rt') as sessKey:
                   r = _rq.get(f'https://adventofcode.com/{y}/day/{d}/input',
                              cookies={'session': sessKey.read().strip()}).text
         with open(f'input{d}', 'wt') as f:

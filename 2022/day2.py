@@ -1,3 +1,4 @@
+import AOCInit
 import util
 
 inp = util.getInput(d=2)
