@@ -1,6 +1,6 @@
-# AOC 2022
+# AOC
 
-This is my attempt on [AOC 2022](https://adventofcode.com/)
+This is my attempt on [AOC](https://adventofcode.com/)
 
-Probably write in `python`
+Solutions written `python`
 
