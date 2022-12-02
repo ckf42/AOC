@@ -1,28 +1,28 @@
-import typing
-import pathlib
-import requests as rq
+import typing as _typing
+import pathlib as _pathlib
+import requests as _rq
 
 if __name__ == '__main__':
     exit()
 
-T = typing.TypeVar('T')
+_T = _typing.TypeVar('T')
 
-def getInput(d: typing.Optional[int] = None,
+def getInput(d: _typing.Optional[int] = None,
              y: int = 2022,
              force: bool = False) -> str:
-    if force or not pathlib.Path('input').is_file():
+    if force or not _pathlib.Path('input').is_file():
         with open('session', 'rt') as sessKey:
-                  r = rq.get(f'https://adventofcode.com/{y}/day/{d}/input',
+                  r = _rq.get(f'https://adventofcode.com/{y}/day/{d}/input',
                              cookies={'session': sessKey.read().strip()}).text
-        with open('input', 'wt') as f:
+        with open(f'input{d}', 'wt') as f:
             print(r, file=f, end='')
         return r
     else:
-        with open('input', 'rt') as f:
+        with open(f'input{d}', 'rt') as f:
             return f.read()
 
-def firstEleSuchThat(items: typing.Iterable[T],
-                         cond: typing.Callable[T, bool]) -> typing.Optional[T]:
+def firstEleSuchThat(items: _typing.Iterable[_T],
+                     cond: _typing.Callable[_T, bool]) -> _typing.Optional[_T]:
     for i in items:
         if cond(i):
             return i
