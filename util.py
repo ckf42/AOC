@@ -1,6 +1,8 @@
 import typing as _typing
+import collections.abc as _abc
 import pathlib as _pathlib
 import requests as _rq
+import re as _re
 
 if __name__ == '__main__':
     exit()
@@ -28,3 +30,14 @@ def firstEleSuchThat(items: _typing.Iterable[_T],
             return i
     return None
 
+def prod(arr: _typing.Iterable[float], /, initVal: float = 1) -> float:
+    v = initVal
+    for item in arr:
+        v = v * item
+    return v
+
+def takeExcept(arr: _abc.Sequence[_T], index: int) -> _abc.Sequence[_T]:
+    return arr[:index] + arr[index + 1:]
+
+def getInts(s: str) -> list[int]:
+    return _re.findall(r'\d+', s)
