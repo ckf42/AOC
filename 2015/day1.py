@@ -2,14 +2,11 @@ import AOCInit
 import util
 
 inp = util.getInput(d=1, y=2015)
+seq = util.sub('()', (1, -1), inp)
 
 # part 1
-print(sum((1 if c == '(' else -1) for c in inp))
+print(sum(seq))
 
 # part 2
-ind = 0
-currentFloor = 0
-while ind < len(inp) and currentFloor >= 0:
-    currentFloor += (1 if inp[ind] == '(' else -1)
-    ind += 1
-print(ind)
+print(util.firstAccumSuchThat(seq, lambda x, y: x + y, lambda x: x < 0)[0] + 1)
+
