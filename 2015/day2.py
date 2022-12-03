@@ -2,12 +2,12 @@ import AOCInit
 import util
 
 inp = util.getInput(d=2, y=2015)
-arr = list(list(int(c) for c in l.split('x')) for l in inp.splitlines())
+arr = list(util.getInts(l) for l in inp.splitlines())
 
 def paperSize(side):
     p = util.prod(side)
     m = max(side)
-    return p / m + sum(p / s for s in side) * 2
+    return p // m + sum(p // s for s in side) * 2
 
 def ribbonSize(side):
     s = sum(side)

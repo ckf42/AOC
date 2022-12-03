@@ -10,7 +10,8 @@ regexTrue = [
     re.compile(r'(.)\1', re.I),
 ]
 withoutSubStr = ['ab', 'cd', 'pq', 'xy']
-print(sum(all(r.search(s) for r in regexTrue) and all(ss not in s for ss in withoutSubStr) for s in inp))
+print(sum(all(r.search(s) for r in regexTrue) and all(ss not in s for ss in withoutSubStr)
+          for s in inp))
 
 # part 2
 regexTrue = [
