@@ -1,6 +1,9 @@
 import AOCInit
 import util
 
+if __name__ != '__main__':
+    exit()
+
 inp = util.getInput(d=3, y=2022).splitlines()
 
 def val(c):

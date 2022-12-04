@@ -33,7 +33,8 @@ def firstSuchThat(arr: _tp.Iterable[_T],
 def firstAccumSuchThat(
         arr: _tp.Iterable[_T],
         func: _tp.Callable[[_T, _T], _T],
-        cond: _tp.Callable[_T, bool]) -> tuple[_tp.Optional[int], _tp.Optional[_T], _tp.Optional[_T]]:
+        cond: _tp.Callable[_T, bool]
+        ) -> tuple[_tp.Optional[int], _tp.Optional[_T], _tp.Optional[_T]]:
     return next(filter(lambda t: cond(t[2]),
                        zip(_it.count(0), arr, _it.accumulate(arr, func))),
                 (None, None, None))
@@ -47,15 +48,15 @@ def prod(arr: _tp.Iterable[float]) -> float:
 def takeExcept(arr: _abc.Sequence[_T], index: int) -> _abc.Sequence[_T]:
     return arr[:index] + arr[index + 1:]
 
-def splitAt(arr: _abc.Sequence[_T], index: int) -> tuple[_abc.Sequence[_T]]:
+def splitAt(arr: _abc.Sequence[_T],
+            index: int) -> tuple[_abc.Sequence[_T], _abc.Sequence[_T]]:
     return (arr[:index], arr[index:])
 
 def getInts(s: str) -> tuple[int]:
     return tuple(map(int, _re.findall(r'\d+', s)))
 
 def splitIntoGp(arr: _abc.Sequence[_T], gpSize: int) ->tuple[tuple[_T]]:
-    return tuple(tuple(arr[ind + i]
-                       for i in range(gpSize))
+    return tuple(tuple(arr[ind + i] for i in range(gpSize))
                  for ind in range(0, len(arr), gpSize))
 
 def sub(originalSym: _abc.Collection[_T],
@@ -65,7 +66,6 @@ def sub(originalSym: _abc.Collection[_T],
     replacementDict = {k: v for k, v in zip(originalSym, targetSym)}
     return tuple(replacementDict.get(c, c) for c in arr if not discard or c in replacementDict)
 
-def charSub(originalSym: str, targetSym: str, s: str) -> str:
-    # return s.translate(str.maketrans(originalSym, targetSym))
-    return ''.join(sub(originalSym, targetSym, s))
+def subChar(originalSym: str, targetSym: str, s: str) -> str:
+    return s.translate(str.maketrans(originalSym, targetSym))
 
