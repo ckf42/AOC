@@ -6,7 +6,9 @@ if __name__ != '__main__':
     exit()
 
 inp = '1'
-eleTableRec = (
+
+# atomic ele
+eleTableRec = [
     'H 22 H',
     'He 13112221133211322112211213322112 Hf.Pa.H.Ca.Li',
     'Li 312211322212221121123222112 He',
@@ -99,14 +101,16 @@ eleTableRec = (
     'Th 1113 Ac',
     'Pa 13 Th',
     'U 3 Pa',
-)
+]
+# transuranic ele
+# for i in range(4, 10):
+    # eleTableRec.append(f'Np{i} 1311222113321132211221121332211{i} Hf.Pa.H.Ca.Pu{i}')
+    # eleTableRec.append(f'Pu{i} 31221132221222112112322211{i} Np{i}')
 eleTableRec = list((l[0], l[1], l[2].split('.'))
                    for s in eleTableRec
                    if (l := s.split()))
-eleTableRec.sort(key=lambda t: len(t[1]), reverse=True)
-runRe = re.compile(r'(\d)\1*')
+runReg = re.compile(r'(\d)\1*')
 tokenDict = {k: v for (v, k, _) in eleTableRec}
-eleList = tokenDict.keys()
 decayDict = {k: v for (k, _, v) in eleTableRec}
 eleTableRec = {k: len(v) for (k, v, _) in eleTableRec}
 
@@ -114,10 +118,10 @@ def tokenize(s):
     """
     122 -> 1, 'H'
     """
-    runSegList = list(m.group() for m in runRe.finditer(s))
+    runSegList = list(m.group() for m in runReg.finditer(s))
     res = list()
     while len(runSegList) != 0:
-        m = util.lastAccumSuchThat(runSegList, lambda x, y: x + y, lambda z: z in eleList)
+        m = util.lastAccumSuchThat(runSegList, lambda x, y: x + y, lambda z: z in tokenDict)
         if m[0] is None:
             res.append(runSegList.pop(0))
         else:
@@ -125,11 +129,11 @@ def tokenize(s):
             runSegList = runSegList[m[0] + 1:]
     return tuple(res)
 
-def dumpLASStep(s):
+def simpleLasStep(s):
     """
     312 -> 131112
     """
-    return ''.join(str(len(p)) + p[0] for m in runRe.finditer(s) if (p := m.group()))
+    return ''.join(str(len(p)) + p[0] for m in runReg.finditer(s) if (p := m.group()))
 
 def lasStep(tokens):
     """
@@ -139,7 +143,7 @@ def lasStep(tokens):
     """
     return tuple(s
                  for t in tokens
-                 for s in (tokenize(dumpLASStep(t)) if t[0].isdigit() else decayDict[t]))
+                 for s in (tokenize(simpleLasStep(t)) if t[0].isdigit() else decayDict[t]))
 
 def toLen(tokens):
     return sum((len(s) if s[0].isdigit() else eleTableRec[s]) for s in tokens)
@@ -147,7 +151,6 @@ def toLen(tokens):
 inp = tokenize(inp)
 # part 1
 for i in range(40):
-    # print(inp)
     inp = lasStep(inp)
 print(toLen(inp))
 
