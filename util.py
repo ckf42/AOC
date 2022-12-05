@@ -30,6 +30,14 @@ def firstSuchThat(arr: _tp.Iterable[_T],
                   cond: _tp.Callable[_T, bool]) -> tuple[_tp.Optional[int], _tp.Optional[_T]]:
     return next(filter(lambda t: cond(t[1]), enumerate(arr)), (None, None))
 
+def lastSuchThat(arr: _tp.Iterable[_T],
+                 cond: _tp.Callable[_T, bool]) -> tuple[_tp.Optional[int], _tp.Optional[_T]]:
+    lastTrue = (None, None)
+    filterObj = filter(lambda t: cond(t[1]), enumerate(arr))
+    while (o := next(filterObj, None)) is not None:
+        lastTrue = o
+    return lastTrue
+
 def firstAccumSuchThat(
         arr: _tp.Iterable[_T],
         func: _tp.Callable[[_T, _T], _T],
@@ -38,6 +46,18 @@ def firstAccumSuchThat(
     return next(filter(lambda t: cond(t[2]),
                        zip(_it.count(0), arr, _it.accumulate(arr, func))),
                 (None, None, None))
+
+def lastAccumSuchThat(
+        arr: _tp.Iterable[_T],
+        func: _tp.Callable[[_T, _T], _T],
+        cond: _tp.Callable[_T, bool]
+        ) -> tuple[_tp.Optional[int], _tp.Optional[_T], _tp.Optional[_T]]:
+    lastTrue = (None, None, None)
+    filterObj = filter(lambda t: cond(t[2]),
+                       zip(_it.count(0), arr, _it.accumulate(arr, func)))
+    while (o := next(filterObj, None)) is not None:
+        lastTrue = o
+    return lastTrue
 
 def cycInd(arr: _abc.Sequence[_T], index: int) -> _T:
     return arr[index % len(arr)]
