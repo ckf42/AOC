@@ -55,16 +55,32 @@ def splitAt(arr: _abc.Sequence[_T],
 def getInts(s: str) -> tuple[int]:
     return tuple(map(int, _re.findall(r'\d+', s)))
 
-def splitIntoGp(arr: _abc.Sequence[_T], gpSize: int) ->tuple[tuple[_T]]:
-    return tuple(tuple(arr[ind + i] for i in range(gpSize))
-                 for ind in range(0, len(arr), gpSize))
+def splitIntoGp(arr: _abc.Sequence[_T],
+                gpSize: int,
+                allowRemain: bool = True) ->tuple[tuple[_T]]:
+    lArr = len(arr)
+    return tuple(tuple(arr[gpInit:(min(gpInit + gpSize, lArr)
+                                   if allowRemain
+                                   else gpInit + gpSize)])
+                 for gpInit in range(0, lArr, gpSize))
+
+def takeFromEvery(arr: _abc.Sequence[_T],
+                  gpSize: int,
+                  idx: int = 0,
+                  takeFromRemain: bool = True) -> tuple[_T]:
+    lArr = len(arr)
+    return tuple(arr[gpInit + idx]
+                 for gpInit in range(0, lArr, gpSize)
+                 if takeFromRemain or gpInit + gpSize <= lArr)
 
 def sub(originalSym: _abc.Collection[_T],
         targetSym: _abc.Collection[_S],
         arr: _abc.Collection[_T],
         discard: bool = False) -> tuple[_tp.Union[_T, _S]]:
     replacementDict = {k: v for k, v in zip(originalSym, targetSym)}
-    return tuple(replacementDict.get(c, c) for c in arr if not discard or c in replacementDict)
+    return tuple(replacementDict.get(c, c)
+                 for c in arr
+                 if not discard or c in replacementDict)
 
 def subChar(originalSym: str, targetSym: str, s: str) -> str:
     return s.translate(str.maketrans(originalSym, targetSym))
