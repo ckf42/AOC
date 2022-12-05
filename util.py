@@ -73,7 +73,10 @@ def splitAt(arr: _abc.Sequence[_T],
     return (arr[:index], arr[index:])
 
 def getInts(s: str) -> tuple[int]:
-    return tuple(map(int, _re.findall(r'\d+', s)))
+    return tuple(map(int, _re.findall(r'-?\d+', s)))
+
+def getFloats(s: str) -> tuple[float]:
+    return tuple(map(float, _re.findall(r'-?\d+(?:\.\d+)', s)))
 
 def splitIntoGp(arr: _abc.Sequence[_T],
                 gpSize: int,
