@@ -32,6 +32,10 @@ def firstSuchThat(arr: _tp.Iterable[_T],
 
 def lastSuchThat(arr: _tp.Iterable[_T],
                  cond: _tp.Callable[_T, bool]) -> tuple[_tp.Optional[int], _tp.Optional[_T]]:
+    """
+    Slower than firstSuchThat on [::-1] as it always go through whole arr
+    Only use if you cannot reverse arr (e.g. arr is generator, which got consumed anyway)
+    """
     lastTrue = (None, None)
     filterObj = filter(lambda t: cond(t[1]), enumerate(arr))
     while (o := next(filterObj, None)) is not None:
@@ -58,6 +62,9 @@ def lastAccumSuchThat(
     while (o := next(filterObj, None)) is not None:
         lastTrue = o
     return lastTrue
+
+add = (lambda x, y: x + y) # helper for *SuchThat
+mul = (lambda x, y: x * y) # helper for *SuchThat
 
 def cycInd(arr: _abc.Sequence[_T], index: int) -> _T:
     return arr[index % len(arr)]
@@ -108,6 +115,13 @@ def sub(originalSym: _abc.Collection[_T],
 def subChar(originalSym: str, targetSym: str, s: str) -> str:
     return s.translate(str.maketrans(originalSym, targetSym))
 
-def multiMap(arr: _tp.Iterable[_T], splitFunc: tuple[_tp.Callable[_T, _tp.Any]]) -> tuple:
-    return tuple(tuple(map(f, arr)) for f in splitFunc)
+def multiMap(arr: _tp.Iterable[_T], funcTuple: tuple[_tp.Callable[_T, _tp.Any]]) -> tuple:
+    return tuple(tuple(map(f, arr)) for f in funcTuple)
+
+def takeApart(coll: _abc.Sequence[_abc.Sequence[_T]]) -> tuple[tuple[_T]]:
+    l = len(coll[0])
+    return multiMap(coll, tuple((lambda x, idx=i: x[idx]) for i in range(l)))
+
+def transpose(coll: _abc.Sequence[_abc.Sequence[_T]]) -> tuple[tuple[_T]]:
+    return takeApart(coll)
 

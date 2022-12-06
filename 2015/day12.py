@@ -14,7 +14,7 @@ print(sum(util.getInts(inp)))
 # part 2
 bIndices = list((s, 1 if inp[s] == '{' else -1) for m in re.finditer('{|}', inp) if (s := m.start()))
 bIndices.sort(key=lambda x: x[0])
-(bIndices, bValue) = util.multiMap(bIndices, (lambda x: x[0], lambda x: x[1]))
+(bIndices, bValue) = util.takeApart(bIndices)
 l = len(bIndices)
 vIndices = tuple(m.start() for m in re.finditer(':"red"', inp))
 inpList = list(inp)
@@ -32,6 +32,7 @@ def findBraces(idx):
 for idx in vIndices:
     if inpList[idx] != 'x':
         p = findBraces(idx)
-        inpList[p[0]:p[1]] = ['x'] * (p[1] - p[0])
+        for i in range(p[0], p[1]):
+            inpList[i] = 'x'
 print(sum(util.getInts(''.join(inpList))))
 
