@@ -108,3 +108,6 @@ def sub(originalSym: _abc.Collection[_T],
 def subChar(originalSym: str, targetSym: str, s: str) -> str:
     return s.translate(str.maketrans(originalSym, targetSym))
 
+def multiMap(arr: _tp.Iterable[_T], splitFunc: tuple[_tp.Callable[_T, _tp.Any]]) -> tuple:
+    return tuple(tuple(map(f, arr)) for f in splitFunc)
+
