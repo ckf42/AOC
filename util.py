@@ -381,15 +381,24 @@ def sub(originalSym: _abc.Collection[_T],
     Parameter
     -----
     originalSym: Collection[T]
-        the symbols to look at in `arr`
+        the symbols to look up in `arr`
+        if the symbol appears in `originalSym` multiple times,
+            only the last appearance is considered
     targetSym: Collection[S]
         the symbols to replace with in `arr`
         should have the same length as `originalSym`
         the longer one of the two will be truncated (with `zip`)
     arr: Collection[T]
-
+        the collection to look at
     discard: bool, optional
+        determine whether symbols not in `originalSym` should be discarded
+        defaults to False
 
+    Returns
+    -----
+    a tuple containing the entries in `arr` with symbols in `originalSym`
+        replaced with the corresponding one in `targetSym`
+    if `discard` is True, symbols in `arr` but not in `originalSym` are discarded
     """
     replacementDict = {k: v for k, v in zip(originalSym, targetSym)}
     return tuple(replacementDict.get(c, c)
@@ -397,15 +406,70 @@ def sub(originalSym: _abc.Collection[_T],
                  if not discard or c in replacementDict)
 
 def subChar(originalSym: str, targetSym: str, s: str) -> str:
+    """
+    substitute characters in a string
+
+    Parameters
+    -----
+    originalSym: str
+        the characters to look up in `s`
+    targetSym: str
+        the symbols to replace with in `s`
+        must be equal length with `originalSym`
+    s: str
+        the str to look at
+
+    Return
+    -----
+    a string with characters in `originalSym` replaced with the corresponding one in `targetSym`
+
+    Note
+    -----
+    wrapper of str.translate
+    """
     return s.translate(str.maketrans(originalSym, targetSym))
 
-def multiMap(arr: _tp.Iterable[_T], funcTuple: tuple[_tp.Callable[_T, _tp.Any]]) -> tuple:
+def multiMap(arr: _tp.Iterable[_T], funcTuple: tuple[_tp.Callable[_T, _tp.Any]]) -> tuple[tuple]:
+    """
+    `map` with multiple functions
+
+    Parameters
+    -----
+    arr: Iterable[T]
+        the sequence in question
+    funcTuple: tuple[Callable[T, Any]]
+        a tuple of callables that maps elements in `arr` to something
+
+    Return
+    -----
+    a tuple of tuples each containing the images of a function in `funcTuple`
+    `multiMap[i]` contains the image of `funcTuple[i]`
+    """
     return tuple(tuple(map(f, arr)) for f in funcTuple)
 
-def takeApart(coll: _abc.Sequence[_abc.Sequence[_T]]) -> tuple[tuple[_T]]:
-    l = len(coll[0])
-    return multiMap(coll, tuple((lambda x, idx=i: x[idx]) for i in range(l)))
+def takeApart(seq: _abc.Sequence[_abc.Sequence]) -> tuple[tuple]:
+    """
+    splitting sequences of sequences
 
-def transpose(coll: _abc.Sequence[_abc.Sequence[_T]]) -> tuple[tuple[_T]]:
-    return takeApart(coll)
+    Parameter
+    -----
+    seq: Sequence[Sequence]
+        a sequence of sequences. At least contain one sequence
+
+    Return
+    -----
+    a tuple of tuples of elements from `seq`
+    `takeApart[i]` contains the `i`th element in every sequence with order preserved
+    `len(takeApart) == len(seq[0])` and `len(takeApart[0]) == len(seq)`
+    if `seq[i]` has length less than `seq[0]`, will raise `IndexError`
+    if `seq[i]` has length larger than `seq[0]`, the sequence will be truncated
+    """
+    l = len(seq[0])
+    return multiMap(seq, tuple((lambda x, idx=i: x[idx]) for i in range(l)))
+
+def transpose(seq: _abc.Sequence[_abc.Sequence]) -> tuple[tuple]:
+    """
+    alias of `takeApart`
+    """
+    return takeApart(seq)
 
