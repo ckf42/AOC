@@ -460,7 +460,7 @@ def takeApart(seq: _abc.Sequence[_abc.Sequence]) -> tuple[tuple]:
     -----
     a tuple of tuples of elements from `seq`
     `takeApart[i]` contains the `i`th element in every sequence with order preserved
-    `len(takeApart) == len(seq[0])` and `len(takeApart[0]) == len(seq)`
+    `len(takeApart) == len(seq[0])` and `len(takeApart[i]) == len(seq)`
     if `seq[i]` has length less than `seq[0]`, will raise `IndexError`
     if `seq[i]` has length larger than `seq[0]`, the sequence will be truncated
     """
