@@ -80,6 +80,46 @@ def firstSuchThat(arr: _tp.Iterable[_T],
     """
     return next(filter(lambda t: cond(t[1]), enumerate(arr)), (None, None))
 
+def firstIdxSuchThat(arr: _tp.Iterable[_T],
+                     cond: _tp.Callable[_T, bool],
+                     s: int = 0,
+                     e: _tp.Optional[int] = None,
+                     step: int = 1) -> _tp.Optional[_T]:
+    """
+    find the index of the first element that the condition holds
+
+    Parameters
+    -----
+    arr: Iterable[T]
+        the input array search. If a generator, will be consumed
+    cond: Callable[T, bool]
+        a function that takes an element in `arr` and return a boolean denoting
+        whether the value should be accepted
+    s: int, optional
+        the index to start the search at, inclusive
+        defaults to 0
+    e: int or None, optional
+        the index to end the search at, exclusive
+        if None, will search till the end of `arr`
+        defaults to None
+    step: int, optional
+        the step size to traversal the array
+        defaults to 1
+
+    Returns
+    -----
+    an int that denotes the index of the first element which `cond` returns true
+    or None if no such element exists in `arr`
+
+    Note
+    -----
+    Wrapper of `firstSuchThat`
+
+    If `arr` is a generator, it will be consumed after the returned element,
+    or the whole `arr` will be consumed if no such element is found
+    """
+    return firstSuchThat(range(s, e, step), lambda idx: cond(arr[idx]))[0]
+
 def lastSuchThat(arr: _tp.Iterable[_T],
                  cond: _tp.Callable[_T, bool]) -> tuple[_tp.Optional[int], _tp.Optional[_T]]:
     """
@@ -472,4 +512,25 @@ def transpose(seq: _abc.Sequence[_abc.Sequence]) -> tuple[tuple]:
     alias of `takeApart`
     """
     return takeApart(seq)
+
+def sgn(x: float) -> int:
+    """
+    compute the signum of a float
+
+    Parameters
+    -----
+    x: float
+        the number in question
+
+    Returns
+    -----
+    a int that represents the signum of `x`
+    if x == 0, returns 0
+    if x > 0, returns 1
+    if x < 0, returns -1
+    """
+    if x == 0:
+        return 0
+    else:
+        return 1 if x > 0 else -1
 
