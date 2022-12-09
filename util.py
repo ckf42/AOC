@@ -12,6 +12,12 @@ if __name__ == '__main__':
 _T = _tp.TypeVar('T')
 _S = _tp.TypeVar('S')
 
+# helper functions
+add = (lambda x, y: x + y) # helper for *SuchThat
+mul = (lambda x, y: x * y) # helper for *SuchThat
+identity = (lambda x: x) # helper for argmax
+
+
 def getInput(d: int,
              y: int,
              force: bool = False) -> str:
@@ -235,9 +241,6 @@ def lastAccumSuchThat(
     while (o := next(filterObj, None)) is not None:
         lastTrue = o
     return lastTrue
-
-add = (lambda x, y: x + y) # helper for *SuchThat
-mul = (lambda x, y: x * y) # helper for *SuchThat
 
 def cycInd(arr: _abc.Sequence[_T], index: int) -> _T:
     """
@@ -533,4 +536,33 @@ def sgn(x: float) -> int:
         return 0
     else:
         return 1 if x > 0 else -1
+
+def argmax(arr: _abc.Collection[_tp.Any],
+           key: _tp.Callable[_tp.Any, float]) -> _tp.Optional[_tp.Any]:
+    """
+    find where maximum occurs
+
+    Parameter
+    -----
+    arr: Collection
+        the collection of elements to look at
+    key: Callable[Any, float]
+        a callable that computes the (float) key for comparison
+
+    Return
+    -----
+    the first item in `arr` (as returned by its iterator) that gives the maximal `key` value
+    if there is no element in `arr`, returns None
+
+    Note
+    -----
+    Only enumerate whole `arr` once
+    """
+    currMaxItem = None
+    currMaxKey = -float('Inf')
+    for item in arr:
+        if (k := key(item)) > currMaxKey:
+            currMaxItem = item
+            currMaxKey = k
+    return item
 
