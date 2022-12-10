@@ -3,17 +3,20 @@ import util
 import sympy as sp
 import itertools as it
 
+# TODO: need faster algorithm
+
 if __name__ != '__main__':
     exit()
 
-inp = '29000000'
+inp = '123'
 inp = int(inp)
 
 # part 1
-def sumFact(fd):
-    return util.prod((p ** (f + 1) - 1) / (p - 1) for p, f in fd.items())
-
-# print(util.firstSuchThat(it.count(2), lambda n: sumFact(sp.factorint(n)) * 10 >= inp))
+print(util.firstSuchThat(it.count(2),
+                         lambda n: sp.divisor_sigma(n, 1) * 10 >= inp)[1])
 
 # part 2
-# ?
+print(util.firstSuchThat(it.count(2),
+                         lambda n: sum(filter(lambda d: d * 50 >= n,
+                                              sp.divisors(n))) * 11 >= inp)[1])
+
