@@ -566,3 +566,49 @@ def argmax(arr: _abc.Collection[_tp.Any],
             currMaxKey = k
     return item
 
+def gcd(*n: int) -> int:
+    """
+    Compute gcd of integers
+
+    Parameter
+    -----
+    n: int
+        the integer to compute gcd for
+
+    Return
+    -----
+    the gcd of the given integers
+    if no integer is given, return 1
+    """
+    if len(n) == 0:
+        return 1
+    elif len(n) == 1:
+        return n[0]
+    elif len(n) == 2:
+        return n[0] if n[1] == 0 else gcd(n[1], n[0] % n[1])
+    else:
+        return gcd(gcd(*n[:2]), *n[2:])
+
+def lcm(*n: int) -> int:
+    """
+    Compute lcm of integers
+
+    Parameter
+    -----
+    n: int
+        the integer to compute gcd for
+
+    Return
+    -----
+    the lcm of the given integers
+    if no integer is given, return 1
+    """
+    if len(n) == 0:
+        return 1
+    elif len(n) == 1:
+        return n[0]
+    elif len(n) == 2:
+        return n[0] // gcd(*n) * n[1]
+    else:
+        return lcm(lcm(*n[:2]), *n[2:])
+
