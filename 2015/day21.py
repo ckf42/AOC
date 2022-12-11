@@ -30,7 +30,6 @@ rc = len(ringList)
 baseHp = 100
 bossStat = util.getInts(util.getInput(d=21, y=2015))
 maxDamageDeal = sum(item[1] for eqClass in (weaponList, armorList, ringList) for item in eqClass)
-maxSpent = sum(item[0] for eqClass in (weaponList, armorList, ringList) for item in eqClass)
 
 model = cp_model.CpModel()
 weaponVarList = tuple(model.NewBoolVar(f'weapon{idx}') for idx in range(wc))
