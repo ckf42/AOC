@@ -29,8 +29,10 @@ def getInput(d: int,
     -----
     d: int
         an integer representing the day
+
     y: int
         an integer representing the year
+
     force: bool, optional
         determine if the cached input should be ignored
         defaults to False
@@ -69,6 +71,7 @@ def firstSuchThat(arr: _tp.Iterable[_T],
     -----
     arr: Iterable[T]
         the input array search. If a generator, will be consumed
+
     cond: Callable[T, bool]
         a function that takes an element in `arr` and return a boolean denoting
         whether the value should be accepted
@@ -99,16 +102,20 @@ def firstIdxSuchThat(arr: _tp.Iterable[_T],
     -----
     arr: Iterable[T]
         the input array search. If a generator, will be consumed
+
     cond: Callable[T, bool]
         a function that takes an element in `arr` and return a boolean denoting
         whether the value should be accepted
+
     s: int, optional
         the index to start the search at, inclusive
         defaults to 0
+
     e: int or None, optional
         the index to end the search at, exclusive
         if None, will search till the end of `arr`
         defaults to None
+
     step: int, optional
         the step size to traversal the array
         defaults to 1
@@ -136,6 +143,7 @@ def lastSuchThat(arr: _tp.Iterable[_T],
     -----
     arr: Iterable[T]
         the input array search. If a generator, will be consumed
+
     cond: Callable[T, bool]
         a function that takes an element in `arr` and return a boolean denoting
         whether the value should be accepted
@@ -173,11 +181,13 @@ def firstAccumSuchThat(
     -----
     arr: Iterable[T]
         the input array search. If a generator, will be consumed
+
     func: Callable[[T, T], T]
         a function that two elements from `arr` and return a element of the same type
         usually a lambda
         common choice may be addition `lambda x, y: x + y`
             or multiplication `lambda x, y: x * y`
+
     cond: Callable[T, bool]
         a function that takes an element in `arr` and return a boolean denoting
         whether the value should be accepted
@@ -213,11 +223,13 @@ def lastAccumSuchThat(
     -----
     arr: Iterable[T]
         the input array search. If a generator, will be consumed
+
     func: Callable[[T, T], T]
         a function that two elements from `arr` and return a element of the same type
         usually a lambda
         common choice may be addition `lambda x, y: x + y`
             or multiplication `lambda x, y: x * y`
+
     cond: Callable[T, bool]
         a function that takes an element in `arr` and return a boolean denoting
         whether the value should be accepted
@@ -251,6 +263,7 @@ def cycInd(arr: _abc.Sequence[_T], index: int) -> _T:
     -----
     arr: Sequence[T]
         the sequence to access
+
     index: int
         the index of the target element
 
@@ -291,6 +304,7 @@ def takeExcept(arr: _abc.Sequence[_T], index: int) -> _abc.Sequence[_T]:
     -----
     arr: Sequence[T]
         the sequence in question
+
     index: int
         the index of the element to be removed
 
@@ -309,6 +323,7 @@ def splitAt(arr: _abc.Sequence[_T],
     -----
     arr: Sequence[T]
         the sequence in question
+
     index: int
         the index to cutoff
 
@@ -361,8 +376,10 @@ def splitIntoGp(arr: _abc.Sequence[_T],
     -----
     arr: Sequence[T]
         a sequence that contains the elements in question
+
     gpSize: int
         the size of a group
+
     allowRemain: bool, optional
         determine if the last group may have size smaller than `gpSize`
         defaults to True
@@ -396,10 +413,13 @@ def takeFromEvery(arr: _abc.Sequence[_T],
     -----
     arr: Sequence[T]
         a sequence that contains the elements in question
+
     gpSize: int
         the size of a group
+
     idx: int
         the index to take from each group
+
     takeFromRemain: bool, optional
         determine if the last group may have size smaller than `gpSize`
         defaults to True
@@ -429,12 +449,15 @@ def sub(originalSym: _abc.Collection[_T],
         the symbols to look up in `arr`
         if the symbol appears in `originalSym` multiple times,
             only the last appearance is considered
+
     targetSym: Collection[S]
         the symbols to replace with in `arr`
         should have the same length as `originalSym`
         the longer one of the two will be truncated (with `zip`)
+
     arr: Collection[T]
         the collection to look at
+
     discard: bool, optional
         determine whether symbols not in `originalSym` should be discarded
         defaults to False
@@ -458,9 +481,11 @@ def subChar(originalSym: str, targetSym: str, s: str) -> str:
     -----
     originalSym: str
         the characters to look up in `s`
+
     targetSym: str
         the symbols to replace with in `s`
         must be equal length with `originalSym`
+
     s: str
         the str to look at
 
@@ -482,6 +507,7 @@ def multiMap(arr: _tp.Iterable[_T], funcTuple: tuple[_tp.Callable[_T, _tp.Any]])
     -----
     arr: Iterable[T]
         the sequence in question
+
     funcTuple: tuple[Callable[T, Any]]
         a tuple of callables that maps elements in `arr` to something
 
@@ -548,6 +574,7 @@ def argmax(arr: _abc.Collection[_tp.Any],
     -----
     arr: Collection
         the collection of elements to look at
+
     key: Callable[Any, float]
         a callable that computes the (float) key for comparison
 
@@ -574,8 +601,8 @@ def gcd(*n: int) -> int:
 
     Parameter
     -----
-    n: int
-        the integer to compute gcd for
+    *n: int
+        the integers to compute gcd for
 
     Return
     -----
@@ -597,8 +624,8 @@ def lcm(*n: int) -> int:
 
     Parameter
     -----
-    n: int
-        the integer to compute gcd for
+    *n: int
+        the integers to compute gcd for
 
     Return
     -----
@@ -644,4 +671,66 @@ class MinHeap:
     def isEmpty(self):
         return len(self.__data) == 0
 
+
+def bfs(initialNode: _T,
+        costFunc: _tp.Callable[[_T, _T, float], float],
+        neighbourListFunc: _tp.Callable[_T, _abc.Collection[_T]],
+        goalCheckerFunc: _tp.Callable[_T, bool],
+        aStarHeuristicFunc: _tp.Optional[_tp.Callable[_T, float]] = None
+        ) -> _tp.Optional[tuple[_T, float]]:
+    """
+    search for minimal cost path via BFS/A*
+
+    Parameter
+    -----
+    initialNode: T
+        the initial node to start searching
+
+    costFunc: Callable[[T, T, float], float]
+        a function to compute cost to a certain node from `initialNode`
+        expected to take 3 positional arguments:
+            newNode: T, tbe node to transfer to
+            oldNode: T, the original node
+            oldCost: float, the original cost to get to `oldNode`
+        expected to return a float representing the cost to `newNode`
+
+    neighbourListFunc: Callable[T, Collection[T]]
+        a function to get what a node can transfer to
+        expected to take 1 positional argument (`node`, the original node)
+        expected to return a collection of nodes, which `node` can transfer to
+
+    goalCheckerFunc: Callable[T, bool]
+        a function that checks whether a node is accepted as the goal node
+        expected to take 1 positional argument (`node`, the node in question)
+        expected to return a bool denoting whether `node` is accepted as a goal
+
+    aStarHeuristicFunc: Callable[T, float] or None, optional
+        a heuristic distance for A*
+        for details, please check the theory for A* algorithm
+        expected to be a callable that takes a node and returns the estimated cost to a goal
+        if None, the heuristic cost is constant zero
+        defaults to None
+
+    Return
+    -----
+    a tuple of [node, cost] where
+        `goalCheckerFunc(node)` is True
+        `cost` is minimal (assuming the heuristic, if given, is suitable)
+    or None, if no such node is found
+    """
+    if aStarHeuristicFunc is None:
+        aStarHeuristicFunc = (lambda state: 0)
+    h = MinHeap(initItemList=((initialNode, 0), ),
+                key=(lambda sc: sc[1] + aStarHeuristicFunc(sc[0])))
+    visited = set()
+    while not h.isEmpty():
+        (currNode, currCost) = h.pop()
+        if goalCheckerFunc(currNode):
+            return (currNode, currCost)
+        if currNode in visited:
+            continue
+        visited.add(currNode)
+        for nextNode in neighbourListFunc(currNode):
+            h.push((nextNode, costFunc(nextNode, currNode, currCost)))
+    return None
 
