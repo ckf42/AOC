@@ -166,7 +166,7 @@ def firstAccumSuchThat(
         cond: _tp.Callable[_T, bool]
         ) -> tuple[_tp.Optional[int], _tp.Optional[_T], _tp.Optional[_T]]:
     """
-    find the first element that the condition holds cumulativly
+    find the first element that the condition holds cumulatively
 
     Parameters
     -----
@@ -278,6 +278,7 @@ def prod(arr: _tp.Iterable[float]) -> float:
     Note
     -----
     `arr` will be consumed if it is a generator
+    Does not seem compatible with `ortools`
     """
     return _ft.reduce(lambda x, y: x * y, arr)
 
