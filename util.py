@@ -5,6 +5,7 @@ import requests as _rq
 import re as _re
 import functools as _ft
 import itertools as _it
+import heapq as _hq
 
 if __name__ == '__main__':
     exit()
@@ -612,4 +613,35 @@ def lcm(*n: int) -> int:
         return n[0] // gcd(*n) * n[1]
     else:
         return lcm(lcm(*n[:2]), *n[2:])
+
+class MinHeap:
+    """
+    simple wrapper for heap based on heapq
+
+    Note
+    -----
+    See https://stackoverflow.com/a/8875823
+    """
+    def __init__(self, initItemList=None, key=lambda k: k):
+        self.__data = list()
+        self.__key = key
+        if initItemList is not None:
+            self.__data.extend((self.__key(item), item) for item in initItemList)
+            _hq.heapify(self.__data)
+
+    def push(self, item):
+        _hq.heappush(self.__data, (self.__key(item), item))
+
+    def pop(self):
+        return _hq.heappop(self.__data)[-1]
+
+    def top(self):
+        return self.__data[0][-1]
+
+    def __len__(self):
+        return len(self.__data)
+
+    def isEmpty(self):
+        return len(self.__data) == 0
+
 
