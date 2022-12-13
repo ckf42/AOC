@@ -703,14 +703,14 @@ class MinHeap:
         return len(self.__data) == 0
 
 
-def bfs(initialNode: _T,
-        costFunc: _tp.Callable[[_T, _T, float], float],
-        neighbourListFunc: _tp.Callable[_T, _abc.Iterable[_T]],
-        goalCheckerFunc: _tp.Callable[_T, bool],
-        aStarHeuristicFunc: _tp.Optional[_tp.Callable[_T, float]] = None
-        ) -> _tp.Optional[tuple[_T, float]]:
+def dijkstra(initialNode: _T,
+             costFunc: _tp.Callable[[_T, _T, float], float],
+             neighbourListFunc: _tp.Callable[_T, _abc.Iterable[_T]],
+             goalCheckerFunc: _tp.Callable[_T, bool],
+             aStarHeuristicFunc: _tp.Optional[_tp.Callable[_T, float]] = None
+             ) -> _tp.Optional[tuple[_T, float]]:
     """
-    search for minimal cost path via BFS/A*
+    search for minimal cost path via Dijkstra / A*
 
     Parameter
     -----

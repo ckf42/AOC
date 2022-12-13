@@ -27,11 +27,11 @@ neiLstFunc = lambda n: tuple(nd
                                 and elev(n) + 1 >= elev(nd))
 isGoal = lambda n: n == endLoc
 aStar = lambda n: sum(abs(n[i] - endLoc[i]) for i in range(2))
-print(util.bfs(initialNode=startLoc,
-               costFunc=costFunc,
-               neighbourListFunc=neiLstFunc,
-               goalCheckerFunc=isGoal,
-               aStarHeuristicFunc=aStar)[1])
+print(util.dijkstra(initialNode=startLoc,
+                    costFunc=costFunc,
+                    neighbourListFunc=neiLstFunc,
+                    goalCheckerFunc=isGoal,
+                    aStarHeuristicFunc=aStar)[1])
 
 # part 2
 neiLstFunc = lambda n: tuple(nd
@@ -40,8 +40,8 @@ neiLstFunc = lambda n: tuple(nd
                                 and all(0 <= nd[i] < dim[i] for i in range(2)) \
                                 and elev(n) <= 1 + elev(nd))
 isGoal = lambda n: elev(n) == 0
-print(util.bfs(initialNode=endLoc,
-               costFunc=costFunc,
-               neighbourListFunc=neiLstFunc,
-               goalCheckerFunc=isGoal)[1])
+print(util.dijkstra(initialNode=endLoc,
+                    costFunc=costFunc,
+                    neighbourListFunc=neiLstFunc,
+                    goalCheckerFunc=isGoal)[1])
 

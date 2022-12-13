@@ -86,17 +86,17 @@ def moveState(st: State, regHarmVal: int = 0) -> list[State]:
     return list(filter(lambda s: s.hp > 0, moveList))
 
 # part 1
-print(util.bfs(State(hp=50, mp=500, manaSpent=0, bossHp=bossHp, defence=0,
-                     shieldRemain=0, poisonRemain=0, rechargeRemain=0),
-               costFunc=lambda s, ost, oc: s.manaSpent,
-               neighbourListFunc=lambda s: moveState(s, 0),
-               goalCheckerFunc=lambda s: s.bossHp <= 0)[1])
+print(util.dijkstra(State(hp=50, mp=500, manaSpent=0, bossHp=bossHp, defence=0,
+                          shieldRemain=0, poisonRemain=0, rechargeRemain=0),
+                    costFunc=lambda s, ost, oc: s.manaSpent,
+                    neighbourListFunc=lambda s: moveState(s, 0),
+                    goalCheckerFunc=lambda s: s.bossHp <= 0)[1])
 
 # part 2
-print(util.bfs(State(hp=50, mp=500, manaSpent=0, bossHp=bossHp, defence=0,
-                     shieldRemain=0, poisonRemain=0, rechargeRemain=0),
-               costFunc=lambda s, ost, oc: s.manaSpent,
-               neighbourListFunc=lambda s: moveState(s, 1),
-               goalCheckerFunc=lambda s: s.bossHp <= 0)[1])
+print(util.dijkstra(State(hp=50, mp=500, manaSpent=0, bossHp=bossHp, defence=0,
+                          shieldRemain=0, poisonRemain=0, rechargeRemain=0),
+                    costFunc=lambda s, ost, oc: s.manaSpent,
+                    neighbourListFunc=lambda s: moveState(s, 1),
+                    goalCheckerFunc=lambda s: s.bossHp <= 0)[1])
 
 
