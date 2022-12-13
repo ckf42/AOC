@@ -765,3 +765,28 @@ def dijkstra(initialNode: _T,
             h.push((nextNode, costFunc(nextNode, currNode, currCost)))
     return None
 
+def clip(x: float, lb: _tp.Optional[float] = None, ub: _tp.Optional[float] = None) -> float:
+    """
+    clipping a value
+
+    Parameter
+    -----
+    x: float
+        the number to clip
+
+    lb: float or None, optional
+        the lower bound (inclusive)
+        if None, no lower bounding clipping will be done
+
+    ub: float or None, optional
+        the upper bound (inclusive)
+        if None, no upper bounding clipping will be done
+
+    Return
+    -----
+    the clipped value
+    if `ub < lb`, will return `lb`
+    """
+    return min(ub if ub is not None else x,
+               max(lb if lb is not None else x, x))
+
