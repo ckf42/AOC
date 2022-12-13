@@ -255,6 +255,37 @@ def lastAccumSuchThat(
         lastTrue = o
     return lastTrue
 
+def flatten(arr: _tp.Any, completely: bool = False):
+    """
+    flatten an iterable of iterables
+
+    Parameter
+    -----
+    arr: Any
+        an item to be flatten
+
+    completely: bool, optional
+        determine if all iterables somehow contained in `arr` should be flatten too
+        if False, only flatten the first level
+        if True, will flatten all levels nested into one
+        defaults to False
+
+    Return
+    -----
+    a tuple containing the flattened result
+    if `arr` is not iterable, will return `arr` itself
+    if `arr` is iterable but contains no iterable, will return its items wrapped in a tuple
+    """
+    if isinstance(arr, _abc.Iterable):
+        return tuple(x
+                     for itab in ((flatten(item, completely)
+                                if isinstance(item, _abc.Iterable)
+                                else (item,))
+                               for item in arr)
+                     for x in itab)
+    else:
+        return arr
+
 def cycInd(arr: _abc.Sequence[_T], index: int) -> _T:
     """
     access a sequence with arbitrary index
@@ -436,26 +467,26 @@ def takeFromEvery(arr: _abc.Sequence[_T],
                  for gpInit in range(0, lArr, gpSize)
                  if takeFromRemain or gpInit + gpSize <= lArr)
 
-def sub(originalSym: _abc.Collection[_T],
-        targetSym: _abc.Collection[_S],
-        arr: _abc.Collection[_T],
+def sub(originalSym: _abc.Iterable[_T],
+        targetSym: _abc.Iterable[_S],
+        arr: _abc.Iterable[_T],
         discard: bool = False) -> tuple[_tp.Union[_T, _S]]:
     """
     create a copy of the collection with its entry replaced
 
     Parameter
     -----
-    originalSym: Collection[T]
+    originalSym: Iterable[T]
         the symbols to look up in `arr`
         if the symbol appears in `originalSym` multiple times,
             only the last appearance is considered
 
-    targetSym: Collection[S]
+    targetSym: Iterable[S]
         the symbols to replace with in `arr`
         should have the same length as `originalSym`
         the longer one of the two will be truncated (with `zip`)
 
-    arr: Collection[T]
+    arr: Iterable[T]
         the collection to look at
 
     discard: bool, optional
@@ -518,13 +549,13 @@ def multiMap(arr: _tp.Iterable[_T], funcTuple: tuple[_tp.Callable[_T, _tp.Any]])
     """
     return tuple(tuple(map(f, arr)) for f in funcTuple)
 
-def takeApart(seq: _abc.Sequence[_abc.Sequence]) -> tuple[tuple]:
+def takeApart(seq: _abc.Iterable[_abc.Sequence]) -> tuple[tuple]:
     """
     splitting sequences of sequences
 
     Parameter
     -----
-    seq: Sequence[Sequence]
+    seq: Iterable[Sequence]
         a sequence of sequences. At least contain one sequence
 
     Return
@@ -538,7 +569,7 @@ def takeApart(seq: _abc.Sequence[_abc.Sequence]) -> tuple[tuple]:
     l = len(seq[0])
     return multiMap(seq, tuple((lambda x, idx=i: x[idx]) for i in range(l)))
 
-def transpose(seq: _abc.Sequence[_abc.Sequence]) -> tuple[tuple]:
+def transpose(seq: _abc.Iterable[_abc.Sequence]) -> tuple[tuple]:
     """
     alias of `takeApart`
     """
@@ -565,14 +596,14 @@ def sgn(x: float) -> int:
     else:
         return 1 if x > 0 else -1
 
-def argmax(arr: _abc.Collection[_tp.Any],
+def argmax(arr: _abc.Iterable[_tp.Any],
            key: _tp.Callable[_tp.Any, float]) -> _tp.Optional[_tp.Any]:
     """
     find where maximum occurs
 
     Parameter
     -----
-    arr: Collection
+    arr: Iterable
         the collection of elements to look at
 
     key: Callable[Any, float]
@@ -674,7 +705,7 @@ class MinHeap:
 
 def bfs(initialNode: _T,
         costFunc: _tp.Callable[[_T, _T, float], float],
-        neighbourListFunc: _tp.Callable[_T, _abc.Collection[_T]],
+        neighbourListFunc: _tp.Callable[_T, _abc.Iterable[_T]],
         goalCheckerFunc: _tp.Callable[_T, bool],
         aStarHeuristicFunc: _tp.Optional[_tp.Callable[_T, float]] = None
         ) -> _tp.Optional[tuple[_T, float]]:
@@ -694,7 +725,7 @@ def bfs(initialNode: _T,
             oldCost: float, the original cost to get to `oldNode`
         expected to return a float representing the cost to `newNode`
 
-    neighbourListFunc: Callable[T, Collection[T]]
+    neighbourListFunc: Callable[T, Iterable[T]]
         a function to get what a node can transfer to
         expected to take 1 positional argument (`node`, the original node)
         expected to return a collection of nodes, which `node` can transfer to
