@@ -21,6 +21,7 @@ floorLevel = 2 + maxLevel
 counter = 0
 part1Answered = False
 planned = set()
+planned.add(sandStart)
 stack = list()
 stack.append(sandStart)
 while len(stack) != 0:
@@ -28,17 +29,17 @@ while len(stack) != 0:
     if n[1] >= floorLevel or n in blocked:
         continue
     nodesToAdd = list()
-    for i in (0, -1, 1):
+    for i in (1, -1, 0):
         if (nn := (n[0] + i, n[1] + 1)) not in blocked and nn not in planned:
             nodesToAdd.append(nn)
-            planned.add(nn)
     if len(nodesToAdd) != 0:
-        stack.extend([n] + nodesToAdd[::-1])
+        planned.update([n] + nodesToAdd)
+        stack.extend([n] + nodesToAdd)
     else:
         counter += 1
         blocked.add(n)
         if not part1Answered and n[1] >= maxLevel:
-            print(counter)
+            print(counter - 1) # already exceeded
             part1Answered = True
 print(counter)
 
