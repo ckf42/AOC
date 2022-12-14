@@ -6,6 +6,8 @@ from functools import cmp_to_key
 if __name__ != '__main__':
     exit()
 
+# TODO: find way without parsing inp with ast
+
 packageGroup = util.getInput(d=13, y=2022).split('\n\n')
 packageList = tuple(tuple(ast.parse(ps, mode='eval').body
                           for ps in l.splitlines())

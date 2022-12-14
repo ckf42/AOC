@@ -13,25 +13,21 @@ loc = (1, 1)
 for line in inp:
     for c in line:
         d = moveDict[c]
-        loc = tuple(util.clip(loc[i] + d[i], 0, 2) for i in range(2))
+        newLoc = tuple(loc[i] + d[i] for i in range(2))
+        if max(abs(newLoc[i] - 1) for i in range(2)) <= 1:
+            loc = newLoc
     codeBuffer.append(str(1 + loc[0] + loc[1] * 3))
 print(''.join(codeBuffer))
 
 # part 2
-keypad = util.splitIntoGp([0, 0, 1, 0, 0,
-                           0, 2, 3, 4, 0,
-                           5, 6, 7, 8, 9,
-                           0, 10, 11, 12, 0,
-                           0, 0, 13, 0, 0], 5)
-keypad = util.transpose(keypad)
 codeBuffer = list()
-loc = (2, 2)
+loc = (0, 0)
 for line in inp:
     for c in line:
         d = moveDict[c]
-        newLoc = tuple(util.clip(loc[i] + d[i], 0, 4) for i in range(2))
-        if keypad[newLoc[0]][newLoc[1]] != 0:
+        newLoc = tuple(loc[i] + d[i] for i in range(2))
+        if sum(abs(newLoc[i]) for i in range(2)) <= 2:
             loc = newLoc
-    codeBuffer.append(hex(keypad[loc[0]][loc[1]])[2:].upper())
+    codeBuffer.append(hex(7 + loc[0] + util.cycInd((0, 4, 6, -6, -4), loc[1]))[2:].upper())
 print(''.join(codeBuffer))
 
