@@ -852,6 +852,22 @@ def inclusiveRange(s: int, e: int, step: _tp.Optional[int] = 1) -> range:
         step = sgn(e - s)
     return range(s, e + step, step)
 
-def count(arr: _tp.Iterable[_T], cond: _tp.Callable[_T, bool] = identity) -> int:
+def count(arr: _tp.Iterable[_T], cond: _tp.Callable[_T, bool] = bool) -> int:
+    """
+    count elements in an iterable that satisfies some condition
+
+    Parameter
+    -----
+    arr: Iterable[T]
+        an iterable that contains the elements to count
+
+    cond: Callable[T, bool], optional
+        a callable that checks whether if an element should be counted
+        defaults to the bool constructor (check truthfulness)
+
+    Return
+    -----
+    an int representing the number of elements in `arr` that satisfies `cond`
+    """
     return sum(map(cond, arr))
 
