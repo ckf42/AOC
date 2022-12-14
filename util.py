@@ -824,3 +824,31 @@ def countOnes(n: int) -> int:
     else:
         return n.bit_count()
 
+def inclusiveRange(s: int, e: int, step: _tp.Optional[int] = 1) -> range:
+    """
+    range, but inclusive and auto step
+
+    Parameter
+    -----
+    s: int
+        the starting value to generate
+
+    e: int
+        the ending value to generate
+
+    step: int or None, optional
+        the step size
+        if None, will use 1 if `s <= e`, -1 if `s > e`
+        defaults to 1
+
+    Return
+    -----
+    a range object that produces {s, s + step, ..., e},
+        if `e - s` is non-negative integral multiple of step
+    otherwise, it is the same as `range(s, e, step)`
+    (with appropriate `step` if given None)
+    """
+    if step is None:
+        step = sgn(e - s)
+    return range(s, e + step, step)
+

@@ -12,7 +12,7 @@ for r in rockPathList:
     for idx in range(len(r) - 1):
         d = 1 if r[idx][0] == r[idx + 1][0] else 0
         incAmount = util.sgn(r[idx + 1][d] - r[idx][d])
-        for coor in range(r[idx][d], r[idx + 1][d] + incAmount, incAmount):
+        for coor in util.inclusiveRange(r[idx][d], r[idx + 1][d], None):
             blocked.add(tuple((coor if i == d else r[idx][i]) for i in range(2)))
     maxLevel = max(maxLevel, r[idx][1], r[idx + 1][1])
 sandStart = (500, 0)
@@ -20,16 +20,14 @@ floorLevel = 2 + maxLevel
 
 
 def fallSandStopLoc(currLoc):
-    (x, y) = currLoc
-    while y < floorLevel - 1:
+    x = currLoc[0]
+    for y in range(currLoc[1], floorLevel - 1):
         xOffset = util.firstSuchThat((0, -1, 1), lambda o: (x + o, y + 1) not in blocked)[1]
         if xOffset is None:
-            return currLoc
+            return (x, y)
         else:
-            currLoc = (currLoc[0] + xOffset, currLoc[1] + 1)
             x += xOffset
-            y += 1
-    return (x, y)
+    return (x, floorLevel - 1)
 
 
 # part 1 and part 2
