@@ -787,6 +787,40 @@ def clip(x: float, lb: _tp.Optional[float] = None, ub: _tp.Optional[float] = Non
     the clipped value
     if `ub < lb`, will return `lb`
     """
-    return min(ub if ub is not None else x,
-               max(lb if lb is not None else x, x))
+    return min(ub if ub is not None else float('Inf'),
+               max(lb if lb is not None else -float('Inf'),
+                   x))
+
+def countOnes(n: int) -> int:
+    """
+    count ones in the binary representation of a (signed) integer
+
+    Parameter
+    -----
+    n: int
+        the integer to count
+
+    Return
+    -----
+    an integer counting the number of ones in the signed binary representation of `n`
+    Different from int.bit_count, this takes in account of the sign of `n`
+    If `n` is non-negative, the result is the same as `n.bit_count()`
+
+    Example
+    -----
+    >>> (127).bit_count()
+    7
+    >>> countOnes(127)
+    7
+    >>> (-127).bit_count()
+    7
+    >>> countOnes(-127)
+    1 
+    """
+    if n == 0:
+        return 0
+    elif n < 0:
+        return 1 + n.bit_length() - (-n).bit_count()
+    else:
+        return n.bit_count()
 
