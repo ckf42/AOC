@@ -18,29 +18,27 @@ for r in rockPathList:
 sandStart = (500, 0)
 floorLevel = 2 + maxLevel
 
-
-def fallSandStopLoc(currLoc):
-    x = currLoc[0]
-    for y in range(currLoc[1], floorLevel - 1):
-        xOffset = util.firstSuchThat((0, -1, 1), lambda o: (x + o, y + 1) not in blocked)[1]
-        if xOffset is None:
-            return (x, y)
-        else:
-            x += xOffset
-    return (x, floorLevel - 1)
-
-
-# part 1 and part 2
 counter = 0
 part1Answered = False
-while sandStart not in blocked:
-    settledLoc = fallSandStopLoc(sandStart)
-    if not part1Answered and settledLoc[1] > maxLevel:
-        # part 1
-        print(counter)
-        part1Answered = True
-    blocked.add(settledLoc)
-    counter += 1
-# part 2
+planned = set()
+stack = list()
+stack.append(sandStart)
+while len(stack) != 0:
+    n = stack.pop()
+    if n[1] >= floorLevel or n in blocked:
+        continue
+    nodesToAdd = list()
+    for i in (0, -1, 1):
+        if (nn := (n[0] + i, n[1] + 1)) not in blocked and nn not in planned:
+            nodesToAdd.append(nn)
+            planned.add(nn)
+    if len(nodesToAdd) != 0:
+        stack.extend([n] + nodesToAdd[::-1])
+    else:
+        counter += 1
+        blocked.add(n)
+        if not part1Answered and n[1] >= maxLevel:
+            print(counter)
+            part1Answered = True
 print(counter)
 
