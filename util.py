@@ -868,6 +868,27 @@ def count(arr: _tp.Iterable[_T], cond: _tp.Callable[_T, bool] = bool) -> int:
     Return
     -----
     an int representing the number of elements in `arr` that satisfies `cond`
+
+    NOTE
+    -----
+    wrapper of `sum` and `map`
     """
     return sum(map(cond, arr))
+
+def consoleChar(b: bool) -> str:
+    """
+    helper function for displaying boolean array on console
+
+    Parameter
+    -----
+    b: bool
+        the boolean to determine if the pixel should be colored
+
+    Return
+    -----
+    a str consisting of a single character,
+        which is either U+2588 (FULL BLOCK) if `b` is True
+        or U+0020 (SPACE) if False
+    """
+    return u'\u2588' if b else u'\u0020'
 
