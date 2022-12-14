@@ -278,10 +278,10 @@ def flatten(arr: _tp.Any, completely: bool = False):
     """
     if isinstance(arr, _abc.Iterable):
         return tuple(x
-                     for itab in ((flatten(item, completely)
-                                if isinstance(item, _abc.Iterable)
-                                else (item,))
-                               for item in arr)
+                     for itab in (((flatten(item, True) if completely else item)
+                                   if isinstance(item, _abc.Iterable)
+                                   else (item,))
+                                  for item in arr)
                      for x in itab)
     else:
         return arr
@@ -851,4 +851,7 @@ def inclusiveRange(s: int, e: int, step: _tp.Optional[int] = 1) -> range:
     if step is None:
         step = sgn(e - s)
     return range(s, e + step, step)
+
+def count(arr: _tp.Iterable[_T], cond: _tp.Callable[_T, bool] = identity) -> int:
+    return sum(map(cond, arr))
 
