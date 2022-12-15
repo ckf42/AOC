@@ -276,6 +276,10 @@ def flatten(arr: _tp.Any, level: int = 1):
     a tuple containing the flattened result
     if `arr` is not iterable, will return `arr` itself
     if `arr` is iterable but contains no iterable, will return its items wrapped in a tuple
+
+    Note
+    -----
+    will also flatten str (as it is iterable)
     """
     if isinstance(arr, _abc.Iterable) and level != 0:
         return tuple(x
