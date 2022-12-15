@@ -132,9 +132,8 @@ def firstIdxSuchThat(arr: _tp.Iterable[_T],
     If `arr` is a generator, it will be consumed after the returned element,
     or the whole `arr` will be consumed if no such element is found
     """
-    if e is None:
-        e = len(arr)
-    return firstSuchThat(range(s, e, step), lambda idx: cond(arr[idx]))[0]
+    return firstSuchThat(range(s, e if e is not None else len(arr), step),
+                         lambda idx: cond(arr[idx]))[0]
 
 def lastSuchThat(arr: _tp.Iterable[_T],
                  cond: _tp.Callable[_T, bool]) -> tuple[_tp.Optional[int], _tp.Optional[_T]]:
