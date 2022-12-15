@@ -14,9 +14,9 @@ _T = _tp.TypeVar('T')
 _S = _tp.TypeVar('S')
 
 # helper functions
-add = (lambda x, y: x + y) # helper for *SuchThat
-mul = (lambda x, y: x * y) # helper for *SuchThat
-identity = (lambda x: x) # helper for argmax
+add = (lambda x, y: x + y)
+mul = (lambda x, y: x * y)
+identity = (lambda x: x)
 
 
 def getInput(d: int,
@@ -185,8 +185,8 @@ def firstAccumSuchThat(
     func: Callable[[T, T], T]
         a function that two elements from `arr` and return a element of the same type
         usually a lambda
-        common choice may be addition `lambda x, y: x + y`
-            or multiplication `lambda x, y: x * y`
+        common choice may be addition `lambda x, y: x + y` (see `add`)
+            or multiplication `lambda x, y: x * y` (see `mul`)
 
     cond: Callable[T, bool]
         a function that takes an element in `arr` and return a boolean denoting
@@ -255,7 +255,7 @@ def lastAccumSuchThat(
         lastTrue = o
     return lastTrue
 
-def flatten(arr: _tp.Any, completely: bool = False):
+def flatten(arr: _tp.Any, level: int = 1):
     """
     flatten an iterable of iterables
 
@@ -264,11 +264,11 @@ def flatten(arr: _tp.Any, completely: bool = False):
     arr: Any
         an item to be flatten
 
-    completely: bool, optional
-        determine if all iterables somehow contained in `arr` should be flatten too
-        if False, only flatten the first level
-        if True, will flatten all levels nested into one
-        defaults to False
+    level: int, optional
+        the number of levels to flatten
+        if 0, nothing will be flatten
+        if negative number (typically -1), will try to flatten every nested objects
+        defaults to 1 (only flatten the first level)
 
     Return
     -----
@@ -276,9 +276,9 @@ def flatten(arr: _tp.Any, completely: bool = False):
     if `arr` is not iterable, will return `arr` itself
     if `arr` is iterable but contains no iterable, will return its items wrapped in a tuple
     """
-    if isinstance(arr, _abc.Iterable):
+    if isinstance(arr, _abc.Iterable) and level != 0:
         return tuple(x
-                     for itab in (((flatten(item, True) if completely else item)
+                     for itab in ((flatten(item, max(level - 1, -1))
                                    if isinstance(item, _abc.Iterable)
                                    else (item,))
                                   for item in arr)
@@ -304,6 +304,11 @@ def cycInd(arr: _abc.Sequence[_T], index: int) -> _T:
     this function extends the usual indexing such that
         `index` larger than `len(arr)` will loop around from the start
         and `index` smaller than `-len(arr)` will loop around from the end
+
+    Note
+    -----
+    Vanilla python syntax only accepts indices in [-len, len)
+    this function allows arbitrary index (but not for slicing)
     """
     return arr[index % len(arr)]
 
@@ -323,7 +328,6 @@ def prod(arr: _tp.Iterable[float]) -> float:
     Note
     -----
     `arr` will be consumed if it is a generator
-    Does not seem compatible with `ortools`
     """
     return _ft.reduce(lambda x, y: x * y, arr)
 
@@ -364,10 +368,14 @@ def splitAt(arr: _abc.Sequence[_T],
     the first entry contains elements of `arr` up until index `arr`, with length `index`
     the second entry contains the remaining elements in `arr`, with the first one being `arr[index]`
     both sequences retain the original order
+
+    Note
+    -----
+    syntax sugar
     """
     return (arr[:index], arr[index:])
 
-def getInts(s: str) -> tuple[int]:
+def getInts(s: str, allowNegative: bool = True) -> tuple[int]:
     """
     get only the integers in a string
 
@@ -376,11 +384,16 @@ def getInts(s: str) -> tuple[int]:
     s: str
         the string to look at
 
+    allowNegative: bool, optional
+        determine if the negative sign should be included
+        defaults to True
+
     Returns
     -----
-    a tuple of int that contains all (possibly negative) integers that appear in `s`
+    a tuple of int that contains all (possibly negative, if `allowNegative` is True) integers
+        that appear in `s`
     """
-    return tuple(map(int, _re.findall(r'-?\d+', s)))
+    return tuple(map(int, _re.findall((r'-?' if allowNegative else r'') + r'\d+', s)))
 
 def getFloats(s: str) -> tuple[float]:
     """
@@ -420,7 +433,7 @@ def splitIntoGp(arr: _abc.Sequence[_T],
     a tuple of tuples that contains elements in `arr`
     the tuples will be `arr[0:gpSize]`, `arr[gpSize:2 * gpSize]`, and so on
     each tuple will have `gpSize` elements
-    (except possibly the last one, if `allowRemain` is True)
+    (except possibly the last tuple, if `allowRemain` is True)
 
     Error
     -----
@@ -446,10 +459,10 @@ def takeFromEvery(arr: _abc.Sequence[_T],
         a sequence that contains the elements in question
 
     gpSize: int
-        the size of a group
+        the size of each group
 
     idx: int
-        the index to take from each group
+        the index to take from each group, starting from 0
 
     takeFromRemain: bool, optional
         determine if the last group may have size smaller than `gpSize`
@@ -672,7 +685,7 @@ def lcm(*n: int) -> int:
     else:
         return lcm(lcm(*n[:2]), *n[2:])
 
-class MinHeap:
+class Heap:
     """
     simple wrapper for heap based on heapq
 
@@ -680,9 +693,12 @@ class MinHeap:
     -----
     See https://stackoverflow.com/a/8875823
     """
-    def __init__(self, initItemList=None, key=lambda k: k):
+    def __init__(self,
+                 initItemList=None,
+                 key=(lambda k: k),
+                 isMinHeap: bool = True):
         self.__data = list()
-        self.__key = key
+        self.__key = (key if isMinHeap else (lambda k: -key(k)))
         if initItemList is not None:
             self.__data.extend((self.__key(item), item) for item in initItemList)
             _hq.heapify(self.__data)
@@ -702,6 +718,11 @@ class MinHeap:
     def isEmpty(self):
         return len(self.__data) == 0
 
+def MinHeap(initItemList=None, key=(lambda k: k)):
+    return Heap(initItemList=initItemList, key=key, isMinHeap=True)
+
+def MaxHeap(initItemList=None, key=(lambda k: k)):
+    return Heap(initItemList=initItemList, key=key, isMinHeap=False)
 
 def dijkstra(initialNode: _T,
              costFunc: _tp.Callable[[_T, _T, float], float],
