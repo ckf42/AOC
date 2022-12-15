@@ -913,3 +913,7 @@ def consoleChar(b: bool) -> str:
     """
     return u'\u2588' if b else u'\u0020'
 
+def rangeLen(arr: _tp.Sequence) -> range:
+    return range(len(arr))
+
+

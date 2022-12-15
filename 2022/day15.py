@@ -11,30 +11,36 @@ inp = tuple(util.splitIntoGp(util.getInts(l), 2)
 def dist(p1, p2):
     return sum(abs(p1[i] - p2[i]) for i in range(2))
 
-sensorRad = tuple((p[0], dist(*p)) for p in inp)
+(sensor, beacon, radius) = util.takeApart(tuple((*p, dist(*p)) for p in inp))
+sLen = len(sensor)
 
 # part 1
 rowNum = 2000000
-def getImpossibleRange(targetY):
-    return Union(*(Interval(sr[0][0] - r, sr[0][0] + r)
-                   for sr in sensorRad
-                   if (r := sr[1] - abs(sr[0][1] - targetY)) >= 0))
-print(getImpossibleRange(rowNum))
+forbidXRange = Union(*(Interval(sensor[i][0] - r, sensor[i][0] + r)
+                       for i in range(sLen)
+                       if (r := radius[i] - abs(sensor[i][1] - rowNum)) >= 0))
+print(forbidXRange.measure + len(forbidXRange.boundary) // 2 \
+      - util.count(set(beacon),
+                   lambda b: b[1] == rowNum and b[0] in forbidXRange))
 
 
 # part 2
 coorBd = 4000000
-searchBegin = 0 # 3253551
-for targetY in util.inclusiveRange(searchBegin, coorBd):
-    bdyX = tuple((sr[0][0] - r - 1, sr[0][0] + r + 1)
-                 for sr in sensorRad
-                 if (r := sr[1] - abs(sr[0][1] - targetY)) >= 0)
-    possibleX = set(filter(
-        lambda x: (0 <= x <= coorBd) and all(dist((x, targetY), sr[0]) > sr[1]
-                                             for sr in sensorRad),
-        util.flatten(bdyX)))
-    if len(possibleX) != 0:
-        for x in possibleX:
-            print((x, targetY), x * 4000000 + targetY)
-        break
+upward = set()
+downward = set()
+for i in range(sLen - 1):
+    for j in range(i + 1, sLen):
+        if dist(sensor[i], sensor[j]) == radius[i] + radius[j] + 2:
+            upward.update(set.intersection(*({sensor[k][1] - sensor[k][0] + s * (radius[k] + 1)
+                                              for s in (-1, 1)}
+                                             for k in (i, j))))
+            downward.update(set.intersection(*({sensor[k][1] + sensor[k][0] + s * (radius[k] + 1)
+                                                for s in (-1, 1)}
+                                               for k in (i, j))))
+for u in upward:
+    for d in downward:
+        pt = ((d - u) // 2, (u + d) // 2)
+        if all(0 <= c <= coorBd for c in pt) \
+                and all(dist(sensor[i], pt) > radius[i] for i in range(sLen)):
+            print(pt, pt[0] * 4000000 + pt[1])
 
