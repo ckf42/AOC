@@ -736,7 +736,6 @@ class Heap:
             _hq.heapify(self.__data)
 
     def push(self, item):
-        print(item)
         _hq.heappush(self.__data, (self.__key(item), item))
 
     def pop(self):
