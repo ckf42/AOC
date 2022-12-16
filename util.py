@@ -380,6 +380,33 @@ def splitAt(arr: _abc.Sequence[_T],
     """
     return (arr[:index], arr[index:])
 
+def splitBy(arr: _tp.Iterable[_T], cond: _tp.Callable[_T, bool]) -> tuple[tuple[_T], tuple[_T]]:
+    """
+    split elements according to given condition
+
+    Parameters
+    -----
+    arr: Iterable[T]
+        the iterable to be split
+
+    cond: Callable[T, bool]
+        a callable to determine how the splitting is done
+
+    Return
+    -----
+    a tuple containing two tuples of elements from `arr`
+    the first tuple contains elements such that `cond` gives True
+    the second tuple contains elements such that `cond` gives False
+    """
+    trueBucket = list()
+    falseBucket = list()
+    for item in arr:
+        if cond(item):
+            trueBucket.append(item)
+        else:
+            falseBucket.append(item)
+    return (tuple(trueBucket), tuple(falseBucket))
+
 def getInts(s: str, allowNegative: bool = True) -> tuple[int]:
     """
     get only the integers in a string
@@ -709,6 +736,7 @@ class Heap:
             _hq.heapify(self.__data)
 
     def push(self, item):
+        print(item)
         _hq.heappush(self.__data, (self.__key(item), item))
 
     def pop(self):
@@ -717,16 +745,16 @@ class Heap:
     def top(self):
         return self.__data[0][-1]
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self.__data)
 
-    def isEmpty(self):
+    def isEmpty(self) -> bool:
         return len(self.__data) == 0
 
-def MinHeap(initItemList=None, key=(lambda k: k)):
+def MinHeap(initItemList=None, key=(lambda k: k)) -> Heap:
     return Heap(initItemList=initItemList, key=key, isMinHeap=True)
 
-def MaxHeap(initItemList=None, key=(lambda k: k)):
+def MaxHeap(initItemList=None, key=(lambda k: k)) -> Heap:
     return Heap(initItemList=initItemList, key=key, isMinHeap=False)
 
 def dijkstra(initialNode: _T,
@@ -870,8 +898,6 @@ def inclusiveRange(s: int, e: int, step: _tp.Optional[int] = 1) -> range:
     Return
     -----
     a range object that produces {s, s + step, ..., e},
-        if `e - s` is non-negative integral multiple of step
-    otherwise, it is the same as `range(s, e, step)`
     (with appropriate `step` if given None)
     """
     if step is None:
@@ -919,6 +945,139 @@ def consoleChar(b: bool) -> str:
     return u'\u2588' if b else u'\u0020'
 
 def rangeLen(arr: _tp.Sequence) -> range:
+    """
+    get a range to enumerate a sequence
+
+    Parameter
+    -----
+    arr: Sequence
+        the sequence to enumerate
+
+    Return
+    -----
+    a range object that enumerates from 0 to `len(arr)`
+
+    Note
+    -----
+    wrapper of `range` and `len`, with fewer parentheses
+    """
     return range(len(arr))
 
+class IntegerIntervals:
+    @classmethod
+    def __itvIsValid(cls, itv: tuple[int, int]) -> bool:
+        return itv[0] <= itv[1]
+
+    @classmethod
+    def __itvLen(cls, itv: tuple[int, int]) -> int:
+        return itv[1] - itv[0] + 1
+
+    @classmethod
+    def __itvContains(cls, n: int, itv: tuple[int, int]) -> bool:
+        return itv[0] <= n <= itv[1]
+
+    @classmethod
+    def __itvIsIntersect(cls,
+                         itv1: tuple[int, int],
+                         itv2: tuple[int, int]) -> bool:
+        return any(cls.__itvContains(c, itv2) for c in itv1) \
+                or any(cls.__itvContains(c, itv1) for c in itv2)
+
+    @classmethod
+    def __itvIntersectIfIntersect(cls,
+                                  itv1: tuple[int, int],
+                                  itv2: tuple[int, int]) -> tuple[int, int]:
+        # assumes itv1 and itv2 intersects
+        return (max(itv1[0], itv2[0]), min(itv1[1], itv2[1]))
+
+    def __init__(self, *initIntervals: tuple[int, int]):
+        self.__contents: list = list() # sorted list of 2-tuple
+        self.__eleCount: _tp.Optional[int] = 0 # None if recorded invalidated
+        if len(initIntervals) != 0:
+            for itv in initIntervals:
+                self.unionWith(itv)
+
+    def __len__(self) -> int:
+        if self.__eleCount is None:
+            l = sum(map(self.__itvLen, self.__contents))
+            self.__eleCount = l
+        return self.__eleCount
+
+    def __contains__(self, n: int) -> bool:
+        return any(self.__itvContains(n, itv)
+                   for itv in self.__contents)
+
+    def __iter__(self) -> int:
+        for itv in self.__contents:
+            yield from range(itv[0], itv[1] + 1)
+
+    def __repr__(self) -> str:
+        if len(self.__contents) == 0:
+            return "Empty Collection"
+        elif len(self.__contents) == 1:
+            return f"Interval{self.__contents[0]}"
+        else:
+            return "Union{" + ", ".join("Interval[" + str(comp)[1:-1] + "]"
+                                        for comp in self.__contents) + "}"
+
+    def __simplifyAt(self, idx: int):
+        # TODO: return simplified interval and slice instead to avoid reallocation
+        itv = self.__contents[idx]
+        (sIdx, eIdx) = (idx, idx + 1)
+        if idx > 0 and self.__contents[idx - 1][1] + 1 == itv[0]:
+            itv[0] = self.__contents[idx - 1][0]
+            sIdx = idx - 1
+        if idx < len(self.__contents) - 1 and self.__contents[idx + 1][0] - 1 == itv[1]:
+            itv[1] = self.__contents[idx + 1][1]
+            eIdx = idx + 1
+        if eIdx - sIdx != 1:
+            self.__contents[sIdx:eIdx] = [itv]
+
+    def unionWith(self, interval: tuple[int, int]):
+        if not self.__itvIsValid(interval):
+            return
+        beginIdx = 0
+        while beginIdx < len(self.__contents) \
+                and not self.__itvIsIntersect(interval, self.__contents[beginIdx]):
+                    beginIdx += 1
+        endIdx = len(self.__contents) - 1
+        while endIdx > 0 \
+                and not self.__itvIsIntersect(interval, self.__contents[endIdx]):
+                    endIdx -= 1
+        if beginIdx <= endIdx:
+            # content[i] with i in [beginIdx, endIdx] intersects with interval
+            newInterval = (min(interval[0], self.__contents[beginIdx][0]),
+                           max(interval[1], self.__contents[endIdx][1]))
+            self.__contents[beginIdx:endIdx + 1] = [newInterval]
+            self.__eleCount = None
+        else:
+            # no comp intersects with interval, just insert
+            # find min index such that interval[1] < contents[idx]
+            (beginIdx, endIdx) = (0, len(self.__contents))
+            while beginIdx < endIdx:
+                m = (beginIdx + endIdx) // 2
+                if interval[1] < self.__contents[m][0]:
+                    endIdx = m
+                else:
+                    beginIdx = m + 1
+            assert beginIdx == endIdx
+            self.__contents.insert(beginIdx, interval)
+            if self.__eleCount is not None:
+                self.__eleCount += self.__itvLen(interval)
+        self.__simplifyAt(beginIdx)
+
+    def intersectWith(self, interval: tuple[int, int]):
+        if not self.__itvIsValid(interval):
+            return
+        self.__contents = list(map(lambda comp: self.__itvIntersectIfIntersect(comp, interval),
+                                   filter(lambda itv: self.__itvIsIntersect(itv, interval),
+                                          self.__contents)))
+        self.__eleCount = None
+
+    def countComponents(self) -> int:
+        return len(self.__contents)
+
+    def clear(self):
+        self.__contents.clear()
+        self.__eleCount = 0
 
