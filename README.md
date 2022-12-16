@@ -14,5 +14,5 @@ Third party tools:
 * scipy
     * for convolution (e.g. 2015 d18)
 * sympy
-    * for number theory (e.g. 2015 d20)
+    * for number theory (e.g. 2015 d20) and intervals (e.g. 2022 d15)
 
