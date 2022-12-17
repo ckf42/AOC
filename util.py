@@ -1112,7 +1112,8 @@ def powerset(arr: _tp.Iterable) -> _tp.Iterable:
                                    for r in range(len(s) + 1))
 
 def findSeqPeriod(seq: _tp.Sequence[_T],
-                  cond: _tp.Optional[_tp.Callable[int, bool]] = None) -> tuple[int, int]:
+                  cond: _tp.Optional[_tp.Callable[int, bool]] = None
+                  ) -> _tp.Optional[tuple[int, int]]:
     """
     find period of (eventually) periodic sequence
 
@@ -1134,6 +1135,7 @@ def findSeqPeriod(seq: _tp.Sequence[_T],
         the first int is the proposed period
         the second int is the length of irregularity
     such that `seq[irregularity : irregularity + period]` is the earliest period
+    or None, if none that satisfies `cond` is found
 
     the period returned has the minimal length of irregularities
 
@@ -1141,16 +1143,19 @@ def findSeqPeriod(seq: _tp.Sequence[_T],
     -----
     l^2 time complexity, l space complexity
     """
-    h = MinHeap(key=lambda t: t[1])
     l = len(seq)
     if l <= 1:
-        return (l, 1)
+        return (l, 0)
+    currOptimal = None
     for t in inclusiveRange(l // 2, 1, None):
         if cond is not None and not cond(t):
             continue
-        rep = firstIdxSuchThat(range(1, (l - 1) // t),
+        rep = firstIdxSuchThat(range(1, l // t),
                                lambda i: seq[(l - (i + 1) * t):(l - i * t)] != seq[l - t:])
-        h.push((t, l - ((rep + 1) if rep is not None else ((l - 1) // t)) * t))
-    return h.top()
+        remainLen = l  - ((rep + 1) if rep is not None else (l // t)) * t
+        if currOptimal is None \
+                or remainLen < currOptimal[1]:
+            currOptimal = (t, remainLen)
+    return currOptimal
 
 
