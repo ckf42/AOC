@@ -1,11 +1,13 @@
 import typing as _tp
 import collections.abc as _abc
 import pathlib as _pathlib
-import requests as _rq
 import re as _re
 import functools as _ft
 import itertools as _it
 import heapq as _hq
+
+# not part of standard library
+import requests as _rq
 
 if __name__ == '__main__':
     exit()
@@ -729,8 +731,8 @@ class Heap:
                  initItemList=None,
                  key=(lambda k: k),
                  isMinHeap: bool = True):
-        self.__data = list()
-        self.__key = (key if isMinHeap else (lambda k: -key(k)))
+        self.__data: list = list()
+        self.__key: _tp.Callable[_tp.Any, float] = (key if isMinHeap else (lambda k: -key(k)))
         if initItemList is not None:
             self.__data.extend((self.__key(item), item) for item in initItemList)
             _hq.heapify(self.__data)
@@ -749,6 +751,10 @@ class Heap:
 
     def isEmpty(self) -> bool:
         return len(self.__data) == 0
+
+    def resize(self, newSize: int):
+        self.__data = self.__data[:newSize]
+        _hq.heapify(self.__data)
 
 def MinHeap(initItemList=None, key=(lambda k: k)) -> Heap:
     return Heap(initItemList=initItemList, key=key, isMinHeap=True)
@@ -962,121 +968,189 @@ def rangeLen(arr: _tp.Sequence) -> range:
     """
     return range(len(arr))
 
-class IntegerIntervals:
-    @classmethod
-    def __itvIsValid(cls, itv: tuple[int, int]) -> bool:
-        return itv[0] <= itv[1]
+# class IntegerIntervals:
+    # @classmethod
+    # def __itvIsValid(cls, itv: tuple[int, int]) -> bool:
+        # return len(itv) == 2 and itv[0] <= itv[1]
 
-    @classmethod
-    def __itvLen(cls, itv: tuple[int, int]) -> int:
-        return itv[1] - itv[0] + 1
+    # @classmethod
+    # def __itvLen(cls, itv: tuple[int, int]) -> int:
+        # return itv[1] - itv[0] + 1
 
-    @classmethod
-    def __itvContains(cls, n: int, itv: tuple[int, int]) -> bool:
-        return itv[0] <= n <= itv[1]
+    # @classmethod
+    # def __itvContains(cls, n: int, itv: tuple[int, int]) -> bool:
+        # return itv[0] <= n <= itv[1]
 
-    @classmethod
-    def __itvIsIntersect(cls,
-                         itv1: tuple[int, int],
-                         itv2: tuple[int, int]) -> bool:
-        return any(cls.__itvContains(c, itv2) for c in itv1) \
-                or any(cls.__itvContains(c, itv1) for c in itv2)
+    # @classmethod
+    # def __itvIsIntersect(cls,
+                         # itv1: tuple[int, int],
+                         # itv2: tuple[int, int]) -> bool:
+        # return any(cls.__itvContains(c, itv2) for c in itv1) \
+                # or any(cls.__itvContains(c, itv1) for c in itv2)
 
-    @classmethod
-    def __itvIntersectIfIntersect(cls,
-                                  itv1: tuple[int, int],
-                                  itv2: tuple[int, int]) -> tuple[int, int]:
-        # assumes itv1 and itv2 intersects
-        return (max(itv1[0], itv2[0]), min(itv1[1], itv2[1]))
+    # @classmethod
+    # def __itvIntersectIfIntersect(cls,
+                                  # itv1: tuple[int, int],
+                                  # itv2: tuple[int, int]) -> tuple[int, int]:
+        # # assumes itv1 and itv2 intersects
+        # return (max(itv1[0], itv2[0]), min(itv1[1], itv2[1]))
 
-    def __init__(self, *initIntervals: tuple[int, int]):
-        self.__contents: list = list() # sorted list of 2-tuple
-        self.__eleCount: _tp.Optional[int] = 0 # None if recorded invalidated
-        if len(initIntervals) != 0:
-            for itv in initIntervals:
-                self.unionWith(itv)
+    # def __init__(self, *initIntervals: tuple[int, int]):
+        # self.__contents: list = list() # sorted list of 2-tuple
+        # self.__eleCount: _tp.Optional[int] = 0 # None if recorded invalidated
+        # if len(initIntervals) != 0:
+            # for itv in initIntervals:
+                # self.unionWith(itv)
 
-    def __len__(self) -> int:
-        if self.__eleCount is None:
-            l = sum(map(self.__itvLen, self.__contents))
-            self.__eleCount = l
-        return self.__eleCount
+    # def __len__(self) -> int:
+        # if self.__eleCount is None:
+            # l = sum(map(self.__itvLen, self.__contents))
+            # self.__eleCount = l
+        # return self.__eleCount
 
-    def __contains__(self, n: int) -> bool:
-        return any(self.__itvContains(n, itv)
-                   for itv in self.__contents)
+    # def __contains__(self, n: int) -> bool:
+        # return any(self.__itvContains(n, itv)
+                   # for itv in self.__contents)
 
-    def __iter__(self) -> int:
-        for itv in self.__contents:
-            yield from range(itv[0], itv[1] + 1)
+    # def __iter__(self) -> int:
+        # for itv in self.__contents:
+            # yield from range(itv[0], itv[1] + 1)
 
-    def __repr__(self) -> str:
-        if len(self.__contents) == 0:
-            return "Empty Collection"
-        elif len(self.__contents) == 1:
-            return f"Interval{self.__contents[0]}"
-        else:
-            return "Union{" + ", ".join("Interval[" + str(comp)[1:-1] + "]"
-                                        for comp in self.__contents) + "}"
+    # def __repr__(self) -> str:
+        # if len(self.__contents) == 0:
+            # return "Empty Collection"
+        # elif len(self.__contents) == 1:
+            # return f"Interval{self.__contents[0]}"
+        # else:
+            # return "Union{" \
+                    # + ", ".join("Interval[" + str(comp)[1:-1] + "]"
+                                # for comp in self.__contents) \
+                    # + "}"
 
-    def __simplifyAt(self, idx: int):
-        # TODO: return simplified interval and slice instead to avoid reallocation
-        itv = self.__contents[idx]
-        (sIdx, eIdx) = (idx, idx + 1)
-        if idx > 0 and self.__contents[idx - 1][1] + 1 == itv[0]:
-            itv[0] = self.__contents[idx - 1][0]
-            sIdx = idx - 1
-        if idx < len(self.__contents) - 1 and self.__contents[idx + 1][0] - 1 == itv[1]:
-            itv[1] = self.__contents[idx + 1][1]
-            eIdx = idx + 1
-        if eIdx - sIdx != 1:
-            self.__contents[sIdx:eIdx] = [itv]
+    # def unionWith(self, interval: tuple[int, int]):
+        # if not self.__itvIsValid(interval):
+            # return
+        # if len(self.__contents) == 0:
+            # self.__contents.append(interval)
+            # self.__eleCount = self.__itvLen(interval)
+            # return
+        # bIdx = -1
+        # while bIdx < len(self.__contents) - 1 \
+                # and not self.__itvIsIntersect(interval, self.__contents[bIdx + 1]):
+            # bIdx += 1
+        # eIdx = len(self.__contents)
+        # while eIdx > 0 \
+                # and not self.__itvIsIntersect(interval, self.__contents[eIdx - 1]):
+            # eIdx -= 1
+        # pass
 
-    def unionWith(self, interval: tuple[int, int]):
-        if not self.__itvIsValid(interval):
-            return
-        beginIdx = 0
-        while beginIdx < len(self.__contents) \
-                and not self.__itvIsIntersect(interval, self.__contents[beginIdx]):
-                    beginIdx += 1
-        endIdx = len(self.__contents) - 1
-        while endIdx > 0 \
-                and not self.__itvIsIntersect(interval, self.__contents[endIdx]):
-                    endIdx -= 1
-        if beginIdx <= endIdx:
-            # content[i] with i in [beginIdx, endIdx] intersects with interval
-            newInterval = (min(interval[0], self.__contents[beginIdx][0]),
-                           max(interval[1], self.__contents[endIdx][1]))
-            self.__contents[beginIdx:endIdx + 1] = [newInterval]
-            self.__eleCount = None
-        else:
-            # no comp intersects with interval, just insert
-            # find min index such that interval[1] < contents[idx]
-            (beginIdx, endIdx) = (0, len(self.__contents))
-            while beginIdx < endIdx:
-                m = (beginIdx + endIdx) // 2
-                if interval[1] < self.__contents[m][0]:
-                    endIdx = m
-                else:
-                    beginIdx = m + 1
-            assert beginIdx == endIdx
-            self.__contents.insert(beginIdx, interval)
-            if self.__eleCount is not None:
-                self.__eleCount += self.__itvLen(interval)
-        self.__simplifyAt(beginIdx)
+    # def intersectWith(self, interval: tuple[int, int]):
+        # if not self.__itvIsValid(interval):
+            # return
+        # self.__contents = list(map(lambda comp: self.__itvIntersectIfIntersect(comp, interval),
+                                   # filter(lambda itv: self.__itvIsIntersect(itv, interval),
+                                          # self.__contents)))
+        # self.__eleCount = None
 
-    def intersectWith(self, interval: tuple[int, int]):
-        if not self.__itvIsValid(interval):
-            return
-        self.__contents = list(map(lambda comp: self.__itvIntersectIfIntersect(comp, interval),
-                                   filter(lambda itv: self.__itvIsIntersect(itv, interval),
-                                          self.__contents)))
-        self.__eleCount = None
+    # def countComponents(self) -> int:
+        # return len(self.__contents)
 
-    def countComponents(self) -> int:
-        return len(self.__contents)
+    # def clear(self):
+        # self.__contents.clear()
+        # self.__eleCount = 0
 
-    def clear(self):
-        self.__contents.clear()
-        self.__eleCount = 0
+def allPairDistances(nodes: _tp.Iterable[int],
+                     distFunc: _tp.Callable[[int, int], _tp.Optional[float]]
+                     ) -> dict[[int, int], float]:
+    """
+    compute pairwise distance with Floyd-Warshall
+
+    Parameter
+    -----
+    nodes: Iterable[int]
+        collection of nodes to compute, represented as integers
+        will only compute distances involving paths among these nodes
+
+    distFunc: Callable[[int, int], Optional[inr]]
+        a callable that gives the distance between nodes
+        expected to take two arguments:
+            source: int, the starting node
+            terminal: int, the ending
+        expected to return a float representing the edge length, or None if no such edge exists
+
+    Return
+    -----
+    a dict that takes a tuple of 2 int (from `nodes`)
+    and return the minimal (directed) distance between them
+    """
+    nodeSeq = tuple(nodes)
+    n = len(nodeSeq)
+    Inf = float('Inf')
+    minDistDict = dict()
+    for i in nodeSeq:
+        for j in nodeSeq:
+            if i == j:
+                minDistDict[(i, i)] = 0
+            elif (d := distFunc(i, j)) is not None:
+                minDistDict[(i, j)] = d
+            else:
+                minDistDict[(i, j)] = Inf
+    for k in nodeSeq:
+        for i in nodeSeq:
+            for j in nodeSeq:
+                minDistDict[(i, j)] = min(minDistDict[(i, j)],
+                                          minDistDict[(i, k)] + minDistDict[(k, j)])
+    return minDistDict
+
+def powerset(arr: _tp.Iterable) -> _tp.Iterable:
+    """
+    get all power sets of a set
+    Modified from official documentation of `itertools`
+    """
+    s = tuple(arr)
+    return _it.chain.from_iterable(_it.combinations(s, r)
+                                   for r in range(len(s) + 1))
+
+def findSeqPeriod(seq: _tp.Sequence[_T],
+                  cond: _tp.Optional[_tp.Callable[int, bool]] = None) -> tuple[int, int]:
+    """
+    find period of (eventually) periodic sequence
+
+    Parameter
+    -----
+    seq: Sequence[T]
+        the sequence in question
+        should be long enough to contain at least two period
+
+    cond: Callable[int, bool] or None, optional
+        a callable that hints the possible period
+        will only search the periods that `cond` returns True on
+        if None, will use every possible period
+        defaults to None
+
+    Return
+    -----
+    a tuple containing 2 int
+        the first int is the proposed period
+        the second int is the length of irregularity
+    such that `seq[irregularity : irregularity + period]` is the earliest period
+
+    the period returned has the minimal length of irregularities
+
+    Note
+    -----
+    l^2 time complexity, l space complexity
+    """
+    h = MinHeap(key=lambda t: t[1])
+    l = len(seq)
+    if l <= 1:
+        return (l, 1)
+    for t in inclusiveRange(l // 2, 1, None):
+        if cond is not None and not cond(t):
+            continue
+        rep = firstIdxSuchThat(range(1, (l - 1) // t),
+                               lambda i: seq[(l - (i + 1) * t):(l - i * t)] != seq[l - t:])
+        h.push((t, l - ((rep + 1) if rep is not None else ((l - 1) // t)) * t))
+    return h.top()
+
 
