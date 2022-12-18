@@ -1034,14 +1034,6 @@ def rangeLen(arr: _tp.Sequence) -> range:
             # self.__contents.append(interval)
             # self.__eleCount = self.__itvLen(interval)
             # return
-        # bIdx = -1
-        # while bIdx < len(self.__contents) - 1 \
-                # and not self.__itvIsIntersect(interval, self.__contents[bIdx + 1]):
-            # bIdx += 1
-        # eIdx = len(self.__contents)
-        # while eIdx > 0 \
-                # and not self.__itvIsIntersect(interval, self.__contents[eIdx - 1]):
-            # eIdx -= 1
         # pass
 
     # def intersectWith(self, interval: tuple[int, int]):
@@ -1081,11 +1073,14 @@ def allPairDistances(nodes: _tp.Iterable[int],
     Return
     -----
     a dict that takes a tuple of 2 int (from `nodes`)
-    and return the minimal (directed) distance between them
+    and return the minimal (directed) distance between them (or float('Inf') if unreachable)
+
+    Note
+    -----
+    n^3 time complexity, n^2 space complexity
     """
     nodeSeq = tuple(nodes)
     n = len(nodeSeq)
-    Inf = float('Inf')
     minDistDict = dict()
     for i in nodeSeq:
         for j in nodeSeq:
@@ -1094,7 +1089,7 @@ def allPairDistances(nodes: _tp.Iterable[int],
             elif (d := distFunc(i, j)) is not None:
                 minDistDict[(i, j)] = d
             else:
-                minDistDict[(i, j)] = Inf
+                minDistDict[(i, j)] = float('Inf')
     for k in nodeSeq:
         for i in nodeSeq:
             for j in nodeSeq:
@@ -1153,8 +1148,7 @@ def findSeqPeriod(seq: _tp.Sequence[_T],
         rep = firstIdxSuchThat(range(1, l // t),
                                lambda i: seq[(l - (i + 1) * t):(l - i * t)] != seq[l - t:])
         remainLen = l  - ((rep + 1) if rep is not None else (l // t)) * t
-        if currOptimal is None \
-                or remainLen < currOptimal[1]:
+        if currOptimal is None or remainLen < currOptimal[1]:
             currOptimal = (t, remainLen)
     return currOptimal
 
