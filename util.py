@@ -281,7 +281,7 @@ def flatten(arr: _tp.Any, level: int = 1):
 
     Note
     -----
-    will also flatten str (as it is iterable)
+    will also flatten str to tuple of single-char string (as it is iterable)
     """
     if isinstance(arr, _abc.Iterable) and level != 0:
         return tuple(x
@@ -482,7 +482,7 @@ def splitIntoGp(arr: _abc.Sequence[_T],
 
 def takeFromEvery(arr: _abc.Sequence[_T],
                   gpSize: int,
-                  idx: int = 0,
+                  idx: int,
                   takeFromRemain: bool = True) -> tuple[_T]:
     """
     take an element in a sequence once every given amount
@@ -496,7 +496,7 @@ def takeFromEvery(arr: _abc.Sequence[_T],
         the size of each group
 
     idx: int
-        the index to take from each group, starting from 0
+        the index to take from each group, start counting from 0
 
     takeFromRemain: bool, optional
         determine if the last group may have size smaller than `gpSize`
@@ -671,7 +671,7 @@ def argmax(arr: _abc.Iterable[_tp.Any],
         if (k := key(item)) > currMaxKey:
             currMaxItem = item
             currMaxKey = k
-    return item
+    return currMaxItem
 
 def gcd(*n: int) -> int:
     """
@@ -810,7 +810,7 @@ def dijkstra(initialNode: _T,
     """
     if aStarHeuristicFunc is None:
         aStarHeuristicFunc = (lambda state: 0)
-    h = MinHeap(initItemList=((initialNode, 0), ),
+    h = MinHeap(initItemList=((initialNode, 0),),
                 key=(lambda sc: sc[1] + aStarHeuristicFunc(sc[0])))
     visited = set()
     while not h.isEmpty():
@@ -905,9 +905,7 @@ def inclusiveRange(s: int, e: int, step: _tp.Optional[int] = 1) -> range:
     a range object that produces {s, s + step, ..., e},
     (with appropriate `step` if given None)
     """
-    if step is None:
-        step = sgn(e - s)
-    return range(s, e + step, step)
+    return range(s, e + step, sgn(e - s) if step is None else step)
 
 def count(arr: _tp.Iterable[_T], cond: _tp.Callable[_T, bool] = bool) -> int:
     """
@@ -968,6 +966,7 @@ def rangeLen(arr: _tp.Sequence) -> range:
     """
     return range(len(arr))
 
+# TODO: fix bug on union
 # class IntegerIntervals:
     # @classmethod
     # def __itvIsValid(cls, itv: tuple[int, int]) -> bool:
@@ -1063,7 +1062,7 @@ def allPairDistances(nodes: _tp.Iterable[int],
         collection of nodes to compute, represented as integers
         will only compute distances involving paths among these nodes
 
-    distFunc: Callable[[int, int], Optional[inr]]
+    distFunc: Callable[[int, int], Optional[int]]
         a callable that gives the distance between nodes
         expected to take two arguments:
             source: int, the starting node
@@ -1096,15 +1095,6 @@ def allPairDistances(nodes: _tp.Iterable[int],
                 minDistDict[(i, j)] = min(minDistDict[(i, j)],
                                           minDistDict[(i, k)] + minDistDict[(k, j)])
     return minDistDict
-
-def powerset(arr: _tp.Iterable) -> _tp.Iterable:
-    """
-    get all power sets of a set
-    Modified from official documentation of `itertools`
-    """
-    s = tuple(arr)
-    return _it.chain.from_iterable(_it.combinations(s, r)
-                                   for r in range(len(s) + 1))
 
 def findSeqPeriod(seq: _tp.Sequence[_T],
                   cond: _tp.Optional[_tp.Callable[int, bool]] = None
@@ -1139,6 +1129,7 @@ def findSeqPeriod(seq: _tp.Sequence[_T],
     l^2 time complexity, 1 space complexity
     should speed up if we test multiple of gcd of suffix item counter,
         but somehow it is slower than naive search (AoC 2022 d17 whole sol took ~6s/~2s)
+        (possible due to gcd == 1)
     """
     l = len(seq)
     if l <= 1:
