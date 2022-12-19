@@ -52,7 +52,7 @@ def getOptimal(bpIdx, timeLimit):
             # excessive in store (include gen faster than spend)
             if botType != 3 and (st[1 + botType] >= (maxCosts[propName[botType]] - st[5 + botType]) * st[0]):
                 continue
-            # did not buy bot but could afford this one (thanks, reddit discussion board)
+            # did not buy bot but could afford this one (thanks, @evouga from reddit)
             if botType != 3 \
                     and not st[9] \
                     and all(st[1 + j] - st[5 + j] >= bp[propName[botType]].get(propName[j], 0)
