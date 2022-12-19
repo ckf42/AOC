@@ -1132,22 +1132,25 @@ def findSeqPeriod(seq: _tp.Sequence[_T],
     such that `seq[irregularity : irregularity + period]` is the earliest period
     or None, if none that satisfies `cond` is found
 
-    the period returned has the minimal length of irregularities
+    the period returned has the minimal length of irregularities and if tie, shortest period
 
     Note
     -----
-    l^2 time complexity, l space complexity
+    l^2 time complexity, 1 space complexity
+    should speed up if we test multiple of gcd of suffix item counter,
+        but somehow it is slower than naive search (AoC 2022 d17 whole sol took ~6s/~2s)
     """
     l = len(seq)
     if l <= 1:
         return (l, 0)
+
     currOptimal = None
-    for t in inclusiveRange(l // 2, 1, None):
+    for t in inclusiveRange(1, l // 2, None):
         if cond is not None and not cond(t):
             continue
         rep = firstIdxSuchThat(range(1, l // t),
                                lambda i: seq[(l - (i + 1) * t):(l - i * t)] != seq[l - t:])
-        remainLen = l  - ((rep + 1) if rep is not None else (l // t)) * t
+        remainLen = l - ((rep + 1) if rep is not None else (l // t)) * t
         if currOptimal is None or remainLen < currOptimal[1]:
             currOptimal = (t, remainLen)
     return currOptimal
