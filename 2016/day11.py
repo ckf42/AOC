@@ -1,70 +1,106 @@
 import AOCInit
 import util
 import re
+from collections import deque
+import itertools as it
 
 if __name__ != '__main__':
     exit()
 
+inp = util.getInput(d=11, y=2016)
+
 chipRe = re.compile(r'\b(\w+)-compatible microchip', re.I)
 genRe = re.compile(r'\b(\w+) generator', re.I)
+floorContents = tuple((chipRe.findall(l), genRe.findall(l)) for l in inp.splitlines())
+itemIdx = {n: i
+           for i, n in enumerate(set(util.flatten(floorContents, 2)))}
+itemCount = len(itemIdx)
+initArrangement = [None] * (2 * itemCount)
+for flrIdx, flr in enumerate(floorContents):
+    for idx, itemList in enumerate(flr):
+        for item in itemList:
+            initArrangement[2 * itemIdx[item] + idx] = flrIdx
+assert all(flr is not None for flr in initArrangement)
 
-inp = util.getInput(d=11, y=2016).splitlines()
-floorContents = tuple((chipRe.findall(l), genRe.findall(l)) for l in inp) # chip, gen
-itemIdxDict = {n: i for i, n in enumerate(set(util.flatten(floorContents, level=2)))}
-itemCount = len(itemIdxDict)
-initState = [0] + [None] * (2 * itemCount)
-for i in range(4):
-    for cIdx in map(lambda n: itemIdxDict[n], floorContents[i][0]):
-        initState[cIdx * 2 + 1] = i
-    for rIdx in map(lambda n: itemIdxDict[n], floorContents[i][1]):
-        initState[rIdx * 2 + 2] = i
+def isValidState(stateSeq):
+    return all(stateSeq[2 * itemIdx] == stateSeq[2 * itemIdx + 1] \
+            or all(stateSeq[2 * itemIdx + 1] == stateSeq[2 * otherIdx + 1]
+                   for otherIdx in range(len(stateSeq) // 2)
+                   if stateSeq[2 * itemIdx + 1] == stateSeq[2 * otherIdx])
+               for itemIdx in range(len(stateSeq) // 2))
 
-def isValidState(state):
-    iCount = (len(state) - 1) // 2
-    unpairedItems = tuple(filter(lambda i: state[i * 2 + 1] != state[i * 2 + 2],
-                                 range(iCount)))
-    return all(all(state[i] != state[j]
-                   for j in unpairedItems
-                   if i != j)
-               for i in unpairedItems)
+def toFloorState(stateSeq):
+    return tuple(sorted(util.splitIntoGp(stateSeq, 2), reverse=True))
 
-def getNei(state):
-    transList = list()
-    eleLoc = state[0]
-    mState = list(state)
-    iCount = (len(state) - 1) // 2
-    movableIndices = tuple(filter(lambda i: state[i] == eleLoc,
-                                  range(1, 1 + 2 * iCount)))
-    mLen = len(movableIndices)
-    for mi in range(mLen):
-        for mj in range(mi, mLen):
-            (i, j) = (movableIndices[mi], movableIndices[mj])
-            # move item i and j
-            if eleLoc > 0:
-                mState[0] = mState[i] = mState[j] = eleLoc - 1
-                if isValidState(mState):
-                    transList.append(tuple(mState))
-                mState[0] = mState[i] = mState[j] = eleLoc
-            if eleLoc < 3:
-                mState[0] = mState[i] = mState[j] = eleLoc + 1
-                if isValidState(mState):
-                    transList.append(tuple(mState))
-                mState[0] = mState[i] = mState[j] = eleLoc
-    return transList
+def getNeiSeq(st, currFloor):
+    resList = list()
+    itemsToMove = tuple(filter(lambda idx: st[idx] == currFloor,
+                               range(len(st))))
+    mSt = list(st)
+    for delta in (d for d in (1, -1) if 0 <= currFloor + d < 4):
+        newFloor = currFloor + delta
+        for moveIdx in it.chain(it.combinations(itemsToMove, 2),
+                                it.combinations(itemsToMove, 1)):
+            for idx in moveIdx:
+                mSt[idx] = newFloor
+            if isValidState(mSt):
+                resList.append((newFloor, tuple(mSt)))
+            for idx in moveIdx:
+                mSt[idx] = currFloor
+    return resList
+
+# double bfs
+def getMinMoveCount(initArr):
+    # state: (cost, curr floor, floor states)
+    startQueue = deque(((0, 0, toFloorState(initArr)),))
+    endQueue = deque(((0, 3, ((3, 3),) * (len(initArr) // 2)),))
+    visitedFromStart = dict() # (curr floor, floor states): min cost
+    visitedFromEnd = dict()
+    optimalStates = None
+    while True:
+        # start
+        while len(startQueue) != 0 and startQueue[0][1:] in visitedFromStart:
+            startQueue.popleft()
+        if len(startQueue) == 0:
+            break
+        # print("start", len(startQueue))
+        (currCost, currFlr, flrState) = startQueue.popleft()
+        visitedFromStart[(currFlr, flrState)] = currCost
+        if (currFlr, flrState) in visitedFromEnd:
+            # found
+            optimalStates = (currFlr, flrState)
+            break
+        # extend
+        st = util.flatten(flrState) # type 1 chip, type 1 gen, type 2 chip, ...
+        mSt = list(st)
+        currCost += 1
+        for newFlr, nst in getNeiSeq(st, currFlr):
+            startQueue.append((currCost, newFlr, toFloorState(nst)))
+        # end
+        while len(endQueue) != 0 and endQueue[0][1:] in visitedFromEnd:
+            endQueue.popleft()
+        if len(endQueue) == 0:
+            break
+        # print("end", len(endQueue))
+        (currCost, currFlr, flrState) = endQueue.popleft()
+        visitedFromEnd[(currFlr, flrState)] = currCost
+        if (currFlr, flrState) in visitedFromStart:
+            # found
+            optimalStates = (currFlr, flrState)
+            break
+        # extend
+        st = util.flatten(flrState) # type 1 chip, type 1 gen, type 2 chip, ...
+        mSt = list(st)
+        currCost += 1
+        for newFlr, nst in getNeiSeq(st, currFlr):
+            endQueue.append((currCost, newFlr, toFloorState(nst)))
+    if optimalStates is not None:
+        return visitedFromStart[optimalStates] + visitedFromEnd[optimalStates]
 
 # part 1
-print(util.dijkstra(initialNode=tuple(initState),
-                    costFunc=lambda ns, st, oc: oc + 1,
-                    neighbourListFunc=getNei,
-                    goalCheckerFunc=lambda st: all(loc == 3 for loc in st),
-                    aStarHeuristicFunc=lambda st: sum(3 - loc for loc in st) // 2)[1])
+print(getMinMoveCount(initArrangement))
 
 # part 2
-# took 1.8 GM RAM and ~10 min without answer
-# initState += [0] * 4
-# print(util.dijkstra(initialNode=tuple(initState),
-                    # costFunc=lambda ns, st, oc: oc + 1,
-                    # neighbourListFunc=getNei,
-                    # goalCheckerFunc=lambda st: all(loc == 3 for loc in st),
-                    # aStarHeuristicFunc=lambda st: sum(3 - loc for loc in st) // 2)[1])
+initArrangement += [0, 0, 0, 0]
+print(getMinMoveCount(initArrangement))
 
