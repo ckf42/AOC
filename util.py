@@ -873,6 +873,13 @@ def countOnes(n: int) -> int:
     Different from int.bit_count, this takes in account of the sign of `n`
     If `n` is non-negative, the result is the same as `n.bit_count()`
 
+    Note
+    -----
+    uses int.bit_count, which is only available after 3.10
+    if int has not bit_count method, will use the equivalent method as noted in
+        the official documentation:
+        https://docs.python.org/3/library/stdtypes.html#int.bit_count
+
     Example
     -----
     >>> (127).bit_count()
@@ -884,10 +891,11 @@ def countOnes(n: int) -> int:
     >>> countOnes(-127)
     1 
     """
+    b_c = getattr(int, 'bit_count', lambda x: bin(x).count('1'))
     if n < 0:
-        return 1 + n.bit_length() - (-n).bit_count()
+        return 1 + n.bit_length() - b_c(-n)
     else:
-        return n.bit_count()
+        return b_c(n)
 
 def inclusiveRange(s: int, e: int, step: _tp.Optional[int] = 1) -> range:
     """
@@ -1152,4 +1160,101 @@ def findSeqPeriod(seq: _tp.Sequence[_T],
             currOptimal = (t, remainLen)
     return currOptimal
 
+
+def integerLattice(dim: int,
+                   l1Norm: int,
+                   excludeNeg: bool = False,
+                   excludeZero: bool = True) -> _tp.Iterator[tuple[int]]:
+    """
+    Generates integer coordinates in some sphere
+
+    Parameter
+    -----
+    dim: int
+        The dimension of the coordinate generated
+
+    l1Norm: int
+        The radius of the sphere in L1 norm
+
+    excludeNeg: bool, optional
+        Determine if points with negative coordinates should be included.
+        Defaults to False
+
+    excludeZero: bool, optional
+        Determine if the original point should be omitted
+        defaults to True
+
+    Return
+    -----
+    Return `r`-tuples of integers that are included in a sphere of L1 radius `l1Norm`.
+    If excludeNeg or excludeZero is True, the corresponding tuples will be omitted.
+    """
+    if dim <= 0 or l1Norm < 0:
+        return
+    elif dim == 1:
+        if not excludeZero:
+            yield (0,)
+        for coor in range(1, l1Norm + 1):
+            if not excludeNeg:
+                yield (-coor,)
+            yield (coor,)
+    else:
+        for pt in integerLattice(dim - 1, l1Norm, excludeNeg, excludeZero):
+            yield (0,) + pt
+        for coor in range(1, l1Norm + 1):
+            for pt in integerLattice(dim - 1, l1Norm - coor, excludeNeg, excludeZero=False):
+                if not excludeNeg:
+                    yield (-coor,) + pt
+                yield (coor,) + pt
+
+class Point:
+    def __init__(self, *coors: float):
+        assert len(coors) != 0, "Empty coordinate"
+        self.__coor = tuple(coors)
+        self.__dim = len(coors)
+
+    @property
+    def dim(self) -> int:
+        return self.__dim
+
+    @property
+    def coor(self) -> tuple[float]:
+        return self.__coor
+
+    def __getitem__(self, dim: int) -> float:
+        assert 0 <= dim < self.__dim, f"Invalid dimension ({dim} not in [0, {self.__dim - 1}])"
+        return self.__coor[dim]
+
+    def __setitem__(self, dim: int, coor: float):
+        assert 0 <= dim < self.__dim, f"Invalid dimension ({dim} not in [0, {self.__dim - 1}])"
+        self.__coor = self.__coor[:dim] + (coor,) + self.__coor[dim + 1:]
+
+    def __repr__(self) -> str:
+        return "Point(" + ", ".join(map(str, self.__coor)) + ")"
+
+    def __len__(self) -> int:
+        return self.__dim
+
+    def __add__(self, other):
+        assert self.__dim == other.__dim, f"Dimension mistach ({self.__dim} and {other.__dim})"
+        return Point(*(self.__coor[i] + other.__coor[i] for i in range(self.__dim)))
+
+    def __rmul__(self, scalar: float):
+        return Point(*(scalar * self.__coor[i] for i in range(self.__dim)))
+
+    def __sub__(self, other):
+        return self.__add__(other.__neg__())
+
+    def __neg__(self):
+        return self.__rmul__(-1)
+
+    def __pos__(self):
+        return self
+
+    def norm(self, p: float = 2) -> float:
+        assert p >= 1, f"p ({p}) must be at least 1"
+        if p == float('Inf'):
+            return max(map(abs, self.__coor))
+        else:
+            return sum(abs(c) ** p for c in self.__coor) ** (1 / p)
 
