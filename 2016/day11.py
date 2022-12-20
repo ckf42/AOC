@@ -63,7 +63,6 @@ def getMinMoveCount(initArr):
             startQueue.popleft()
         if len(startQueue) == 0:
             break
-        # print("start", len(startQueue))
         (currCost, currFlr, flrState) = startQueue.popleft()
         visitedFromStart[(currFlr, flrState)] = currCost
         if (currFlr, flrState) in visitedFromEnd:
@@ -72,7 +71,6 @@ def getMinMoveCount(initArr):
             break
         # extend
         st = util.flatten(flrState) # type 1 chip, type 1 gen, type 2 chip, ...
-        mSt = list(st)
         currCost += 1
         for newFlr, nst in getNeiSeq(st, currFlr):
             startQueue.append((currCost, newFlr, toFloorState(nst)))
@@ -81,7 +79,6 @@ def getMinMoveCount(initArr):
             endQueue.popleft()
         if len(endQueue) == 0:
             break
-        # print("end", len(endQueue))
         (currCost, currFlr, flrState) = endQueue.popleft()
         visitedFromEnd[(currFlr, flrState)] = currCost
         if (currFlr, flrState) in visitedFromStart:
@@ -90,7 +87,6 @@ def getMinMoveCount(initArr):
             break
         # extend
         st = util.flatten(flrState) # type 1 chip, type 1 gen, type 2 chip, ...
-        mSt = list(st)
         currCost += 1
         for newFlr, nst in getNeiSeq(st, currFlr):
             endQueue.append((currCost, newFlr, toFloorState(nst)))
