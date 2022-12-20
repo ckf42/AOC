@@ -664,6 +664,7 @@ def argmax(arr: _abc.Iterable[_tp.Any],
     Note
     -----
     Only enumerate whole `arr` once
+    Will consume `arr` if it is a generator
     """
     currMaxItem = None
     currMaxKey = -float('Inf')
@@ -807,6 +808,12 @@ def dijkstra(initialNode: _T,
         `goalCheckerFunc(node)` is True
         `cost` is minimal (assuming the heuristic, if given, is suitable)
     or None, if no such node is found
+
+    Note
+    -----
+    only for simple cost-minimizing problems
+    if you need something more complicated (e.g. getting all goal states, callback),
+        just implement the algorithm yourself
     """
     if aStarHeuristicFunc is None:
         aStarHeuristicFunc = (lambda state: 0)
@@ -862,6 +869,7 @@ def countOnes(n: int) -> int:
     Return
     -----
     an integer counting the number of ones in the signed binary representation of `n`
+        in 2-complement format
     Different from int.bit_count, this takes in account of the sign of `n`
     If `n` is non-negative, the result is the same as `n.bit_count()`
 
@@ -876,9 +884,7 @@ def countOnes(n: int) -> int:
     >>> countOnes(-127)
     1 
     """
-    if n == 0:
-        return 0
-    elif n < 0:
+    if n < 0:
         return 1 + n.bit_length() - (-n).bit_count()
     else:
         return n.bit_count()
