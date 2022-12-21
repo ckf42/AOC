@@ -56,10 +56,13 @@ def getInput(d: int,
     if force or not _pathlib.Path('input').is_file():
         with open('../session', 'rt') as sessKey:
             r = _rq.get(f'https://adventofcode.com/{y}/day/{d}/input',
-                        cookies={'session': sessKey.read().strip()}).text
-        with open(f'input{d}', 'wt') as f:
-            print(r, file=f, end='')
-        return r
+                        cookies={'session': sessKey.read().strip()})
+            if r.status_code != 200:
+                raise _rq.ConnectionError(f"Failed to fetch input: {r.reason}\nDetail: {r.text}")
+            rt = r.text
+            with open(f'input{d}', 'wt') as f:
+                print(rt, file=f, end='')
+            return rt
     else:
         with open(f'input{d}', 'rt') as f:
             return f.read()
@@ -1177,16 +1180,16 @@ def integerLattice(dim: int,
         The radius of the sphere in L1 norm
 
     excludeNeg: bool, optional
-        Determine if points with negative coordinates should be included.
+        Determine if points with negative coordinates should be omitted
         Defaults to False
 
     excludeZero: bool, optional
-        Determine if the original point should be omitted
+        Determine if the origin point should be omitted
         defaults to True
 
     Return
     -----
-    Return `r`-tuples of integers that are included in a sphere of L1 radius `l1Norm`.
+    Return `dim`-tuples of integers that are included in a sphere of L1 radius `l1Norm`.
     If excludeNeg or excludeZero is True, the corresponding tuples will be omitted.
     """
     if dim <= 0 or l1Norm < 0:
@@ -1213,21 +1216,24 @@ class Point:
         self.__coor = tuple(coors)
         self.__dim = len(coors)
 
+    @classmethod
+    def fromIterable(cls, it: _tp.Iterable[float]) -> 'Point':
+        return cls(*it)
+
     @property
     def dim(self) -> int:
         return self.__dim
-
-    @property
-    def coor(self) -> tuple[float]:
-        return self.__coor
 
     def __getitem__(self, dim: int) -> float:
         assert 0 <= dim < self.__dim, f"Invalid dimension ({dim} not in [0, {self.__dim - 1}])"
         return self.__coor[dim]
 
-    def __setitem__(self, dim: int, coor: float):
+    def __setitem__(self, dim: int, coor: float) -> None:
         assert 0 <= dim < self.__dim, f"Invalid dimension ({dim} not in [0, {self.__dim - 1}])"
         self.__coor = self.__coor[:dim] + (coor,) + self.__coor[dim + 1:]
+
+    def __iter__(self) -> _tp.Iterable[float]:
+        yield from self.__coor
 
     def __repr__(self) -> str:
         return "Point(" + ", ".join(map(str, self.__coor)) + ")"
@@ -1235,26 +1241,31 @@ class Point:
     def __len__(self) -> int:
         return self.__dim
 
-    def __add__(self, other):
+    def __add__(self, other: 'Point') -> 'Point':
         assert self.__dim == other.__dim, f"Dimension mistach ({self.__dim} and {other.__dim})"
         return Point(*(self.__coor[i] + other.__coor[i] for i in range(self.__dim)))
 
-    def __rmul__(self, scalar: float):
+    def __rmul__(self, scalar: float) -> 'Point':
         return Point(*(scalar * self.__coor[i] for i in range(self.__dim)))
 
-    def __sub__(self, other):
-        return self.__add__(other.__neg__())
+    def __mul__(self, scalar: float) -> 'Point':
+        return self.__rmul__(scalar)
 
-    def __neg__(self):
+    def __neg__(self) -> 'Point':
         return self.__rmul__(-1)
 
-    def __pos__(self):
+    def __sub__(self, other: 'Point') -> 'Point':
+        return self.__add__(other.__neg__())
+
+    def __pos__(self) -> 'Point':
         return self
 
     def norm(self, p: float = 2) -> float:
         assert p >= 1, f"p ({p}) must be at least 1"
         if p == float('Inf'):
             return max(map(abs, self.__coor))
+        elif p == 1:
+            return sum(map(abs, self.__coor))
         else:
             return sum(abs(c) ** p for c in self.__coor) ** (1 / p)
 
