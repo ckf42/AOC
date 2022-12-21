@@ -947,22 +947,23 @@ def count(arr: _tp.Iterable[_T], cond: _tp.Callable[_T, bool] = bool) -> int:
     """
     return sum(map(cond, arr))
 
-def consoleChar(b: bool) -> str:
+def consoleChar(b: _tp.Union[bool, None]) -> str:
     """
     helper function for displaying boolean array on console
 
     Parameter
     -----
-    b: bool
+    b: bool or None
         the boolean to determine if the pixel should be colored
 
     Return
     -----
-    a str consisting of a single character,
-        which is either U+2588 (FULL BLOCK) if `b` is True
-        or U+0020 (SPACE) if False
+    a str consisting of a single character, which is
+        U+2588 (FULL BLOCK) if `b` is True
+        U+0020 (SPACE) if False
+        U+2592 (MEDIUM SHADE) if is None
     """
-    return u'\u2588' if b else u'\u0020'
+    return u'\u2592' if u is None else (u'\u2588' if b else u'\u0020')
 
 def rangeLen(arr: _tp.Sequence) -> range:
     """
@@ -1220,6 +1221,10 @@ class Point:
     def fromIterable(cls, it: _tp.Iterable[float]) -> 'Point':
         return cls(*it)
 
+    @classmethod
+    def zero(cls, dim: int) -> 'Point':
+        return cls.fromIterable((0,) * dim)
+
     @property
     def dim(self) -> int:
         return self.__dim
@@ -1227,10 +1232,6 @@ class Point:
     def __getitem__(self, dim: int) -> float:
         assert 0 <= dim < self.__dim, f"Invalid dimension ({dim} not in [0, {self.__dim - 1}])"
         return self.__coor[dim]
-
-    def __setitem__(self, dim: int, coor: float) -> None:
-        assert 0 <= dim < self.__dim, f"Invalid dimension ({dim} not in [0, {self.__dim - 1}])"
-        self.__coor = self.__coor[:dim] + (coor,) + self.__coor[dim + 1:]
 
     def __iter__(self) -> _tp.Iterable[float]:
         yield from self.__coor
@@ -1259,6 +1260,25 @@ class Point:
 
     def __pos__(self) -> 'Point':
         return self
+
+    def __eq__(self, other: 'Point') -> bool:
+        return self.__dim == other.__dim \
+                and all(self.__coor[i] == other.__coor[i]
+                        for i in range(self.__dim))
+
+    def __lt__(self, other: 'Point') -> bool:
+        return self.__dim == other.__dim \
+                and all(self.__coor[i] <= other.__coor[i]
+                        for i in range(self.__dim))
+
+    def __le__(self, other: 'Point') -> bool:
+        return self.__eq__(other) or self.__lt__(other)
+
+    def __bool__(self) -> bool:
+        return any(self.__coor)
+
+    def __hash__(self) -> int:
+        return hash(('Point type', self.__dim,) + self.__coor)
 
     def norm(self, p: float = 2) -> float:
         assert p >= 1, f"p ({p}) must be at least 1"
