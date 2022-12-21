@@ -13,16 +13,13 @@ def mixing(taggedList):
     for orderToMove in range(l):
         idx = util.firstIdxSuchThat(taggedList, lambda t: t[0] == orderToMove)
         offset = taggedList[idx][1]
-        d = util.sgn(offset)
-        offset = abs(offset) % (l - 1) # loop, off by one
+        # offset = abs(offset) % (l - 1) # loop, off by one
         if offset == 0:
             continue
         item = taggedList[idx]
+        # replace it with slicing
         taggedList = taggedList[idx + 1:] + taggedList[:idx]
-        if d > 0:
-            taggedList.insert(offset, item)
-        else:
-            taggedList.insert(l - 1 - offset, item)
+        taggedList.insert(offset % (l - 1), item)
     return taggedList
 
 taggedSeq = mixing(list(enumerate(inp)))
