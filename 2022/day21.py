@@ -1,5 +1,6 @@
 import AOCInit
 import util
+import operator as op
 import sympy as sp
 
 if __name__ != '__main__':
@@ -14,10 +15,10 @@ instDict = {ls[0]: (sp.Rational(ls[1]) if ls[1].isdigit() else ls[1])
 # part 1
 reg = dict()
 funcList = {
-    '+': lambda x, y: x + y,
-    '-': lambda x, y: x - y,
-    '*': lambda x, y: x * y,
-    '/': lambda x, y: x / y,
+    '+': op.add,
+    '-': op.sub,
+    '*': op.mul,
+    '/': op.truediv,
 }
 
 def getRes(n):
