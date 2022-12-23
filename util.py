@@ -445,7 +445,7 @@ def getFloats(s: str) -> tuple[float]:
     -----
     a tuple of float that contains all (possibly negative) floats that appear in `s`
     """
-    return tuple(map(float, _re.findall(r'-?\d+(?:\.\d+)', s)))
+    return tuple(map(float, _re.findall(r'-?\d+(?:\.\d+)?', s)))
 
 def splitIntoGp(arr: _abc.Sequence[_T],
                 gpSize: int,
@@ -624,6 +624,26 @@ def transpose(seq: _abc.Iterable[_abc.Sequence]) -> tuple[tuple]:
     alias of `takeApart`
     """
     return takeApart(seq)
+
+def ptp(seq: _tp.Iterable[_tp.Iterable[float]]) -> tuple[tuple[float]]:
+    """
+    find the range of numbers
+
+    Parameter
+    -----
+    seq: Iterable[Iterable[float]]
+        a collection of sets of numbers
+
+    Return
+    -----
+    a tuple containing 2-tuples of float numbers
+    `ptp[i]` is the (min, max) of `seq[i]`
+
+    Note
+    -----
+    naming from `numpy.ptp`. See https://numpy.org/doc/stable/reference/generated/numpy.ptp.html
+    """
+    return takeApart(multiMap(seq, (min, max)))
 
 def sgn(x: float) -> int:
     """
