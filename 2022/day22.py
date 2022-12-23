@@ -5,6 +5,7 @@ import re
 if __name__ != '__main__':
     exit()
 
+# test case
 inp = \
 """        ...#    
         .#..    
@@ -32,22 +33,22 @@ direction = ((1, 0), (0, 1), (-1, 0), (0, -1)) # L <- -> R
 dim = (len(board[0]), len(board))
 
 # part 1
-# currLoc = (util.firstIdxSuchThat(board[0], lambda c: c == '.'), 0)
-# faceDir = 0
-# for inst in pathDesc:
-    # if inst.isdigit():
-        # d = direction[faceDir]
-        # for _ in range(int(inst)):
-            # nextLoc = tuple((currLoc[i] + d[i]) % dim[i] for i in range(2))
-            # while board[nextLoc[1]][nextLoc[0]] not in '.#':
-                # nextLoc = tuple((nextLoc[i] + d[i]) % dim[i] for i in range(2))
-            # if board[nextLoc[1]][nextLoc[0]] == '.':
-                # currLoc = nextLoc
-            # else:
-                # break
-    # else:
-        # faceDir = (faceDir + {'L': -1, 'R': 1}[inst]) % 4
-# print((currLoc[0] + 1) * 4 + (currLoc[1] + 1) * 1000 + faceDir)
+currLoc = (util.firstIdxSuchThat(board[0], lambda c: c == '.'), 0)
+faceDir = 0
+for inst in pathDesc:
+    if inst.isdigit():
+        d = direction[faceDir]
+        for _ in range(int(inst)):
+            nextLoc = tuple((currLoc[i] + d[i]) % dim[i] for i in range(2))
+            while board[nextLoc[1]][nextLoc[0]] not in '.#':
+                nextLoc = tuple((nextLoc[i] + d[i]) % dim[i] for i in range(2))
+            if board[nextLoc[1]][nextLoc[0]] == '.':
+                currLoc = nextLoc
+            else:
+                break
+    else:
+        faceDir = (faceDir + {'L': -1, 'R': 1}[inst]) % 4
+print((currLoc[0] + 1) * 4 + (currLoc[1] + 1) * 1000 + faceDir)
 
 # part 2
 faceLen = util.gcd(*(util.count(l, lambda c: c != ' ') for l in board))
@@ -83,16 +84,22 @@ def shiftDown():
     shiftUp()
     shiftUp()
 
-# TODO: find out why shiftRight(); shiftLeft() does not give back original orient
-# def shiftRight():
-    # rotRight()
-    # shiftUp()
-    # rotLeft()
+def shiftRight():
+    # point down
+    rotRight()
+    shiftUp()
+    rotLeft()
 
-# def shiftLeft():
-    # rotLeft()
-    # shiftUp()
-    # rotRight()
+# TODO: find out why rotLeft(); shiftUp(); rotRight() does not give correct shiftLeft
+def shiftLeft():
+    shiftRight()
+    shiftRight()
+    shiftRight()
+
+def shiftLeftOther():
+    rotLeft()
+    shiftUp()
+    rotRight()
 
 searchPt = (util.firstIdxSuchThat(board[0], lambda c: c == '.'), 0) # face 0
 visited = set()
@@ -123,37 +130,60 @@ def registerFace(pt):
                 shiftDown()
 
 registerFace(searchPt)
-# we should not need this. why?
-while orient[0][1] != 0:
-    rotRight()
+
+def preceptTofaceCoor(pt, deviate):
+    for _ in range(deviate):
+        pt = (pt[1], faceLen - 1 - pt[0])
+    return pt
 
 realLoc = (util.firstIdxSuchThat(board[0], lambda c: c == '.'), 0) # coor on 2D map
-preceptLoc = (0, 0) # coor on surface
+preceptLoc = (0, 0) # coor on surface 0
 preceptFaceDir = 0
+
+def printBoard():
+    for y in range(dim[1]):
+        for x in range(dim[0]):
+            if (x, y) == realLoc:
+                print('x', end='')
+            else:
+                print(board[y][x], end='')
+        print('')
+
+# printBoard()
 for inst in pathDesc:
     if inst.isdigit():
         d = direction[preceptFaceDir]
         for _ in range(int(inst)):
             preceptNextLoc = tuple(preceptLoc[i] + d[i] for i in range(2))
+            rotatedAction = None
             if preceptNextLoc[0] < 0:
                 shiftLeft()
+                rotatedAction = 'l'
                 preceptNextLoc = (faceLen - 1, preceptNextLoc[1])
             elif preceptNextLoc[0] == faceLen:
                 shiftRight()
+                rotatedAction = 'r'
                 preceptNextLoc = (0, preceptNextLoc[1])
             elif preceptNextLoc[1] < 0:
                 shiftUp()
+                rotatedAction = 'u'
                 preceptNextLoc = (preceptNextLoc[0], faceLen - 1)
             elif preceptNextLoc[1] == faceLen:
                 shiftDown()
+                rotatedAction = 'd'
                 preceptNextLoc = (preceptNextLoc[0], 0)
-            realNextLoc = tuple() # pass
+            faceCoor = preceptTofaceCoor(preceptNextLoc, orient[0][1])
+            realNextLoc = tuple(orient[0][0][i] + faceCoor[i] for i in range(2))
             if board[realNextLoc[1]][realNextLoc[0]] == '.':
                 realLoc = realNextLoc
                 preceptLoc = preceptNextLoc
             else:
+                if rotatedAction is not None:
+                    {'l': shiftRight, 'r': shiftLeft, 'u': shiftDown, 'd': shiftUp}[rotatedAction]()
                 break
     else:
         preceptFaceDir = (preceptFaceDir + {'L': -1, 'R': 1}[inst]) % 4
-# print((realLoc[0] + 1) * 4 + (realLoc[1] + 1) * 1000 + faceDir)
+    # print(inst, '>v<^'[(preceptFaceDir - orient[0][1]) % 4])
+    # printBoard()
+print((realLoc[0] + 1) * 4 + (realLoc[1] + 1) * 1000 + (preceptFaceDir - orient[0][1]) % 4)
 

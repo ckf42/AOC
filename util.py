@@ -963,7 +963,7 @@ def consoleChar(b: _tp.Union[bool, None]) -> str:
         U+0020 (SPACE) if False
         U+2592 (MEDIUM SHADE) if is None
     """
-    return u'\u2592' if u is None else (u'\u2588' if b else u'\u0020')
+    return u'\u2592' if b is None else (u'\u2588' if b else u'\u0020')
 
 def rangeLen(arr: _tp.Sequence) -> range:
     """
