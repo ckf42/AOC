@@ -625,7 +625,7 @@ def transpose(seq: _abc.Iterable[_abc.Sequence]) -> tuple[tuple]:
     """
     return takeApart(seq)
 
-def ptp(seq: _tp.Iterable[_tp.Iterable[float]]) -> tuple[tuple[float]]:
+def rangeBound(seq: _tp.Iterable[_tp.Iterable[float]]) -> tuple[tuple[float]]:
     """
     find the range of numbers
 
@@ -637,11 +637,7 @@ def ptp(seq: _tp.Iterable[_tp.Iterable[float]]) -> tuple[tuple[float]]:
     Return
     -----
     a tuple containing 2-tuples of float numbers
-    `ptp[i]` is the (min, max) of `seq[i]`
-
-    Note
-    -----
-    naming from `numpy.ptp`. See https://numpy.org/doc/stable/reference/generated/numpy.ptp.html
+    `rangeBound[i]` is the (min, max) of `seq[i]`
     """
     return takeApart(multiMap(seq, (min, max)))
 
