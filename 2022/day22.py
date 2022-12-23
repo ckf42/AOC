@@ -6,23 +6,23 @@ if __name__ != '__main__':
     exit()
 
 # test case
-inp = \
-"""        ...#    
-        .#..    
-        #...    
-        ....    
-...#.......#    
-........#...    
-..#....#....    
-..........#.    
-        ...#....
-        .....#..
-        .#......
-        ......#.
+# inp = \
+# """        ...#
+        # .#..
+        # #...
+        # ....
+# ...#.......#
+# ........#...
+# ..#....#....
+# ..........#.
+        # ...#....
+        # .....#..
+        # .#......
+        # ......#.
 
-10R5L5R10L4R5L5"""
+# 10R5L5R10L4R5L5"""
 
-# inp = util.getInput(d=22, y=2022)
+inp = util.getInput(d=22, y=2022)
 
 board = inp.splitlines()[:-2]
 maxCol = max(len(l) for l in board)
@@ -73,6 +73,12 @@ def shiftUp():
     orient[2][1] = (orient[2][1] - 1) % 4
     orient[4][1] = (orient[4][1] + 1) % 4
 
+def shiftRight():
+    # rot vector points down
+    rotRight()
+    shiftUp()
+    rotLeft()
+
 def rotLeft():
     # rot vect points outward
     rotRight()
@@ -80,29 +86,19 @@ def rotLeft():
     rotRight()
 
 def shiftDown():
+    # rot vect points left
     shiftUp()
     shiftUp()
     shiftUp()
 
-def shiftRight():
-    # point down
-    rotRight()
-    shiftUp()
-    rotLeft()
-
-# TODO: find out why rotLeft(); shiftUp(); rotRight() does not give correct shiftLeft
 def shiftLeft():
+    # rot vector points up
     shiftRight()
     shiftRight()
     shiftRight()
-
-def shiftLeftOther():
-    rotLeft()
-    shiftUp()
-    rotRight()
 
 searchPt = (util.firstIdxSuchThat(board[0], lambda c: c == '.'), 0) # face 0
-visited = set()
+visited = set() # probably not needed
 
 def registerFace(pt):
     orient[0] = [pt, 0]
@@ -137,7 +133,7 @@ def preceptTofaceCoor(pt, deviate):
     return pt
 
 realLoc = (util.firstIdxSuchThat(board[0], lambda c: c == '.'), 0) # coor on 2D map
-preceptLoc = (0, 0) # coor on surface 0
+preceptLoc = (0, 0) # coor on precepted surface 0
 preceptFaceDir = 0
 
 def printBoard():
@@ -155,22 +151,22 @@ for inst in pathDesc:
         d = direction[preceptFaceDir]
         for _ in range(int(inst)):
             preceptNextLoc = tuple(preceptLoc[i] + d[i] for i in range(2))
-            rotatedAction = None
+            reverseRot = None
             if preceptNextLoc[0] < 0:
                 shiftLeft()
-                rotatedAction = 'l'
+                reverseRot = shiftRight
                 preceptNextLoc = (faceLen - 1, preceptNextLoc[1])
             elif preceptNextLoc[0] == faceLen:
                 shiftRight()
-                rotatedAction = 'r'
+                reverseRot = shiftLeft
                 preceptNextLoc = (0, preceptNextLoc[1])
             elif preceptNextLoc[1] < 0:
                 shiftUp()
-                rotatedAction = 'u'
+                reverseRot = shiftDown
                 preceptNextLoc = (preceptNextLoc[0], faceLen - 1)
             elif preceptNextLoc[1] == faceLen:
                 shiftDown()
-                rotatedAction = 'd'
+                reverseRot = shiftUp
                 preceptNextLoc = (preceptNextLoc[0], 0)
             faceCoor = preceptTofaceCoor(preceptNextLoc, orient[0][1])
             realNextLoc = tuple(orient[0][0][i] + faceCoor[i] for i in range(2))
@@ -178,8 +174,8 @@ for inst in pathDesc:
                 realLoc = realNextLoc
                 preceptLoc = preceptNextLoc
             else:
-                if rotatedAction is not None:
-                    {'l': shiftRight, 'r': shiftLeft, 'u': shiftDown, 'd': shiftUp}[rotatedAction]()
+                if reverseRot is not None:
+                    reverseRot()
                 break
     else:
         preceptFaceDir = (preceptFaceDir + {'L': -1, 'R': 1}[inst]) % 4
