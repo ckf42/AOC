@@ -341,24 +341,6 @@ def prod(arr: _tp.Iterable[float]) -> float:
     """
     return _ft.reduce(lambda x, y: x * y, arr)
 
-def takeExcept(arr: _abc.Sequence[_T], index: int) -> _abc.Sequence[_T]:
-    """
-    copy the whole arr with a certain element removed
-
-    Parameters
-    -----
-    arr: Sequence[T]
-        the sequence in question
-
-    index: int
-        the index of the element to be removed
-
-    Returns
-    -----
-    a copy of the original `arr` with the element at `index` removed
-    """
-    return arr[:index] + arr[index + 1:]
-
 def splitAt(arr: _abc.Sequence[_T],
             index: int) -> tuple[_abc.Sequence[_T], _abc.Sequence[_T]]:
     """
@@ -962,6 +944,30 @@ def count(arr: _tp.Iterable[_T], cond: _tp.Callable[_T, bool] = bool) -> int:
     wrapper of `sum` and `map`
     """
     return sum(map(cond, arr))
+
+def countItem(arr: _tp.Iterable[_T], item: _T) -> int:
+    """
+    count elements in an iterable that satisfies some condition
+
+    Parameter
+    -----
+    arr: Iterable[T]
+        an iterable that contains the elements to count
+
+    item: T
+        the item to count in `arr`
+
+    Return
+    -----
+    an int representing the number of times `item` appears in `arr`
+
+    NOTE
+    -----
+    wrapper of `count`
+    compare by __eq__
+    """
+    return count(arr, lambda x: x == item)
+
 
 def consoleChar(b: _tp.Union[bool, None]) -> str:
     """
