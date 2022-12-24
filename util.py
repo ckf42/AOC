@@ -1,13 +1,11 @@
 import typing as _tp
-import collections.abc as _abc
-import pathlib as _pathlib
+import urllib.request as _ulq
+import urllib.error as _ule
 import re as _re
 import functools as _ft
 import itertools as _it
 import heapq as _hq
 
-# not part of standard library
-import requests as _rq
 
 if __name__ == '__main__':
     exit()
@@ -53,19 +51,24 @@ def getInput(d: int,
     it is expected to see a file named `session` in the parent dir of
     cwd that contains only the session cookie
     """
-    if force or not _pathlib.Path('input').is_file():
-        with open('../session', 'rt') as sessKey:
-            r = _rq.get(f'https://adventofcode.com/{y}/day/{d}/input',
-                        cookies={'session': sessKey.read().strip()})
-            if r.status_code != 200:
-                raise _rq.ConnectionError(f"Failed to fetch input: {r.reason}\nDetail: {r.text}")
-            rt = r.text
-            with open(f'input{d}', 'wt') as f:
-                print(rt, file=f, end='')
-            return rt
-    else:
+    try:
+        if force:
+            raise FileNotFoundError
         with open(f'input{d}', 'rt') as f:
             return f.read()
+    except FileNotFoundError as e:
+        pass
+    with open('../session', 'rt') as sessKey:
+        try:
+            with _ulq.urlopen(
+                    _ulq.Request(f'https://adventofcode.com/{y}/day/{d}/input',
+                                 headers={'Cookie': f'session={sessKey.read().strip()}'})) as resp:
+                rt = resp.fp.read().decode()
+                with open(f'input{d}', 'wt') as f:
+                    print(rt, file=f, end='')
+                return rt
+        except _ule.HTTPError as e:
+            raise ValueError(f"Failed to fetch input: {e.msg}\nDetail: {e.fp.read().decode()}") from e
 
 def firstSuchThat(arr: _tp.Iterable[_T],
                   cond: _tp.Callable[_T, bool]) -> tuple[_tp.Optional[int], _tp.Optional[_T]]:
@@ -286,17 +289,17 @@ def flatten(arr: _tp.Any, level: int = 1):
     -----
     will also flatten str to tuple of single-char string (as it is iterable)
     """
-    if isinstance(arr, _abc.Iterable) and level != 0:
+    if isinstance(arr, _tp.Iterable) and level != 0:
         return tuple(x
                      for itab in ((flatten(item, max(level - 1, -1))
-                                   if isinstance(item, _abc.Iterable)
+                                   if isinstance(item, _tp.Iterable)
                                    else (item,))
                                   for item in arr)
                      for x in itab)
     else:
         return arr
 
-def cycInd(arr: _abc.Sequence[_T], index: int) -> _T:
+def cycInd(arr: _tp.Sequence[_T], index: int) -> _T:
     """
     access a sequence with arbitrary index
 
@@ -341,8 +344,8 @@ def prod(arr: _tp.Iterable[float]) -> float:
     """
     return _ft.reduce(lambda x, y: x * y, arr)
 
-def splitAt(arr: _abc.Sequence[_T],
-            index: int) -> tuple[_abc.Sequence[_T], _abc.Sequence[_T]]:
+def splitAt(arr: _tp.Sequence[_T],
+            index: int) -> tuple[_tp.Sequence[_T], _tp.Sequence[_T]]:
     """
     split a sequence at the given location
 
@@ -429,7 +432,7 @@ def getFloats(s: str) -> tuple[float]:
     """
     return tuple(map(float, _re.findall(r'-?\d+(?:\.\d+)?', s)))
 
-def splitIntoGp(arr: _abc.Sequence[_T],
+def splitIntoGp(arr: _tp.Sequence[_T],
                 gpSize: int,
                 allowRemain: bool = True) ->tuple[tuple[_T]]:
     """
@@ -465,7 +468,7 @@ def splitIntoGp(arr: _abc.Sequence[_T],
                                    else gpInit + gpSize)])
                  for gpInit in range(0, lArr, gpSize))
 
-def takeFromEvery(arr: _abc.Sequence[_T],
+def takeFromEvery(arr: _tp.Sequence[_T],
                   gpSize: int,
                   idx: int,
                   takeFromRemain: bool = True) -> tuple[_T]:
@@ -499,9 +502,9 @@ def takeFromEvery(arr: _abc.Sequence[_T],
                  for gpInit in range(0, lArr, gpSize)
                  if takeFromRemain or gpInit + gpSize <= lArr)
 
-def sub(originalSym: _abc.Iterable[_T],
-        targetSym: _abc.Iterable[_S],
-        arr: _abc.Iterable[_T],
+def sub(originalSym: _tp.Iterable[_T],
+        targetSym: _tp.Iterable[_S],
+        arr: _tp.Iterable[_T],
         discard: bool = False) -> tuple[_tp.Union[_T, _S]]:
     """
     create a copy of the collection with its entry replaced
@@ -581,7 +584,7 @@ def multiMap(arr: _tp.Iterable[_T], funcTuple: tuple[_tp.Callable[_T, _tp.Any]])
     """
     return tuple(tuple(map(f, arr)) for f in funcTuple)
 
-def takeApart(seq: _abc.Iterable[_abc.Sequence]) -> tuple[tuple]:
+def takeApart(seq: _tp.Iterable[_tp.Sequence]) -> tuple[tuple]:
     """
     splitting sequences of sequences
 
@@ -601,7 +604,7 @@ def takeApart(seq: _abc.Iterable[_abc.Sequence]) -> tuple[tuple]:
     l = len(seq[0])
     return multiMap(seq, tuple((lambda x, idx=i: x[idx]) for i in range(l)))
 
-def transpose(seq: _abc.Iterable[_abc.Sequence]) -> tuple[tuple]:
+def transpose(seq: _tp.Iterable[_tp.Sequence]) -> tuple[tuple]:
     """
     alias of `takeApart`
     """
@@ -644,7 +647,7 @@ def sgn(x: float) -> int:
     else:
         return 1 if x > 0 else -1
 
-def argmax(arr: _abc.Iterable[_tp.Any],
+def argmax(arr: _tp.Iterable[_tp.Any],
            key: _tp.Callable[_tp.Any, float]) -> _tp.Optional[_tp.Any]:
     """
     find where maximum occurs
@@ -766,7 +769,7 @@ def MaxHeap(initItemList=None, key=(lambda k: k)) -> Heap:
 
 def dijkstra(initialNode: _T,
              costFunc: _tp.Callable[[_T, _T, float], float],
-             neighbourListFunc: _tp.Callable[_T, _abc.Iterable[_T]],
+             neighbourListFunc: _tp.Callable[_T, _tp.Iterable[_T]],
              goalCheckerFunc: _tp.Callable[_T, bool],
              aStarHeuristicFunc: _tp.Optional[_tp.Callable[_T, float]] = None
              ) -> _tp.Optional[tuple[_T, float]]:
@@ -920,7 +923,9 @@ def inclusiveRange(s: int, e: int, step: _tp.Optional[int] = 1) -> range:
     a range object that produces {s, s + step, ..., e},
     (with appropriate `step` if given None)
     """
-    return range(s, e + step, sgn(e - s) if step is None else step)
+    if step is None:
+        step = sgn(e - s)
+    return range(s, e + step, step)
 
 def count(arr: _tp.Iterable[_T], cond: _tp.Callable[_T, bool] = bool) -> int:
     """

@@ -11,7 +11,7 @@ inp = """#.######
 #<^v^^>#
 ######.#"""
 
-# inp = util.getInput(d=24, y=2022)
+inp = util.getInput(d=24, y=2022)
 
 board = inp.splitlines()
 dim = (len(board), len(board[0]))
