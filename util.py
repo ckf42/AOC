@@ -10,8 +10,8 @@ import heapq as _hq
 if __name__ == '__main__':
     exit()
 
-_T = _tp.TypeVar('T')
-_S = _tp.TypeVar('S')
+T = _tp.TypeVar('T')
+S = _tp.TypeVar('S')
 
 # helper functions
 add = (lambda x, y: x + y)
@@ -68,10 +68,10 @@ def getInput(d: int,
                     print(rt, file=f, end='')
                 return rt
         except _ule.HTTPError as e:
-            raise ValueError(f"Failed to fetch input: {e.msg}\nDetail: {e.fp.read().decode()}") from e
+            raise ValueError(f"Failed to fetch input: {e.reason}\nDetail: {e.fp.read().decode()}") from e
 
-def firstSuchThat(arr: _tp.Iterable[_T],
-                  cond: _tp.Callable[_T, bool]) -> tuple[_tp.Optional[int], _tp.Optional[_T]]:
+def firstSuchThat(arr: _tp.Iterable[T],
+                  cond: _tp.Callable[[T], bool]) -> tuple[_tp.Optional[int], _tp.Optional[T]]:
     """
     find the first element that the condition holds
 
@@ -80,7 +80,7 @@ def firstSuchThat(arr: _tp.Iterable[_T],
     arr: Iterable[T]
         the input array search. If a generator, will be consumed
 
-    cond: Callable[T, bool]
+    cond: Callable[[T], bool]
         a function that takes an element in `arr` and return a boolean denoting
         whether the value should be accepted
 
@@ -98,20 +98,20 @@ def firstSuchThat(arr: _tp.Iterable[_T],
     """
     return next(filter(lambda t: cond(t[1]), enumerate(arr)), (None, None))
 
-def firstIdxSuchThat(arr: _tp.Iterable[_T],
-                     cond: _tp.Callable[_T, bool],
+def firstIdxSuchThat(arr: _tp.Sequence[T],
+                     cond: _tp.Callable[[T], bool],
                      s: int = 0,
                      e: _tp.Optional[int] = None,
-                     step: int = 1) -> _tp.Optional[_T]:
+                     step: int = 1) -> _tp.Optional[int]:
     """
     find the index of the first element that the condition holds
 
     Parameters
     -----
-    arr: Iterable[T]
+    arr: Sequence[T]
         the input array search. If a generator, will be consumed
 
-    cond: Callable[T, bool]
+    cond: Callable[[T], bool]
         a function that takes an element in `arr` and return a boolean denoting
         whether the value should be accepted
 
@@ -143,8 +143,8 @@ def firstIdxSuchThat(arr: _tp.Iterable[_T],
     return firstSuchThat(range(s, e if e is not None else len(arr), step),
                          lambda idx: cond(arr[idx]))[0]
 
-def lastSuchThat(arr: _tp.Iterable[_T],
-                 cond: _tp.Callable[_T, bool]) -> tuple[_tp.Optional[int], _tp.Optional[_T]]:
+def lastSuchThat(arr: _tp.Iterable[T],
+                 cond: _tp.Callable[[T], bool]) -> tuple[_tp.Optional[int], _tp.Optional[T]]:
     """
     find the last element that the condition holds. similar to `firstSuchThat`
 
@@ -153,7 +153,7 @@ def lastSuchThat(arr: _tp.Iterable[_T],
     arr: Iterable[T]
         the input array search. If a generator, will be consumed
 
-    cond: Callable[T, bool]
+    cond: Callable[[T], bool]
         a function that takes an element in `arr` and return a boolean denoting
         whether the value should be accepted
 
@@ -172,17 +172,17 @@ def lastSuchThat(arr: _tp.Iterable[_T],
     Slower than firstSuchThat on [::-1] as it always go through whole arr
     Only use if you cannot reverse arr (e.g. arr is generator)
     """
-    lastTrue = (None, None)
+    lastTrue: tuple[_tp.Optional[int], _tp.Optional[T]] = (None, None)
     filterObj = filter(lambda t: cond(t[1]), enumerate(arr))
     while (o := next(filterObj, None)) is not None:
         lastTrue = o
     return lastTrue
 
 def firstAccumSuchThat(
-        arr: _tp.Iterable[_T],
-        func: _tp.Callable[[_T, _T], _T],
-        cond: _tp.Callable[_T, bool]
-        ) -> tuple[_tp.Optional[int], _tp.Optional[_T], _tp.Optional[_T]]:
+        arr: _tp.Iterable[T],
+        func: _tp.Callable[[T, T], T],
+        cond: _tp.Callable[[T], bool]
+        ) -> tuple[_tp.Optional[int], _tp.Optional[T], _tp.Optional[T]]:
     """
     find the first element that the condition holds cumulatively
 
@@ -197,7 +197,7 @@ def firstAccumSuchThat(
         common choice may be addition `lambda x, y: x + y` (see `add`)
             or multiplication `lambda x, y: x * y` (see `mul`)
 
-    cond: Callable[T, bool]
+    cond: Callable[[T], bool]
         a function that takes an element in `arr` and return a boolean denoting
         whether the value should be accepted
 
@@ -220,10 +220,10 @@ def firstAccumSuchThat(
                 (None, None, None))
 
 def lastAccumSuchThat(
-        arr: _tp.Iterable[_T],
-        func: _tp.Callable[[_T, _T], _T],
-        cond: _tp.Callable[_T, bool]
-        ) -> tuple[_tp.Optional[int], _tp.Optional[_T], _tp.Optional[_T]]:
+        arr: _tp.Iterable[T],
+        func: _tp.Callable[[T, T], T],
+        cond: _tp.Callable[[T], bool]
+        ) -> tuple[_tp.Optional[int], _tp.Optional[T], _tp.Optional[T]]:
     """
     find the last element that the condition holds cumulativly.
     similar to firstAccumSuch that
@@ -239,7 +239,7 @@ def lastAccumSuchThat(
         common choice may be addition `lambda x, y: x + y`
             or multiplication `lambda x, y: x * y`
 
-    cond: Callable[T, bool]
+    cond: Callable[[T], bool]
         a function that takes an element in `arr` and return a boolean denoting
         whether the value should be accepted
 
@@ -257,7 +257,7 @@ def lastAccumSuchThat(
     If `arr` is a generator, it will be consumed after the returned element,
     or the whole `arr` will be consumed if no such element is found
     """
-    lastTrue = (None, None, None)
+    lastTrue: tuple[_tp.Optional[int], _tp.Optional[T], _tp.Optional[T]] = (None, None, None)
     filterObj = filter(lambda t: cond(t[2]),
                        zip(_it.count(0), arr, _it.accumulate(arr, func)))
     while (o := next(filterObj, None)) is not None:
@@ -299,7 +299,7 @@ def flatten(arr: _tp.Any, level: int = 1):
     else:
         return arr
 
-def cycInd(arr: _tp.Sequence[_T], index: int) -> _T:
+def cycInd(arr: _tp.Sequence[T], index: int) -> T:
     """
     access a sequence with arbitrary index
 
@@ -344,8 +344,8 @@ def prod(arr: _tp.Iterable[float]) -> float:
     """
     return _ft.reduce(lambda x, y: x * y, arr)
 
-def splitAt(arr: _tp.Sequence[_T],
-            index: int) -> tuple[_tp.Sequence[_T], _tp.Sequence[_T]]:
+def splitAt(arr: _tp.Sequence[T],
+            index: int) -> tuple[_tp.Sequence[T], _tp.Sequence[T]]:
     """
     split a sequence at the given location
 
@@ -370,7 +370,7 @@ def splitAt(arr: _tp.Sequence[_T],
     """
     return (arr[:index], arr[index:])
 
-def splitBy(arr: _tp.Iterable[_T], cond: _tp.Callable[_T, bool]) -> tuple[tuple[_T], tuple[_T]]:
+def splitBy(arr: _tp.Iterable[T], cond: _tp.Callable[[T], bool]) -> tuple[tuple[T, ...], tuple[T, ...]]:
     """
     split elements according to given condition
 
@@ -379,7 +379,7 @@ def splitBy(arr: _tp.Iterable[_T], cond: _tp.Callable[_T, bool]) -> tuple[tuple[
     arr: Iterable[T]
         the iterable to be split
 
-    cond: Callable[T, bool]
+    cond: Callable[[T], bool]
         a callable to determine how the splitting is done
 
     Return
@@ -397,7 +397,7 @@ def splitBy(arr: _tp.Iterable[_T], cond: _tp.Callable[_T, bool]) -> tuple[tuple[
             falseBucket.append(item)
     return (tuple(trueBucket), tuple(falseBucket))
 
-def getInts(s: str, allowNegative: bool = True) -> tuple[int]:
+def getInts(s: str, allowNegative: bool = True) -> tuple[int, ...]:
     """
     get only the integers in a string
 
@@ -417,7 +417,7 @@ def getInts(s: str, allowNegative: bool = True) -> tuple[int]:
     """
     return tuple(map(int, _re.findall((r'-?' if allowNegative else r'') + r'\d+', s)))
 
-def getFloats(s: str) -> tuple[float]:
+def getFloats(s: str) -> tuple[float, ...]:
     """
     get only the floats in a string
 
@@ -432,9 +432,9 @@ def getFloats(s: str) -> tuple[float]:
     """
     return tuple(map(float, _re.findall(r'-?\d+(?:\.\d+)?', s)))
 
-def splitIntoGp(arr: _tp.Sequence[_T],
+def splitIntoGp(arr: _tp.Sequence[T],
                 gpSize: int,
-                allowRemain: bool = True) ->tuple[tuple[_T]]:
+                allowRemain: bool = True) ->tuple[tuple[T, ...], ...]:
     """
     grouping elements in a sequence by their order
 
@@ -468,10 +468,10 @@ def splitIntoGp(arr: _tp.Sequence[_T],
                                    else gpInit + gpSize)])
                  for gpInit in range(0, lArr, gpSize))
 
-def takeFromEvery(arr: _tp.Sequence[_T],
+def takeFromEvery(arr: _tp.Sequence[T],
                   gpSize: int,
                   idx: int,
-                  takeFromRemain: bool = True) -> tuple[_T]:
+                  takeFromRemain: bool = True) -> tuple[T, ...]:
     """
     take an element in a sequence once every given amount
 
@@ -502,10 +502,10 @@ def takeFromEvery(arr: _tp.Sequence[_T],
                  for gpInit in range(0, lArr, gpSize)
                  if takeFromRemain or gpInit + gpSize <= lArr)
 
-def sub(originalSym: _tp.Iterable[_T],
-        targetSym: _tp.Iterable[_S],
-        arr: _tp.Iterable[_T],
-        discard: bool = False) -> tuple[_tp.Union[_T, _S]]:
+def sub(originalSym: _tp.Iterable[T],
+        targetSym: _tp.Iterable[S],
+        arr: _tp.Iterable[T],
+        discard: bool = False) -> tuple[_tp.Union[T, S], ...]:
     """
     create a copy of the collection with its entry replaced
 
@@ -565,7 +565,7 @@ def subChar(originalSym: str, targetSym: str, s: str) -> str:
     """
     return s.translate(str.maketrans(originalSym, targetSym))
 
-def multiMap(arr: _tp.Iterable[_T], funcTuple: tuple[_tp.Callable[_T, _tp.Any]]) -> tuple[tuple]:
+def multiMap(arr: _tp.Iterable[T], funcTuple: tuple[_tp.Callable[[T], _tp.Any]]) -> tuple[tuple, ...]:
     """
     `map` with multiple functions
 
@@ -574,7 +574,7 @@ def multiMap(arr: _tp.Iterable[_T], funcTuple: tuple[_tp.Callable[_T, _tp.Any]])
     arr: Iterable[T]
         the sequence in question
 
-    funcTuple: tuple[Callable[T, Any]]
+    funcTuple: tuple[Callable[[T], Any]]
         a tuple of callables that maps elements in `arr` to something
 
     Return
@@ -584,13 +584,13 @@ def multiMap(arr: _tp.Iterable[_T], funcTuple: tuple[_tp.Callable[_T, _tp.Any]])
     """
     return tuple(tuple(map(f, arr)) for f in funcTuple)
 
-def takeApart(seq: _tp.Iterable[_tp.Sequence]) -> tuple[tuple]:
+def takeApart(seq: _tp.Sequence[_tp.Sequence]) -> tuple[tuple, ...]:
     """
     splitting sequences of sequences
 
     Parameter
     -----
-    seq: Iterable[Sequence]
+    seq: Sequence[Sequence]
         a sequence of sequences. At least contain one sequence
 
     Return
@@ -604,13 +604,13 @@ def takeApart(seq: _tp.Iterable[_tp.Sequence]) -> tuple[tuple]:
     l = len(seq[0])
     return multiMap(seq, tuple((lambda x, idx=i: x[idx]) for i in range(l)))
 
-def transpose(seq: _tp.Iterable[_tp.Sequence]) -> tuple[tuple]:
+def transpose(seq: _tp.Iterable[_tp.Sequence]) -> tuple[tuple, ...]:
     """
     alias of `takeApart`
     """
     return takeApart(seq)
 
-def rangeBound(seq: _tp.Iterable[_tp.Iterable[float]]) -> tuple[tuple[float]]:
+def rangeBound(seq: _tp.Iterable[_tp.Iterable[float]]) -> tuple[tuple[float, float], ...]:
     """
     find the range of numbers
 
@@ -648,7 +648,7 @@ def sgn(x: float) -> int:
         return 1 if x > 0 else -1
 
 def argmax(arr: _tp.Iterable[_tp.Any],
-           key: _tp.Callable[_tp.Any, float]) -> _tp.Optional[_tp.Any]:
+           key: _tp.Callable[[_tp.Any], float]) -> _tp.Optional[_tp.Any]:
     """
     find where maximum occurs
 
@@ -657,7 +657,7 @@ def argmax(arr: _tp.Iterable[_tp.Any],
     arr: Iterable
         the collection of elements to look at
 
-    key: Callable[Any, float]
+    key: Callable[[Any], float]
         a callable that computes the (float) key for comparison
 
     Return
@@ -737,7 +737,7 @@ class Heap:
                  key=(lambda k: k),
                  isMinHeap: bool = True):
         self.__data: list = list()
-        self.__key: _tp.Callable[_tp.Any, float] = (key if isMinHeap else (lambda k: -key(k)))
+        self.__key: _tp.Callable[[_tp.Any], float] = (key if isMinHeap else (lambda k: -key(k)))
         if initItemList is not None:
             self.__data.extend((self.__key(item), item) for item in initItemList)
             _hq.heapify(self.__data)
@@ -767,12 +767,12 @@ def MinHeap(initItemList=None, key=(lambda k: k)) -> Heap:
 def MaxHeap(initItemList=None, key=(lambda k: k)) -> Heap:
     return Heap(initItemList=initItemList, key=key, isMinHeap=False)
 
-def dijkstra(initialNode: _T,
-             costFunc: _tp.Callable[[_T, _T, float], float],
-             neighbourListFunc: _tp.Callable[_T, _tp.Iterable[_T]],
-             goalCheckerFunc: _tp.Callable[_T, bool],
-             aStarHeuristicFunc: _tp.Optional[_tp.Callable[_T, float]] = None
-             ) -> _tp.Optional[tuple[_T, float]]:
+def dijkstra(initialNode: T,
+             costFunc: _tp.Callable[[T, T, float], float],
+             neighbourListFunc: _tp.Callable[[T], _tp.Iterable[T]],
+             goalCheckerFunc: _tp.Callable[[T], bool],
+             aStarHeuristicFunc: _tp.Optional[_tp.Callable[[T], float]] = None
+             ) -> _tp.Optional[tuple[T, float]]:
     """
     search for minimal cost path via Dijkstra / A*
 
@@ -789,17 +789,17 @@ def dijkstra(initialNode: _T,
             oldCost: float, the original cost to get to `oldNode`
         expected to return a float representing the cost to `newNode`
 
-    neighbourListFunc: Callable[T, Iterable[T]]
+    neighbourListFunc: Callable[[T], Iterable[T]]
         a function to get what a node can transfer to
         expected to take 1 positional argument (`node`, the original node)
         expected to return a collection of nodes, which `node` can transfer to
 
-    goalCheckerFunc: Callable[T, bool]
+    goalCheckerFunc: Callable[[T], bool]
         a function that checks whether a node is accepted as the goal node
         expected to take 1 positional argument (`node`, the node in question)
         expected to return a bool denoting whether `node` is accepted as a goal
 
-    aStarHeuristicFunc: Callable[T, float] or None, optional
+    aStarHeuristicFunc: Callable[[T], float] or None, optional
         a heuristic distance for A*
         for details, please check the theory for A* algorithm
         expected to be a callable that takes a node and returns the estimated cost to a goal
@@ -927,7 +927,7 @@ def inclusiveRange(s: int, e: int, step: _tp.Optional[int] = 1) -> range:
         step = sgn(e - s)
     return range(s, e + step, step)
 
-def count(arr: _tp.Iterable[_T], cond: _tp.Callable[_T, bool] = bool) -> int:
+def count(arr: _tp.Iterable[T], cond: _tp.Callable[[T], bool] = bool) -> int:
     """
     count elements in an iterable that satisfies some condition
 
@@ -936,7 +936,7 @@ def count(arr: _tp.Iterable[_T], cond: _tp.Callable[_T, bool] = bool) -> int:
     arr: Iterable[T]
         an iterable that contains the elements to count
 
-    cond: Callable[T, bool], optional
+    cond: Callable[[T], bool], optional
         a callable that checks whether if an element should be counted
         defaults to the bool constructor (check truthfulness)
 
@@ -950,7 +950,7 @@ def count(arr: _tp.Iterable[_T], cond: _tp.Callable[_T, bool] = bool) -> int:
     """
     return sum(map(cond, arr))
 
-def countItem(arr: _tp.Iterable[_T], item: _T) -> int:
+def countItem(arr: _tp.Iterable[T], item: T) -> int:
     """
     count elements in an iterable that satisfies some condition
 
@@ -1097,7 +1097,7 @@ def rangeLen(arr: _tp.Sequence) -> range:
 
 def allPairDistances(nodes: _tp.Iterable[int],
                      distFunc: _tp.Callable[[int, int], _tp.Optional[float]]
-                     ) -> dict[[int, int], float]:
+                     ) -> dict[tuple[int, int], float]:
     """
     compute pairwise distance with Floyd-Warshall
 
@@ -1125,7 +1125,7 @@ def allPairDistances(nodes: _tp.Iterable[int],
     """
     nodeSeq = tuple(nodes)
     n = len(nodeSeq)
-    minDistDict = dict()
+    minDistDict: dict[tuple[int, int], float] = dict()
     for i in nodeSeq:
         for j in nodeSeq:
             if i == j:
@@ -1141,8 +1141,8 @@ def allPairDistances(nodes: _tp.Iterable[int],
                                           minDistDict[(i, k)] + minDistDict[(k, j)])
     return minDistDict
 
-def findSeqPeriod(seq: _tp.Sequence[_T],
-                  cond: _tp.Optional[_tp.Callable[int, bool]] = None
+def findSeqPeriod(seq: _tp.Sequence[T],
+                  cond: _tp.Optional[_tp.Callable[[int], bool]] = None
                   ) -> _tp.Optional[tuple[int, int]]:
     """
     find period of (eventually) periodic sequence
@@ -1153,7 +1153,7 @@ def findSeqPeriod(seq: _tp.Sequence[_T],
         the sequence in question
         should be long enough to contain at least two period
 
-    cond: Callable[int, bool] or None, optional
+    cond: Callable[[int], bool] or None, optional
         a callable that hints the possible period
         will only search the periods that `cond` returns True on
         if None, will use every possible period
@@ -1195,7 +1195,7 @@ def findSeqPeriod(seq: _tp.Sequence[_T],
 def integerLattice(dim: int,
                    l1Norm: int,
                    excludeNeg: bool = False,
-                   excludeZero: bool = True) -> _tp.Iterator[tuple[int]]:
+                   excludeZero: bool = True) -> _tp.Iterator[tuple[int, ...]]:
     """
     Generates integer coordinates in some sphere
 
@@ -1241,8 +1241,8 @@ def integerLattice(dim: int,
 class Point:
     def __init__(self, *coors: float):
         assert len(coors) != 0, "Empty coordinate"
-        self.__coor = tuple(coors)
-        self.__dim = len(coors)
+        self.__coor: tuple[float] = tuple(coors)
+        self.__dim: int = len(coors)
 
     @classmethod
     def fromIterable(cls, it: _tp.Iterable[float]) -> 'Point':
@@ -1288,7 +1288,9 @@ class Point:
     def __pos__(self) -> 'Point':
         return self
 
-    def __eq__(self, other: 'Point') -> bool:
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, type(self)):
+            return NotImplemented
         return self.__dim == other.__dim \
                 and all(self.__coor[i] == other.__coor[i]
                         for i in range(self.__dim))
