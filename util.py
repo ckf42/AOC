@@ -1318,3 +1318,29 @@ class Point:
         else:
             return sum(abs(c) ** p for c in self.__coor) ** (1 / p)
 
+def toBase(n: int, b: int) -> tuple[int, ...]:
+    """
+    Convert a number to given base
+
+    Parameter
+    -----
+    n: int
+        the number to convert. Must be non-negative
+
+    b: int
+        the target base
+
+    Return
+    -----
+    a tuple of int, which represents the digits, starting from the least significant place
+    `sum(d * b ** i for i, d in enumerate(toBase(n, b))) == n` holds
+    """
+    assert n >= 0
+    if n == 0:
+        return (0,)
+    res: list[int] = list()
+    while n != 0:
+        (n, r) = divmod(n, b)
+        res.append(r)
+    return tuple(res)
+
