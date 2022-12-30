@@ -1011,101 +1011,136 @@ def rangeLen(arr: _tp.Sequence) -> range:
     """
     return range(len(arr))
 
-# TODO: fix bug on union
-# class IntegerIntervals:
-    # @classmethod
-    # def __itvIsValid(cls, itv: tuple[int, int]) -> bool:
-        # return len(itv) == 2 and itv[0] <= itv[1]
+class IntegerIntervals:
+    @classmethod
+    def __itvIsValid(cls, itv: tuple[int, int]) -> bool:
+        return len(itv) == 2 and itv[0] <= itv[1]
 
-    # @classmethod
-    # def __itvLen(cls, itv: tuple[int, int]) -> int:
-        # return itv[1] - itv[0] + 1
+    @classmethod
+    def __itvLen(cls, itv: tuple[int, int]) -> int:
+        return itv[1] - itv[0] + 1
 
-    # @classmethod
-    # def __itvContains(cls, n: int, itv: tuple[int, int]) -> bool:
-        # return itv[0] <= n <= itv[1]
+    @classmethod
+    def __itvContains(cls, n: int, itv: tuple[int, int]) -> bool:
+        return itv[0] <= n <= itv[1]
 
-    # @classmethod
-    # def __itvIsIntersect(cls,
-                         # itv1: tuple[int, int],
-                         # itv2: tuple[int, int]) -> bool:
-        # return any(cls.__itvContains(c, itv2) for c in itv1) \
-                # or any(cls.__itvContains(c, itv1) for c in itv2)
+    @classmethod
+    def __itvIsIntersect(cls,
+                         itv1: tuple[int, int],
+                         itv2: tuple[int, int]) -> bool:
+        return any(cls.__itvContains(c, itv2) for c in itv1) \
+                or any(cls.__itvContains(c, itv1) for c in itv2)
 
-    # @classmethod
-    # def __itvIntersectIfIntersect(cls,
-                                  # itv1: tuple[int, int],
-                                  # itv2: tuple[int, int]) -> tuple[int, int]:
-        # # assumes itv1 and itv2 intersects
-        # return (max(itv1[0], itv2[0]), min(itv1[1], itv2[1]))
+    @classmethod
+    def __itvIntersectIfIntersect(cls,
+                                  itv1: tuple[int, int],
+                                  itv2: tuple[int, int]) -> tuple[int, int]:
+        # assumes itv1 and itv2 intersects
+        return (max(itv1[0], itv2[0]), min(itv1[1], itv2[1]))
 
-    # def __init__(self, *initIntervals: tuple[int, int]):
-        # self.__contents: list = list() # sorted list of 2-tuple
-        # self.__eleCount: _tp.Optional[int] = 0 # None if recorded invalidated
-        # if len(initIntervals) != 0:
-            # for itv in initIntervals:
-                # self.unionWith(itv)
+    def __init__(self, *initIntervals: _tp.Union[int, tuple[int, int]]):
+        self.__contents: list[tuple[int, int], ...] = list() # sorted list of 2-tuple
+        self.__eleCount: _tp.Optional[int] = 0 # None if recorded invalidated
+        if len(initIntervals) != 0:
+            for itv in initIntervals:
+                self.unionWith(itv)
 
-    # def __len__(self) -> int:
-        # if self.__eleCount is None:
-            # l = sum(map(self.__itvLen, self.__contents))
-            # self.__eleCount = l
-        # return self.__eleCount
+    def __len__(self) -> int:
+        if self.__eleCount is None:
+            l = sum(map(self.__itvLen, self.__contents))
+            self.__eleCount = l
+        return self.__eleCount
 
-    # def __contains__(self, n: int) -> bool:
-        # return any(self.__itvContains(n, itv)
-                   # for itv in self.__contents)
+    def __contains__(self, n: int) -> bool:
+        return any(self.__itvContains(n, itv)
+                   for itv in self.__contents)
 
-    # def __iter__(self) -> int:
-        # assert self.isUnbounded(), "Cannot iterate on unbounded interval(s)"
-        # for itv in self.__contents:
-            # yield from range(itv[0], itv[1] + 1)
+    def __iter__(self) -> int:
+        assert self.isUnbounded(), "Cannot iterate on unbounded interval(s)"
+        for itv in self.__contents:
+            yield from range(itv[0], itv[1] + 1)
 
-    # def __repr__(self) -> str:
-        # if len(self.__contents) == 0:
-            # return "Empty Collection"
-        # elif len(self.__contents) == 1:
-            # return f"Interval{self.__contents[0]}"
-        # else:
-            # return "Union{" \
-                    # + ", ".join("Interval[" + str(comp)[1:-1] + "]"
-                                # for comp in self.__contents) \
-                    # + "}"
+    def __repr__(self) -> str:
+        if len(self.__contents) == 0:
+            return "Empty Collection"
+        elif len(self.__contents) == 1:
+            return f"Interval{self.__contents[0]}"
+        else:
+            return "Union{" \
+                    + ", ".join("Interval[" + str(comp)[1:-1] + "]"
+                                for comp in self.__contents) \
+                    + "}"
 
-    # def unionWith(self, interval: tuple[int, int]):
-        # if not self.__itvIsValid(interval):
-            # return
-        # if len(self.__contents) == 0:
-            # self.__contents.append(interval)
-            # self.__eleCount = self.__itvLen(interval)
-            # return
-        # pass
-        # # find first itv in contents that itv[1] >= interval[0] - 1
-        # # if not exists, append interval at end
-        # # find last itv in contents that itv[0] <= interval[1] + 1
-        # # if not exists, insert interval at begin
-        # # if firstIdx > lastIdx, insert after firstIdx
-        # # else, merge and replace with [firstIdx, lastIdx]
+    # TODO: need testing
+    def unionWith(self, interval: _tp.Union[int, tuple[int, int]]):
+        if isinstance(interval, int):
+            interval = (interval, interval)
+        if not self.__itvIsValid(interval):
+            return
+        l = len(self.__contents)
+        if l == 0:
+            self.__contents.append(interval)
+            self.__eleCount = self.__itvLen(interval)
+            return
+        # find first itv in contents that itv[1] >= interval[0] - 1
+        # if not exists, append interval at end
+        s, e = 0, l
+        while e != s:
+            m = (s + e) // 2
+            if self.__contents[m][1] < interval[0] - 1:
+                s = m + 1
+            else:
+                e = m
+        fIdx = s
+        if fIdx == l:
+            self.__contents.append(interval)
+            self.__eleCount += self.__itvLen(interval)
+            return
+        # find last itv in contents that itv[0] <= interval[1] + 1
+        # if not exists, insert interval at begin
+        s, e = 0, l
+        while e != s:
+            m = (s + e) // 2
+            if self.__contents[m][0] > interval[1] + 1:
+                e = m
+            else:
+                s = m + 1
+        eIdx = s - 1
+        if eIdx == -1:
+            self.__contents.insert(0, interval)
+            self.__eleCount += self.__itvLen(interval)
+            return
+        # if firstIdx > lastIdx, insert after firstIdx
+        # else, merge and replace with [firstIdx, lastIdx]
+        if fIdx > eIdx:
+            self.__contents.insert(fIdx, interval)
+            self.__eleCount += self.__itvLen(interval)
+        else:
+            self.__contents[fIdx:eIdx + 1] = [
+                (min(interval[0], self.__contents[fIdx][0]),
+                 max(interval[1], self.__contents[eIdx][1]))
+            ]
+            self.__eleCount = None
 
-    # def intersectWith(self, interval: tuple[int, int]):
-        # if not self.__itvIsValid(interval):
-            # return
-        # self.__contents = list(map(lambda comp: self.__itvIntersectIfIntersect(comp, interval),
-                                   # filter(lambda itv: self.__itvIsIntersect(itv, interval),
-                                          # self.__contents)))
-        # self.__eleCount = None
+    def intersectWith(self, interval: tuple[int, int]):
+        if not self.__itvIsValid(interval):
+            return
+        self.__contents = list(map(lambda comp: self.__itvIntersectIfIntersect(comp, interval),
+                                   filter(lambda itv: self.__itvIsIntersect(itv, interval),
+                                          self.__contents)))
+        self.__eleCount = None
 
-    # def countComponents(self) -> int:
-        # return len(self.__contents)
+    def countComponents(self) -> int:
+        return len(self.__contents)
 
-    # def isUnbounded(self) -> bool:
-        # return len(self.__contents) != 0 \
-                # and self.__contents[0][0] > -float('Inf') \
-                # and self.__contents[-1][1] < float('Inf')
+    def isUnbounded(self) -> bool:
+        return len(self.__contents) != 0 \
+                and self.__contents[0][0] > -float('Inf') \
+                and self.__contents[-1][1] < float('Inf')
 
-    # def clear(self):
-        # self.__contents.clear()
-        # self.__eleCount = 0
+    def clear(self):
+        self.__contents.clear()
+        self.__eleCount = 0
 
 def allPairDistances(nodes: _tp.Iterable[int],
                      distFunc: _tp.Callable[[int, int], _tp.Optional[float]]
