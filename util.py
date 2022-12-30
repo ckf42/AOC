@@ -1066,10 +1066,13 @@ class IntegerIntervals:
         elif len(self.__contents) == 1:
             return f"Interval{self.__contents[0]}"
         else:
-            return "Union{" \
+            return "Union(" \
                     + ", ".join("Interval[" + str(comp)[1:-1] + "]"
                                 for comp in self.__contents) \
-                    + "}"
+                    + ")"
+
+    def __getitem__(self, idx: int) -> tuple[int, int]:
+        return self.__contents[idx]
 
     # TODO: need testing
     def unionWith(self, interval: _tp.Union[int, tuple[int, int]]):
@@ -1094,7 +1097,8 @@ class IntegerIntervals:
         fIdx = s
         if fIdx == l:
             self.__contents.append(interval)
-            self.__eleCount += self.__itvLen(interval)
+            if self.__eleCount is not None:
+                self.__eleCount += self.__itvLen(interval)
             return
         # find last itv in contents that itv[0] <= interval[1] + 1
         # if not exists, insert interval at begin
@@ -1108,13 +1112,15 @@ class IntegerIntervals:
         eIdx = s - 1
         if eIdx == -1:
             self.__contents.insert(0, interval)
-            self.__eleCount += self.__itvLen(interval)
+            if self.__eleCount is not None:
+                self.__eleCount += self.__itvLen(interval)
             return
         # if firstIdx > lastIdx, insert after firstIdx
         # else, merge and replace with [firstIdx, lastIdx]
         if fIdx > eIdx:
             self.__contents.insert(fIdx, interval)
-            self.__eleCount += self.__itvLen(interval)
+            if self.__eleCount is not None:
+                self.__eleCount += self.__itvLen(interval)
         else:
             self.__contents[fIdx:eIdx + 1] = [
                 (min(interval[0], self.__contents[fIdx][0]),
