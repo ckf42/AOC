@@ -1057,6 +1057,7 @@ def rangeLen(arr: _tp.Sequence) -> range:
                    # for itv in self.__contents)
 
     # def __iter__(self) -> int:
+        # assert self.isUnbounded(), "Cannot iterate on unbounded interval(s)"
         # for itv in self.__contents:
             # yield from range(itv[0], itv[1] + 1)
 
@@ -1079,6 +1080,12 @@ def rangeLen(arr: _tp.Sequence) -> range:
             # self.__eleCount = self.__itvLen(interval)
             # return
         # pass
+        # # find first itv in contents that itv[1] >= interval[0] - 1
+        # # if not exists, append interval at end
+        # # find last itv in contents that itv[0] <= interval[1] + 1
+        # # if not exists, insert interval at begin
+        # # if firstIdx > lastIdx, insert after firstIdx
+        # # else, merge and replace with [firstIdx, lastIdx]
 
     # def intersectWith(self, interval: tuple[int, int]):
         # if not self.__itvIsValid(interval):
@@ -1090,6 +1097,11 @@ def rangeLen(arr: _tp.Sequence) -> range:
 
     # def countComponents(self) -> int:
         # return len(self.__contents)
+
+    # def isUnbounded(self) -> bool:
+        # return len(self.__contents) != 0 \
+                # and self.__contents[0][0] > -float('Inf') \
+                # and self.__contents[-1][1] < float('Inf')
 
     # def clear(self):
         # self.__contents.clear()
@@ -1332,9 +1344,10 @@ def toBase(n: int, b: int) -> tuple[int, ...]:
 
     Return
     -----
-    a tuple of int, which represents the digits, starting from the least significant place
-    `sum(d * b ** i for i, d in enumerate(toBase(n, b))) == n` holds
+    a tuple of int, which represents the digits, starting from *the LEAST significant digit*
+    it is to make that `sum(d * b ** i for i, d in enumerate(toBase(n, b))) == n` holds
     """
+    assert b > 0
     assert n >= 0
     if n == 0:
         return (0,)
@@ -1343,4 +1356,54 @@ def toBase(n: int, b: int) -> tuple[int, ...]:
         (n, r) = divmod(n, b)
         res.append(r)
     return tuple(res)
+
+def fromBase(digits: _tp.Sequence[int],
+             b: int,
+             fractionalPartLen: int = 0) -> float:
+    """
+    Convert a number to given base
+
+    Parameter
+    -----
+    digits: Sequence[int]
+        the digits of the number, ordered from *MOST* significant digit to least significant digit
+        (just like in usual writing)
+        does not check if the digits are nonnegative or within [0, `b`)
+
+    b: int
+        the base of the number
+
+    fractionalPartLen: int, optional
+        the length of the fractional parts in `digits`
+        the fractional part must be put at the end of `digits`
+        defaults to 0 (no fractional)
+
+    Return
+    -----
+    a int (in base 10) that represents the number
+
+    Note
+    -----
+    suffer from floating point error if has fractional part
+
+    Example
+    -----
+    >>> fromBase([1, 2], 10)
+    12
+    >>> fromBase([1, 2], 10, 1)
+    1.2
+    """
+    assert b > 0
+    assert 0 <= fractionalPartLen <= len(digits)
+    l = len(digits)
+    x = 0
+    for i in range(l - fractionalPartLen):
+        x *= b
+        x += digits[i]
+    fracPart = 0.0
+    for i in range(l - 1, l - fractionalPartLen - 1, -1):
+        fracPart += digits[i]
+        fracPart /= b
+    x += fracPart
+    return x
 
