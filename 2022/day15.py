@@ -1,6 +1,5 @@
 import AOCInit
 import util
-from sympy import Interval, Union
 
 if __name__ != '__main__':
     exit()
@@ -16,12 +15,11 @@ sLen = len(sensor)
 
 # part 1
 rowNum = 2000000
-forbidXRange = Union(*(Interval(sensor[i][0] - r, sensor[i][0] + r)
-                       for i in range(sLen)
-                       if (r := radius[i] - abs(sensor[i][1] - rowNum)) >= 0))
-print(forbidXRange.measure + len(forbidXRange.boundary) // 2 \
-      - util.count(set(beacon),
-                   lambda b: b[1] == rowNum and b[0] in forbidXRange))
+forbidXRange = util.IntegerIntervals(*((sensor[i][0] - r, sensor[i][0] + r)
+                                       for i in range(sLen)
+                                       if (r := radius[i] - abs(sensor[i][1] - rowNum)) >= 0))
+print(len(forbidXRange) - util.count(set(beacon),
+                                     lambda b: b[1] == rowNum and b[0] in forbidXRange))
 
 
 # part 2
