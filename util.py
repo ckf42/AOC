@@ -1292,7 +1292,7 @@ def integerLattice(dim: int,
                 yield (coor,) + pt
 
 class Point:
-    def __init__(self, *coors: float):
+    def __init__(self, *coors: float) -> None:
         assert len(coors) != 0, "Empty coordinate"
         self.__coor: tuple[float] = tuple(coors)
         self.__dim: int = len(coors)
@@ -1323,7 +1323,7 @@ class Point:
         return self.__dim
 
     def __add__(self, other: 'Point') -> 'Point':
-        assert self.__dim == other.__dim, f"Dimension mistach ({self.__dim} and {other.__dim})"
+        assert self.__dim == other.__dim, f"Dimension mistach ({self.__dim} != {other.__dim})"
         return Point(*(self.__coor[i] + other.__coor[i] for i in range(self.__dim)))
 
     def __rmul__(self, scalar: float) -> 'Point':
@@ -1342,19 +1342,37 @@ class Point:
         return self
 
     def __eq__(self, other: object) -> bool:
-        if not isinstance(other, type(self)):
+        if isinstance(other, (int, float)):
+            other = Point.fromIterable((other,) * self.__dim)
+        elif not isinstance(other, type(self)):
             return NotImplemented
         return self.__dim == other.__dim \
                 and all(self.__coor[i] == other.__coor[i]
                         for i in range(self.__dim))
 
-    def __lt__(self, other: 'Point') -> bool:
+    def __lt__(self, other: object) -> bool:
+        if isinstance(other, (int, float)):
+            other = Point.fromIterable((other,) * self.__dim)
+        elif not isinstance(other, type(self)):
+            return NotImplemented
         return self.__dim == other.__dim \
-                and all(self.__coor[i] <= other.__coor[i]
+                and all(self.__coor[i] < other.__coor[i]
                         for i in range(self.__dim))
 
-    def __le__(self, other: 'Point') -> bool:
+    def __le__(self, other: object) -> bool:
         return self.__eq__(other) or self.__lt__(other)
+
+    def __gt__(self, other: object) -> bool:
+        if isinstance(other, (int, float)):
+            other = Point.fromIterable((other,) * self.__dim)
+        elif not isinstance(other, type(self)):
+            return NotImplemented
+        return self.__dim == other.__dim \
+                and all(self.__coor[i] > other.__coor[i]
+                        for i in range(self.__dim))
+
+    def __ge__(self, other: object) -> bool:
+        return self.__eq__(other) or self.__gt__(other)
 
     def __bool__(self) -> bool:
         return any(self.__coor)
