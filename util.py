@@ -1246,7 +1246,8 @@ def findSeqPeriod(seq: _tp.Sequence[T],
 
 
 def integerLattice(dim: int,
-                   l1Norm: int,
+                   norm: float,
+                   p: float = 1,
                    excludeNeg: bool = False,
                    excludeZero: bool = True) -> _tp.Iterator[tuple[int, ...]]:
     """
@@ -1257,8 +1258,13 @@ def integerLattice(dim: int,
     dim: int
         The dimension of the coordinate generated
 
-    l1Norm: int
-        The radius of the sphere in L1 norm
+    norm: int
+        The radius of the sphere
+
+    p: float, optional
+        the index used to measure radius (p in L^p)
+        must be at least 1
+        defaults to 1
 
     excludeNeg: bool, optional
         Determine if points with negative coordinates should be omitted
@@ -1270,23 +1276,25 @@ def integerLattice(dim: int,
 
     Return
     -----
-    Return `dim`-tuples of integers that are included in a sphere of L1 radius `l1Norm`.
+    Return `dim`-tuples of integers that are included in a sphere of L`p` radius `norm`.
     If excludeNeg or excludeZero is True, the corresponding tuples will be omitted.
     """
-    if dim <= 0 or l1Norm < 0:
+    assert p >= 1
+    if dim <= 0 or norm < 0:
         return
     elif dim == 1:
         if not excludeZero:
             yield (0,)
-        for coor in range(1, l1Norm + 1):
+        for coor in range(1, int(norm) + 1):
             if not excludeNeg:
                 yield (-coor,)
             yield (coor,)
     else:
-        for pt in integerLattice(dim - 1, l1Norm, excludeNeg, excludeZero):
+        for pt in integerLattice(dim - 1, norm, p, excludeNeg, excludeZero):
             yield (0,) + pt
-        for coor in range(1, l1Norm + 1):
-            for pt in integerLattice(dim - 1, l1Norm - coor, excludeNeg, excludeZero=False):
+        for coor in range(1, int(norm) + 1):
+            remainNorm = norm if p == float('Inf') else (norm ** p - coor ** p) ** (1 / p)
+            for pt in integerLattice(dim - 1, remainNorm, p, excludeNeg, excludeZero=False):
                 if not excludeNeg:
                     yield (-coor,) + pt
                 yield (coor,) + pt
@@ -1309,9 +1317,16 @@ class Point:
     def dim(self) -> int:
         return self.__dim
 
-    def __getitem__(self, dim: int) -> float:
-        assert 0 <= dim < self.__dim, f"Invalid dimension ({dim} not in [0, {self.__dim - 1}])"
-        return self.__coor[dim]
+    def __getitem__(self, dim: _tp.Union[int, slice]) -> _tp.Union[float, tuple[float, ...]]:
+        if isinstance(dim, int):
+            assert 0 <= dim < self.__dim, f"Invalid dimension ({dim} not in [0, {self.__dim - 1}])"
+            return self.__coor[dim]
+        elif isinstance(dim, slice):
+            assert 0 <= dim.start and (dim.stop is None or dim.stop <= self.__dim), \
+                    f"Invalid slice ({dim} on dim {self.__dim})"
+            return self.__coor[dim]
+        else:
+            raise NotImplementedError(f"Subscript type not recognized: {type(dim)}")
 
     def __iter__(self) -> _tp.Iterable[float]:
         yield from self.__coor
@@ -1324,10 +1339,10 @@ class Point:
 
     def __add__(self, other: 'Point') -> 'Point':
         assert self.__dim == other.__dim, f"Dimension mistach ({self.__dim} != {other.__dim})"
-        return Point(*(self.__coor[i] + other.__coor[i] for i in range(self.__dim)))
+        return type(self)(*(self.__coor[i] + other.__coor[i] for i in range(self.__dim)))
 
     def __rmul__(self, scalar: float) -> 'Point':
-        return Point(*(scalar * self.__coor[i] for i in range(self.__dim)))
+        return type(self)(*(scalar * self.__coor[i] for i in range(self.__dim)))
 
     def __mul__(self, scalar: float) -> 'Point':
         return self.__rmul__(scalar)
@@ -1341,9 +1356,12 @@ class Point:
     def __pos__(self) -> 'Point':
         return self
 
+    def __abs__(self) -> 'Point':
+        return type(self).fromIterable(map(abs, self.__coor))
+
     def __eq__(self, other: object) -> bool:
         if isinstance(other, (int, float)):
-            other = Point.fromIterable((other,) * self.__dim)
+            other = type(self).fromIterable((other,) * self.__dim)
         elif not isinstance(other, type(self)):
             return NotImplemented
         return self.__dim == other.__dim \
@@ -1352,7 +1370,7 @@ class Point:
 
     def __lt__(self, other: object) -> bool:
         if isinstance(other, (int, float)):
-            other = Point.fromIterable((other,) * self.__dim)
+            other = type(self).fromIterable((other,) * self.__dim)
         elif not isinstance(other, type(self)):
             return NotImplemented
         return self.__dim == other.__dim \
@@ -1364,7 +1382,7 @@ class Point:
 
     def __gt__(self, other: object) -> bool:
         if isinstance(other, (int, float)):
-            other = Point.fromIterable((other,) * self.__dim)
+            other = type(self).fromIterable((other,) * self.__dim)
         elif not isinstance(other, type(self)):
             return NotImplemented
         return self.__dim == other.__dim \
@@ -1465,4 +1483,25 @@ def fromBase(digits: _tp.Sequence[int],
         fracPart /= b
     x += fracPart
     return x
+
+def arrayAccess(arr: _tp.Sequence, coor: _tp.Sequence[int]) -> _tp.Any:
+    """
+    Access multi-dimensional array with a point
+
+    Parameter
+    -----
+    arr: Sequence
+        the array to access
+
+    coor: Sequence[int]
+        the coordinate to access
+
+    Return
+    -----
+    whatever is in the corresponding location of `coor`
+    """
+    if len(coor) == 0:
+        return arr
+    else:
+        return arrayAccess(arr[coor[0]], coor[1:])
 
