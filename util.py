@@ -732,6 +732,9 @@ class Heap:
     -----
     See https://stackoverflow.com/a/8875823
     """
+
+    __slots__ = ('__data', '__key')
+
     def __init__(self,
                  initItemList=None,
                  key=(lambda k: k),
@@ -1012,6 +1015,8 @@ def rangeLen(arr: _tp.Sequence) -> range:
     return range(len(arr))
 
 class IntegerIntervals:
+    __slots__ = ('__contents', '__eleCount')
+
     @classmethod
     def __itvIsValid(cls, itv: tuple[int, int]) -> bool:
         return len(itv) == 2 and itv[0] <= itv[1]
@@ -1300,10 +1305,14 @@ def integerLattice(dim: int,
                 yield (coor,) + pt
 
 class Point:
+    """
+    A wrapper class for using tuple as points in Euclidean space
+    """
+    __slots__ = ('__coor',)
+
     def __init__(self, *coors: float) -> None:
         assert len(coors) != 0, "Empty coordinate"
         self.__coor: tuple[float] = tuple(coors)
-        self.__dim: int = len(coors)
 
     @classmethod
     def fromIterable(cls, it: _tp.Iterable[float]) -> 'Point':
@@ -1315,15 +1324,15 @@ class Point:
 
     @property
     def dim(self) -> int:
-        return self.__dim
+        return len(self.__coor)
 
     def __getitem__(self, dim: _tp.Union[int, slice]) -> _tp.Union[float, tuple[float, ...]]:
         if isinstance(dim, int):
-            assert 0 <= dim < self.__dim, f"Invalid dimension ({dim} not in [0, {self.__dim - 1}])"
+            assert 0 <= dim < self.dim, f"Invalid dimension ({dim} not in [0, {self.dim - 1}])"
             return self.__coor[dim]
         elif isinstance(dim, slice):
-            assert 0 <= dim.start and (dim.stop is None or dim.stop <= self.__dim), \
-                    f"Invalid slice ({dim} on dim {self.__dim})"
+            assert 0 <= dim.start and (dim.stop is None or dim.stop <= self.dim), \
+                    f"Invalid slice ({dim} on dim {self.dim})"
             return self.__coor[dim]
         else:
             raise NotImplementedError(f"Subscript type not recognized: {type(dim)}")
@@ -1335,14 +1344,16 @@ class Point:
         return "Point(" + ", ".join(map(str, self.__coor)) + ")"
 
     def __len__(self) -> int:
-        return self.__dim
+        return self.dim
 
-    def __add__(self, other: 'Point') -> 'Point':
-        assert self.__dim == other.__dim, f"Dimension mistach ({self.__dim} != {other.__dim})"
-        return type(self)(*(self.__coor[i] + other.__coor[i] for i in range(self.__dim)))
+    def __add__(self, other: _tp.Union['Point', float]) -> 'Point':
+        if isinstance(other, (int, float)):
+            other = type(self).fromIterable((other,) * self.dim)
+        assert self.dim == other.dim, f"Dimension mismatch ({self.dim} != {other.dim})"
+        return type(self)(*(self.__coor[i] + other.__coor[i] for i in range(self.dim)))
 
     def __rmul__(self, scalar: float) -> 'Point':
-        return type(self)(*(scalar * self.__coor[i] for i in range(self.__dim)))
+        return type(self)(*(scalar * self.__coor[i] for i in range(self.dim)))
 
     def __mul__(self, scalar: float) -> 'Point':
         return self.__rmul__(scalar)
@@ -1361,33 +1372,33 @@ class Point:
 
     def __eq__(self, other: object) -> bool:
         if isinstance(other, (int, float)):
-            other = type(self).fromIterable((other,) * self.__dim)
+            other = type(self).fromIterable((other,) * self.dim)
         elif not isinstance(other, type(self)):
             return NotImplemented
-        return self.__dim == other.__dim \
+        return self.dim == other.dim \
                 and all(self.__coor[i] == other.__coor[i]
-                        for i in range(self.__dim))
+                        for i in range(self.dim))
 
     def __lt__(self, other: object) -> bool:
         if isinstance(other, (int, float)):
-            other = type(self).fromIterable((other,) * self.__dim)
+            other = type(self).fromIterable((other,) * self.dim)
         elif not isinstance(other, type(self)):
             return NotImplemented
-        return self.__dim == other.__dim \
+        return self.dim == other.dim \
                 and all(self.__coor[i] < other.__coor[i]
-                        for i in range(self.__dim))
+                        for i in range(self.dim))
 
     def __le__(self, other: object) -> bool:
         return self.__eq__(other) or self.__lt__(other)
 
     def __gt__(self, other: object) -> bool:
         if isinstance(other, (int, float)):
-            other = type(self).fromIterable((other,) * self.__dim)
+            other = type(self).fromIterable((other,) * self.dim)
         elif not isinstance(other, type(self)):
             return NotImplemented
-        return self.__dim == other.__dim \
+        return self.dim == other.dim \
                 and all(self.__coor[i] > other.__coor[i]
-                        for i in range(self.__dim))
+                        for i in range(self.dim))
 
     def __ge__(self, other: object) -> bool:
         return self.__eq__(other) or self.__gt__(other)
@@ -1396,7 +1407,7 @@ class Point:
         return any(self.__coor)
 
     def __hash__(self) -> int:
-        return hash(('Point type', self.__dim,) + self.__coor)
+        return hash(('Point type', self.dim,) + self.__coor)
 
     def norm(self, p: float = 2) -> float:
         assert p >= 1, f"p ({p}) must be at least 1"
