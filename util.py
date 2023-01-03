@@ -568,7 +568,8 @@ def subChar(originalSym: str, targetSym: str, s: str) -> str:
     """
     return s.translate(str.maketrans(originalSym, targetSym))
 
-def multiMap(arr: _tp.Iterable[T], funcTuple: tuple[_tp.Callable[[T], _tp.Any]]) -> tuple[tuple, ...]:
+def multiMap(arr: _tp.Iterable[T],
+             funcTuple: tuple[_tp.Callable[[T], S]]) -> tuple[tuple[S, ...], ...]:
     """
     `map` with multiple functions
 
@@ -583,11 +584,11 @@ def multiMap(arr: _tp.Iterable[T], funcTuple: tuple[_tp.Callable[[T], _tp.Any]])
     Return
     -----
     a tuple of tuples each containing the images of a function in `funcTuple`
-    `multiMap[i]` contains the image of `funcTuple[i]`
+    `multiMap[i]` is the image of `funcTuple[i]` on `arr`
     """
     return tuple(tuple(map(f, arr)) for f in funcTuple)
 
-def takeApart(seq: _tp.Sequence[_tp.Sequence]) -> tuple[tuple, ...]:
+def takeApart(seq: _tp.Sequence[_tp.Sequence[T]]) -> tuple[tuple[T, ...], ...]:
     """
     splitting sequences of sequences
 
@@ -604,22 +605,23 @@ def takeApart(seq: _tp.Sequence[_tp.Sequence]) -> tuple[tuple, ...]:
     if `seq[i]` has length less than `seq[0]`, will raise `IndexError`
     if `seq[i]` has length larger than `seq[0]`, the sequence will be truncated
     """
-    l = len(seq[0])
-    return multiMap(seq, tuple((lambda x, idx=i: x[idx]) for i in range(l)))
+    return multiMap(seq,
+                    tuple((lambda x, idx=i: x[idx])
+                          for i in range(len(seq[0]))))
 
-def transpose(seq: _tp.Iterable[_tp.Sequence]) -> tuple[tuple, ...]:
+def transpose(seq: _tp.Sequence[_tp.Sequence[T]]) -> tuple[tuple[T, ...], ...]:
     """
     alias of `takeApart`
     """
     return takeApart(seq)
 
-def rangeBound(seq: _tp.Iterable[_tp.Iterable[float]]) -> tuple[tuple[float, float], ...]:
+def rangeBound(seq: _tp.Sequence[_tp.Sequence[float]]) -> tuple[tuple[float, float], ...]:
     """
     find the range of numbers
 
     Parameter
     -----
-    seq: Iterable[Iterable[float]]
+    seq: Sequence[Sequence[float]]
         a collection of sets of numbers
 
     Return
@@ -1050,7 +1052,7 @@ class IntegerIntervals:
         return (max(itv1[0], itv2[0]), min(itv1[1], itv2[1]))
 
     def __init__(self, *initIntervals: tuple[int, int]):
-        self.__contents: list[tuple[int, int], ...] = list() # sorted list of 2-tuple
+        self.__contents: list[tuple[int, int]] = list() # sorted list of 2-tuple
         self.__eleCount: _tp.Optional[int] = 0 # None if recorded invalidated
         if len(initIntervals) != 0:
             for itv in initIntervals:
@@ -1058,8 +1060,7 @@ class IntegerIntervals:
 
     def __len__(self) -> int:
         if self.__eleCount is None:
-            l = sum(map(self.__itvLen, self.__contents))
-            self.__eleCount = l
+            self.__eleCount = sum(map(self.__itvLen, self.__contents))
         return self.__eleCount
 
     def __contains__(self, n: int) -> bool:
@@ -1076,7 +1077,7 @@ class IntegerIntervals:
                 s = m + 1
         return self.__itvContains(n, self.__contents[s - 1])
 
-    def __iter__(self) -> int:
+    def __iter__(self) -> _tp.Iterable[int]:
         assert self.isBounded(), "Cannot iterate from an unbounded collection"
         for itv in self.__contents:
             yield from range(itv[0], itv[1] + 1)
@@ -1235,8 +1236,9 @@ def allPairDistances(nodes: _tp.Iterable[int],
     for k in nodeSeq:
         for i in nodeSeq:
             for j in nodeSeq:
-                minDistDict[(i, j)] = min(minDistDict[(i, j)],
-                                          minDistDict[(i, k)] + minDistDict[(k, j)])
+                minDistDict[(i, j)] = min(
+                        minDistDict[(i, j)],
+                        minDistDict[(i, k)] + minDistDict[(k, j)])
     return minDistDict
 
 def findSeqPeriod(seq: _tp.Sequence[T],
@@ -1277,7 +1279,6 @@ def findSeqPeriod(seq: _tp.Sequence[T],
     l = len(seq)
     if l <= 1:
         return (l, 0)
-
     currOptimal = None
     for t in inclusiveRange(1, l // 2, None):
         if cond is not None and not cond(t):
@@ -1352,7 +1353,7 @@ class Point:
 
     def __init__(self, *coors: float) -> None:
         assert len(coors) != 0, "Empty coordinate"
-        self.__coor: tuple[float] = tuple(coors)
+        self.__coor: tuple[float, ...] = tuple(coors)
 
     @classmethod
     def fromIterable(cls, it: _tp.Iterable[float]) -> 'Point':
@@ -1487,7 +1488,7 @@ def toBase(n: int, b: int) -> tuple[int, ...]:
 
 def fromBase(digits: _tp.Sequence[int],
              b: int,
-             fractionalPartLen: int = 0) -> float:
+             fractionalPartLen: int = 0) -> _tp.Union[int, float]:
     """
     Convert a number to given base
 
@@ -1508,7 +1509,7 @@ def fromBase(digits: _tp.Sequence[int],
 
     Return
     -----
-    a int (in base 10) that represents the number
+    a int or a float (in base 10) that represents the number
 
     Note
     -----
@@ -1523,16 +1524,17 @@ def fromBase(digits: _tp.Sequence[int],
     """
     assert b > 0
     assert 0 <= fractionalPartLen <= len(digits)
-    l = len(digits)
-    x = 0
+    l: int = len(digits)
+    x: _tp.Union[int, float] = 0
     for i in range(l - fractionalPartLen):
         x *= b
         x += digits[i]
-    fracPart = 0.0
+    fracPart: float = 0.0
     for i in range(l - 1, l - fractionalPartLen - 1, -1):
         fracPart += digits[i]
         fracPart /= b
-    x += fracPart
+    if fracPart != 0:
+        x += fracPart
     return x
 
 def arrayAccess(arr: _tp.Sequence, coor: _tp.Sequence[int]) -> _tp.Any:
