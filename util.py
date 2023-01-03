@@ -13,6 +13,9 @@ if __name__ == '__main__':
 T = _tp.TypeVar('T')
 S = _tp.TypeVar('S')
 
+# helper var
+inf = float('Inf')
+
 # helper functions
 add = (lambda x, y: x + y)
 mul = (lambda x, y: x * y)
@@ -1019,7 +1022,10 @@ class IntegerIntervals:
 
     @classmethod
     def __itvIsValid(cls, itv: tuple[int, int]) -> bool:
-        return len(itv) == 2 and itv[0] <= itv[1]
+        return len(itv) == 2 \
+                and itv[0] <= itv[1] \
+                and itv[0] != float('Inf') \
+                and itv[1] != -float('Inf')
 
     @classmethod
     def __itvLen(cls, itv: tuple[int, int]) -> int:
@@ -1043,7 +1049,7 @@ class IntegerIntervals:
         # assumes itv1 and itv2 intersects
         return (max(itv1[0], itv2[0]), min(itv1[1], itv2[1]))
 
-    def __init__(self, *initIntervals: _tp.Union[int, tuple[int, int]]):
+    def __init__(self, *initIntervals: tuple[int, int]):
         self.__contents: list[tuple[int, int], ...] = list() # sorted list of 2-tuple
         self.__eleCount: _tp.Optional[int] = 0 # None if recorded invalidated
         if len(initIntervals) != 0:
@@ -1057,11 +1063,21 @@ class IntegerIntervals:
         return self.__eleCount
 
     def __contains__(self, n: int) -> bool:
-        return any(self.__itvContains(n, itv)
-                   for itv in self.__contents)
+        l = len(self.__contents)
+        if l == 0 or n < self.__contents[0][0] or n > self.__contents[l - 1][1]:
+            return False
+        # TODO: need testing
+        s, e = 0, l
+        while e != s:
+            m = (s + e) // 2
+            if self.__contents[m][0] > n:
+                e = m
+            else:
+                s = m + 1
+        return self.__itvContains(n, self.__contents[s - 1])
 
     def __iter__(self) -> int:
-        assert self.isUnbounded(), "Cannot iterate on unbounded interval(s)"
+        assert self.isBounded(), "Cannot iterate from an unbounded collection"
         for itv in self.__contents:
             yield from range(itv[0], itv[1] + 1)
 
@@ -1080,11 +1096,8 @@ class IntegerIntervals:
         return self.__contents[idx]
 
     # TODO: need testing
-    def unionWith(self, interval: _tp.Union[int, tuple[int, int]]):
-        if isinstance(interval, int):
-            interval = (interval, interval)
-        if not self.__itvIsValid(interval):
-            return
+    def unionWith(self, interval: tuple[int, int]):
+        assert self.__itvIsValid(interval), f"Invalid interval: {interval}"
         l = len(self.__contents)
         if l == 0:
             self.__contents.append(interval)
@@ -1126,7 +1139,9 @@ class IntegerIntervals:
             self.__contents.insert(fIdx, interval)
             if self.__eleCount is not None:
                 self.__eleCount += self.__itvLen(interval)
-        else:
+        elif fIdx != eIdx \
+                or not (self.__contents[fIdx][0] <= interval[0] \
+                <= interval[1] <= self.__contents[fIdx][1]):
             self.__contents[fIdx:eIdx + 1] = [
                 (min(interval[0], self.__contents[fIdx][0]),
                  max(interval[1], self.__contents[eIdx][1]))
@@ -1134,20 +1149,45 @@ class IntegerIntervals:
             self.__eleCount = None
 
     def intersectWith(self, interval: tuple[int, int]):
-        if not self.__itvIsValid(interval):
-            return
-        self.__contents = list(map(lambda comp: self.__itvIntersectIfIntersect(comp, interval),
+        assert self.__itvIsValid(interval), f"Invalid interval: {interval}"
+        self.__contents = list(map(lambda compo: self.__itvIntersectIfIntersect(compo, interval),
                                    filter(lambda itv: self.__itvIsIntersect(itv, interval),
                                           self.__contents)))
         self.__eleCount = None
 
+    def component(self, idx: int) -> tuple[int, int]:
+        return self.__getitem__(idx)
+
     def countComponents(self) -> int:
         return len(self.__contents)
 
-    def isUnbounded(self) -> bool:
-        return len(self.__contents) != 0 \
-                and self.__contents[0][0] > -float('Inf') \
-                and self.__contents[-1][1] < float('Inf')
+    def count(self) -> int:
+        return self.__len__()
+
+    def isEmpty(self) -> bool:
+        return len(self.__contents) == 0
+
+    def isBounded(self) -> bool:
+        return self.isEmpty() \
+                or (self.__contents[0][0] > -float('Inf') \
+                and self.__contents[-1][1] < float('Inf'))
+
+    def isSupersetOf(self, interval: tuple[int, int]) -> bool:
+        assert self.__itvIsValid(interval), f"Invalid interval: {interval}"
+        l = len(self.__contents)
+        if l == 0:
+            return False
+        # TODO: need testing
+        s, e = 0, l
+        while e != s:
+            m = (s + e) // 2
+            if self.__contents[m][0] > interval[0]:
+                e = m
+            else:
+                s = m + 1
+        return s != 0 \
+                and self.__contents[s - 1][0] <= interval[0] \
+                and interval[1] <= self.__contents[s - 1][1]
 
     def clear(self):
         self.__contents.clear()
