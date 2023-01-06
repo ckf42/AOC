@@ -10,8 +10,8 @@ import heapq as _hq
 if __name__ == '__main__':
     exit()
 
-T = _tp.TypeVar('T')
-S = _tp.TypeVar('S')
+_T = _tp.TypeVar('_T')
+_S = _tp.TypeVar('_S')
 
 # helper var
 inf = float('Inf')
@@ -46,7 +46,8 @@ def getInput(d: int,
     the input for question of day `d` in year `y` fetched from the website
     the same input str will be written in cwd with filename `input{d}`
     if this file already exists, will overwrite
-    if `force` is false and this file already exists, will read frm this file instead
+    if `force` is false and this file already exists,
+    will read frm this file instead
 
     Note
     -----
@@ -59,22 +60,29 @@ def getInput(d: int,
             raise FileNotFoundError
         with open(f'input{d}', 'rt') as f:
             return f.read()
-    except FileNotFoundError as e:
+    except FileNotFoundError:
         pass
     with open('../session', 'rt') as sessKey:
         try:
+            sKey = sessKey.read().strip()
             with _ulq.urlopen(
-                    _ulq.Request(f'https://adventofcode.com/{y}/day/{d}/input',
-                                 headers={'Cookie': f'session={sessKey.read().strip()}'})) as resp:
+                    _ulq.Request(
+                        f'https://adventofcode.com/{y}/day/{d}/input',
+                        headers={'Cookie': f'session={sKey}'})
+                    ) as resp:
                 rt = resp.fp.read().decode()
                 with open(f'input{d}', 'wt') as f:
                     print(rt, file=f, end='')
                 return rt
         except _ule.HTTPError as e:
-            raise ValueError(f"Failed to fetch input: {e.reason}\nDetail: {e.fp.read().decode()}") from e
+            raise ValueError(f"Failed to fetch input: {e.reason}\n"
+                             f"Detail: {e.fp.read().decode()}") from e
 
-def firstSuchThat(arr: _tp.Iterable[T],
-                  cond: _tp.Callable[[T], bool]) -> tuple[_tp.Optional[int], _tp.Optional[T]]:
+
+def firstSuchThat(
+        arr: _tp.Iterable[_T],
+        cond: _tp.Callable[[_T], bool]
+        ) -> tuple[_tp.Optional[int], _tp.Optional[_T]]:
     """
     find the first element that the condition holds
 
@@ -89,9 +97,9 @@ def firstSuchThat(arr: _tp.Iterable[T],
 
     Returns
     -----
-    a tuple of type tuple[int, T] where
-        the first entry is the index of the first element which `cond` returns true
-        the second entry is the value of that element
+    a tuple of type tuple[int, T] where the entries are
+        the index of the first element which `cond` returns true
+        and the value of that element
     or (None, None) if no such element exists in `arr`
 
     Note
@@ -99,10 +107,13 @@ def firstSuchThat(arr: _tp.Iterable[T],
     If `arr` is a generator, it will be consumed after the returned element,
     or the whole `arr` will be consumed if no such element is found
     """
-    return next(filter(lambda t: cond(t[1]), enumerate(arr)), (None, None))
+    return next(filter(lambda t: cond(t[1]),
+                       enumerate(arr)),
+                (None, None))
 
-def firstIdxSuchThat(arr: _tp.Sequence[T],
-                     cond: _tp.Callable[[T], bool],
+
+def firstIdxSuchThat(arr: _tp.Sequence[_T],
+                     cond: _tp.Callable[[_T], bool],
                      s: int = 0,
                      e: _tp.Optional[int] = None,
                      step: int = 1) -> _tp.Optional[int]:
@@ -133,7 +144,7 @@ def firstIdxSuchThat(arr: _tp.Sequence[T],
 
     Returns
     -----
-    an int that denotes the index of the first element which `cond` returns true
+    int that denotes the index of the first element which `cond` returns true
     or None if no such element exists in `arr`
 
     Note
@@ -146,8 +157,10 @@ def firstIdxSuchThat(arr: _tp.Sequence[T],
     return firstSuchThat(range(s, e if e is not None else len(arr), step),
                          lambda idx: cond(arr[idx]))[0]
 
-def lastSuchThat(arr: _tp.Iterable[T],
-                 cond: _tp.Callable[[T], bool]) -> tuple[_tp.Optional[int], _tp.Optional[T]]:
+def lastSuchThat(
+        arr: _tp.Iterable[_T],
+        cond: _tp.Callable[[_T], bool]
+        ) -> tuple[_tp.Optional[int], _tp.Optional[_T]]:
     """
     find the last element that the condition holds. similar to `firstSuchThat`
 
@@ -162,9 +175,9 @@ def lastSuchThat(arr: _tp.Iterable[T],
 
     Returns
     -----
-    a tuple of type tuple[int, T] where
-        the first entry is the index of the last element which `cond` returns true
-        the second entry is the value of that element
+    a tuple of type tuple[int, T] where the entries are
+        the index of the last element which `cond` returns true
+        and the value of that element
     or (None, None) if no such element exists in `arr`
 
     Note
@@ -175,17 +188,18 @@ def lastSuchThat(arr: _tp.Iterable[T],
     Slower than firstSuchThat on [::-1] as it always go through whole arr
     Only use if you cannot reverse arr (e.g. arr is generator)
     """
-    lastTrue: tuple[_tp.Optional[int], _tp.Optional[T]] = (None, None)
+    lastTrue: tuple[_tp.Optional[int], _tp.Optional[_T]] = (None, None)
     filterObj = filter(lambda t: cond(t[1]), enumerate(arr))
     while (o := next(filterObj, None)) is not None:
         lastTrue = o
     return lastTrue
 
+
 def firstAccumSuchThat(
-        arr: _tp.Iterable[T],
-        func: _tp.Callable[[T, T], T],
-        cond: _tp.Callable[[T], bool]
-        ) -> tuple[_tp.Optional[int], _tp.Optional[T], _tp.Optional[T]]:
+        arr: _tp.Iterable[_T],
+        func: _tp.Callable[[_T, _T], _T],
+        cond: _tp.Callable[[_T], bool]
+        ) -> tuple[_tp.Optional[int], _tp.Optional[_T], _tp.Optional[_T]]:
     """
     find the first element that the condition holds cumulatively
 
@@ -195,8 +209,7 @@ def firstAccumSuchThat(
         the input array search. If a generator, will be consumed
 
     func: Callable[[T, T], T]
-        a function that two elements from `arr` and return a element of the same type
-        usually a lambda
+        a function on two elements from `arr` and return one of the same type
         common choice may be addition `lambda x, y: x + y` (see `add`)
             or multiplication `lambda x, y: x * y` (see `mul`)
 
@@ -206,11 +219,11 @@ def firstAccumSuchThat(
 
     Returns
     -----
-    a tuple of type tuple[int, T, T] where
-        the first entry is the index of the first element until which `cond` returns true
+    a tuple of type tuple[int, T, T] where the entries are
+        the index of the first element until which `cond` returns true
             on the cumulative operation via `func`
-        the second entry is the value of that element
-        the third entry is the result of cumulative operation
+        and the value of that element
+        and the result of cumulative operation
     or (None, None, None) if no such element exists in `arr`
 
     Note
@@ -222,11 +235,12 @@ def firstAccumSuchThat(
                        zip(_it.count(0), arr, _it.accumulate(arr, func))),
                 (None, None, None))
 
+
 def lastAccumSuchThat(
-        arr: _tp.Iterable[T],
-        func: _tp.Callable[[T, T], T],
-        cond: _tp.Callable[[T], bool]
-        ) -> tuple[_tp.Optional[int], _tp.Optional[T], _tp.Optional[T]]:
+        arr: _tp.Iterable[_T],
+        func: _tp.Callable[[_T, _T], _T],
+        cond: _tp.Callable[[_T], bool]
+        ) -> tuple[_tp.Optional[int], _tp.Optional[_T], _tp.Optional[_T]]:
     """
     find the last element that the condition holds cumulativly.
     similar to firstAccumSuch that
@@ -237,7 +251,7 @@ def lastAccumSuchThat(
         the input array search. If a generator, will be consumed
 
     func: Callable[[T, T], T]
-        a function that two elements from `arr` and return a element of the same type
+        a function on two elements from `arr` and return one of the same type
         usually a lambda
         common choice may be addition `lambda x, y: x + y`
             or multiplication `lambda x, y: x * y`
@@ -248,11 +262,11 @@ def lastAccumSuchThat(
 
     Returns
     -----
-    a tuple of type tuple[int, T, T] where
-        the first entry is the index of the last element until which `cond` returns true
+    a tuple of type tuple[int, T, T] where the entries are
+        the index of the last element until which `cond` returns true
             on the cumulative operation via `func`
-        the second entry is the value of that element
-        the third entry is the result of cumulative operation
+        and the value of that element
+        and the result of cumulative operation
     or (None, None, None) if no such element exists in `arr`
 
     Note
@@ -260,12 +274,13 @@ def lastAccumSuchThat(
     If `arr` is a generator, it will be consumed after the returned element,
     or the whole `arr` will be consumed if no such element is found
     """
-    lastTrue: tuple[_tp.Optional[int], _tp.Optional[T], _tp.Optional[T]] = (None, None, None)
+    lastTrue: tuple[_tp.Optional[int], _tp.Optional[_T], _tp.Optional[_T]] = (None, None, None)
     filterObj = filter(lambda t: cond(t[2]),
                        zip(_it.count(0), arr, _it.accumulate(arr, func)))
     while (o := next(filterObj, None)) is not None:
         lastTrue = o
     return lastTrue
+
 
 def flatten(arr: _tp.Any, level: int = 1):
     """
@@ -279,7 +294,7 @@ def flatten(arr: _tp.Any, level: int = 1):
     level: int, optional
         the number of levels to flatten
         if 0, nothing will be flatten
-        if negative number (typically -1), will try to flatten every nested objects
+        if negative (e.g. -1), will try to flatten every nested objects
         defaults to 1 (only flatten the first level)
 
     Return
@@ -302,7 +317,8 @@ def flatten(arr: _tp.Any, level: int = 1):
     else:
         return arr
 
-def cycInd(arr: _tp.Sequence[T], index: int) -> T:
+
+def cycInd(arr: _tp.Sequence[_T], index: int) -> _T:
     """
     access a sequence with arbitrary index
 
@@ -328,6 +344,7 @@ def cycInd(arr: _tp.Sequence[T], index: int) -> T:
     """
     return arr[index % len(arr)]
 
+
 def prod(arr: _tp.Iterable[float]) -> float:
     """
     compute the product of elements. similar to the builtin `sum`
@@ -347,8 +364,9 @@ def prod(arr: _tp.Iterable[float]) -> float:
     """
     return _ft.reduce(lambda x, y: x * y, arr)
 
-def splitAt(arr: _tp.Sequence[T],
-            index: int) -> tuple[_tp.Sequence[T], _tp.Sequence[T]]:
+
+def splitAt(arr: _tp.Sequence[_T],
+            index: int) -> tuple[_tp.Sequence[_T], _tp.Sequence[_T]]:
     """
     split a sequence at the given location
 
@@ -373,7 +391,11 @@ def splitAt(arr: _tp.Sequence[T],
     """
     return (arr[:index], arr[index:])
 
-def splitBy(arr: _tp.Iterable[T], cond: _tp.Callable[[T], bool]) -> tuple[tuple[T, ...], tuple[T, ...]]:
+
+def splitBy(
+        arr: _tp.Iterable[_T],
+        cond: _tp.Callable[[_T], bool]
+        ) -> tuple[tuple[_T, ...], tuple[_T, ...]]:
     """
     split elements according to given condition
 
@@ -400,6 +422,7 @@ def splitBy(arr: _tp.Iterable[T], cond: _tp.Callable[[T], bool]) -> tuple[tuple[
             falseBucket.append(item)
     return (tuple(trueBucket), tuple(falseBucket))
 
+
 def getInts(s: str, allowNegative: bool = True) -> tuple[int, ...]:
     """
     get only the integers in a string
@@ -415,10 +438,13 @@ def getInts(s: str, allowNegative: bool = True) -> tuple[int, ...]:
 
     Returns
     -----
-    a tuple of int that contains all (possibly negative, if `allowNegative` is True) integers
+    a tuple of int that contains all (signed, if `allowNegative` is True) integers
         that appear in `s`
     """
-    return tuple(map(int, _re.findall((r'-?' if allowNegative else r'') + r'\d+', s)))
+    intRegex = (r'-?' if allowNegative else r'') + r'\d+'
+    return tuple(map(int,
+                     _re.findall(intRegex, s)))
+
 
 def getFloats(s: str) -> tuple[float, ...]:
     """
@@ -431,13 +457,15 @@ def getFloats(s: str) -> tuple[float, ...]:
 
     Returns
     -----
-    a tuple of float that contains all (possibly negative) floats that appear in `s`
+    a tuple of float that contains all (signed) floats that appear in `s`
     """
     return tuple(map(float, _re.findall(r'-?\d+(?:\.\d+)?', s)))
 
-def splitIntoGp(arr: _tp.Sequence[T],
-                gpSize: int,
-                allowRemain: bool = True) ->tuple[tuple[T, ...], ...]:
+
+def splitIntoGp(
+        arr: _tp.Sequence[_T],
+        gpSize: int,
+        allowRemain: bool = True) -> tuple[tuple[_T, ...], ...]:
     """
     grouping elements in a sequence by their order
 
@@ -471,10 +499,11 @@ def splitIntoGp(arr: _tp.Sequence[T],
                                    else gpInit + gpSize)])
                  for gpInit in range(0, lArr, gpSize))
 
-def takeFromEvery(arr: _tp.Sequence[T],
+
+def takeFromEvery(arr: _tp.Sequence[_T],
                   gpSize: int,
                   idx: int,
-                  takeFromRemain: bool = True) -> tuple[T, ...]:
+                  takeFromRemain: bool = True) -> tuple[_T, ...]:
     """
     take an element in a sequence once every given amount
 
@@ -505,10 +534,11 @@ def takeFromEvery(arr: _tp.Sequence[T],
                  for gpInit in range(0, lArr, gpSize)
                  if takeFromRemain or gpInit + gpSize <= lArr)
 
-def sub(originalSym: _tp.Iterable[T],
-        targetSym: _tp.Iterable[S],
-        arr: _tp.Iterable[T],
-        discard: bool = False) -> tuple[_tp.Union[T, S], ...]:
+
+def sub(originalSym: _tp.Iterable[_T],
+        targetSym: _tp.Iterable[_S],
+        arr: _tp.Iterable[_T],
+        discard: bool = False) -> tuple[_tp.Union[_T, _S], ...]:
     """
     create a copy of the collection with its entry replaced
 
@@ -542,6 +572,7 @@ def sub(originalSym: _tp.Iterable[T],
                  for c in arr
                  if not discard or c in replacementDict)
 
+
 def subChar(originalSym: str, targetSym: str, s: str) -> str:
     """
     substitute characters in a string
@@ -568,8 +599,10 @@ def subChar(originalSym: str, targetSym: str, s: str) -> str:
     """
     return s.translate(str.maketrans(originalSym, targetSym))
 
-def multiMap(arr: _tp.Iterable[T],
-             funcTuple: tuple[_tp.Callable[[T], S]]) -> tuple[tuple[S, ...], ...]:
+
+def multiMap(arr: _tp.Iterable[_T],
+             funcTuple: tuple[_tp.Callable[[_T], _S]]
+             ) -> tuple[tuple[_S, ...], ...]:
     """
     `map` with multiple functions
 
@@ -588,7 +621,9 @@ def multiMap(arr: _tp.Iterable[T],
     """
     return tuple(tuple(map(f, arr)) for f in funcTuple)
 
-def takeApart(seq: _tp.Sequence[_tp.Sequence[T]]) -> tuple[tuple[T, ...], ...]:
+
+def takeApart(
+        seq: _tp.Sequence[_tp.Sequence[_T]]) -> tuple[tuple[_T, ...], ...]:
     """
     splitting sequences of sequences
 
@@ -609,13 +644,17 @@ def takeApart(seq: _tp.Sequence[_tp.Sequence[T]]) -> tuple[tuple[T, ...], ...]:
                     tuple((lambda x, idx=i: x[idx])
                           for i in range(len(seq[0]))))
 
-def transpose(seq: _tp.Sequence[_tp.Sequence[T]]) -> tuple[tuple[T, ...], ...]:
+def transpose(
+        seq: _tp.Sequence[_tp.Sequence[_T]]) -> tuple[tuple[_T, ...], ...]:
     """
     alias of `takeApart`
     """
     return takeApart(seq)
 
-def rangeBound(seq: _tp.Sequence[_tp.Sequence[float]]) -> tuple[tuple[float, float], ...]:
+
+def rangeBound(
+        seq: _tp.Sequence[_tp.Sequence[float]]
+        ) -> tuple[tuple[float, float], ...]:
     """
     find the range of numbers
 
@@ -630,6 +669,7 @@ def rangeBound(seq: _tp.Sequence[_tp.Sequence[float]]) -> tuple[tuple[float, flo
     `rangeBound[i]` is the (min, max) of `seq[i]`
     """
     return takeApart(multiMap(seq, (min, max)))
+
 
 def sgn(x: float) -> int:
     """
@@ -651,6 +691,7 @@ def sgn(x: float) -> int:
         return 0
     else:
         return 1 if x > 0 else -1
+
 
 def argmax(arr: _tp.Iterable[_tp.Any],
            key: _tp.Callable[[_tp.Any], float]) -> _tp.Optional[_tp.Any]:
@@ -683,6 +724,7 @@ def argmax(arr: _tp.Iterable[_tp.Any],
             currMaxKey = k
     return currMaxItem
 
+
 def gcd(*n: int) -> int:
     """
     Compute gcd of integers
@@ -705,6 +747,7 @@ def gcd(*n: int) -> int:
         return n[0] if n[1] == 0 else gcd(n[1], n[0] % n[1])
     else:
         return gcd(gcd(*n[:2]), *n[2:])
+
 
 def lcm(*n: int) -> int:
     """
@@ -729,6 +772,7 @@ def lcm(*n: int) -> int:
     else:
         return lcm(lcm(*n[:2]), *n[2:])
 
+
 class Heap:
     """
     simple wrapper for heap based on heapq
@@ -745,9 +789,12 @@ class Heap:
                  key=(lambda k: k),
                  isMinHeap: bool = True):
         self.__data: list = list()
-        self.__key: _tp.Callable[[_tp.Any], float] = (key if isMinHeap else (lambda k: -key(k)))
+        self.__key: _tp.Callable[[_tp.Any], float] = (key
+                                                      if isMinHeap
+                                                      else (lambda k: -key(k)))
         if initItemList is not None:
-            self.__data.extend((self.__key(item), item) for item in initItemList)
+            self.__data.extend((self.__key(item), item)
+                               for item in initItemList)
             _hq.heapify(self.__data)
 
     def push(self, item):
@@ -769,18 +816,21 @@ class Heap:
         self.__data = self.__data[:newSize]
         _hq.heapify(self.__data)
 
+
 def MinHeap(initItemList=None, key=(lambda k: k)) -> Heap:
     return Heap(initItemList=initItemList, key=key, isMinHeap=True)
+
 
 def MaxHeap(initItemList=None, key=(lambda k: k)) -> Heap:
     return Heap(initItemList=initItemList, key=key, isMinHeap=False)
 
-def dijkstra(initialNode: T,
-             costFunc: _tp.Callable[[T, T, float], float],
-             neighbourListFunc: _tp.Callable[[T], _tp.Iterable[T]],
-             goalCheckerFunc: _tp.Callable[[T], bool],
-             aStarHeuristicFunc: _tp.Optional[_tp.Callable[[T], float]] = None
-             ) -> _tp.Optional[tuple[T, float]]:
+
+def dijkstra(initialNode: _T,
+             costFunc: _tp.Callable[[_T, _T, float], float],
+             neighbourListFunc: _tp.Callable[[_T], _tp.Iterable[_T]],
+             goalCheckerFunc: _tp.Callable[[_T], bool],
+             aStarHeuristicFunc: _tp.Optional[_tp.Callable[[_T], float]] = None
+             ) -> _tp.Optional[tuple[_T, float]]:
     """
     search for minimal cost path via Dijkstra / A*
 
@@ -843,7 +893,9 @@ def dijkstra(initialNode: T,
             h.push((nextNode, costFunc(nextNode, currNode, currCost)))
     return None
 
-def clip(x: float, lb: _tp.Optional[float] = None, ub: _tp.Optional[float] = None) -> float:
+def clip(x: float,
+         lb: _tp.Optional[float] = None,
+         ub: _tp.Optional[float] = None) -> float:
     """
     clipping a value
 
@@ -868,6 +920,7 @@ def clip(x: float, lb: _tp.Optional[float] = None, ub: _tp.Optional[float] = Non
     return min(ub if ub is not None else float('Inf'),
                max(lb if lb is not None else -float('Inf'),
                    x))
+
 
 def countOnes(n: int) -> int:
     """
@@ -901,13 +954,14 @@ def countOnes(n: int) -> int:
     >>> (-127).bit_count()
     7
     >>> countOnes(-127)
-    1 
+    1
     """
     b_c = getattr(int, 'bit_count', lambda x: bin(x).count('1'))
     if n < 0:
         return 1 + n.bit_length() - b_c(-n)
     else:
         return b_c(n)
+
 
 def inclusiveRange(s: int, e: int, step: _tp.Optional[int] = 1) -> range:
     """
@@ -935,7 +989,8 @@ def inclusiveRange(s: int, e: int, step: _tp.Optional[int] = 1) -> range:
         step = sgn(e - s)
     return range(s, e + step, step)
 
-def count(arr: _tp.Iterable[T], cond: _tp.Callable[[T], bool] = bool) -> int:
+
+def count(arr: _tp.Iterable[_T], cond: _tp.Callable[[_T], bool] = bool) -> int:
     """
     count elements in an iterable that satisfies some condition
 
@@ -958,7 +1013,8 @@ def count(arr: _tp.Iterable[T], cond: _tp.Callable[[T], bool] = bool) -> int:
     """
     return sum(map(cond, arr))
 
-def countItem(arr: _tp.Iterable[T], item: T) -> int:
+
+def countItem(arr: _tp.Iterable[_T], item: _T) -> int:
     """
     count elements in an iterable that satisfies some condition
 
@@ -1000,6 +1056,7 @@ def consoleChar(b: _tp.Union[bool, None]) -> str:
     """
     return u'\u2592' if b is None else (u'\u2588' if b else u'\u0020')
 
+
 def rangeLen(arr: _tp.Sequence) -> range:
     """
     get a range to enumerate a sequence
@@ -1018,6 +1075,7 @@ def rangeLen(arr: _tp.Sequence) -> range:
     wrapper of `range` and `len`, with fewer parentheses
     """
     return range(len(arr))
+
 
 class IntegerIntervals:
     __slots__ = ('__contents', '__eleCount')
@@ -1051,9 +1109,30 @@ class IntegerIntervals:
         # assumes itv1 and itv2 intersects
         return (max(itv1[0], itv2[0]), min(itv1[1], itv2[1]))
 
+    @classmethod
+    def __itvSetminus(cls,
+                      itv1: tuple[int, int],
+                      itv2: tuple[int, int]
+                      ) -> tuple[tuple[int, int], ...]:
+        if not cls.__itvIsIntersect(itv1, itv2):
+            return (itv1,)
+        elif itv2[0] <= itv1[0] and itv1[1] <= itv2[1]:
+            return tuple()
+        elif itv1[0] < itv2[0] and itv2[1] < itv1[1]:
+            return ((itv1[0], itv2[0] - 1), (itv2[1] + 1, itv1[1]))
+        elif itv2[0] <= itv1[0]:
+            return ((itv2[1] + 1, itv1[1]),)
+        elif itv1[1] <= itv2[1]:
+            return ((itv1[0], itv2[0] - 1),)
+        else:
+            # this should not happen
+            raise RuntimeError(f"Case not considered: {itv1}, {itv2}")
+
     def __init__(self, *initIntervals: tuple[int, int]):
-        self.__contents: list[tuple[int, int]] = list() # sorted list of 2-tuple
-        self.__eleCount: _tp.Optional[int] = 0 # None if recorded invalidated
+        # sorted list of 2-tuple components
+        self.__contents: list[tuple[int, int]] = list()
+        # element count in collection, None if recorded invalidated
+        self.__eleCount: _tp.Optional[int] = 0
         if len(initIntervals) != 0:
             for itv in initIntervals:
                 self.unionWith(itv)
@@ -1064,11 +1143,13 @@ class IntegerIntervals:
         return self.__eleCount
 
     def __contains__(self, n: int) -> bool:
-        l = len(self.__contents)
-        if l == 0 or n < self.__contents[0][0] or n > self.__contents[l - 1][1]:
+        compoCount = len(self.__contents)
+        if compoCount == 0 \
+                or n < self.__contents[0][0] \
+                or n > self.__contents[compoCount - 1][1]:
             return False
         # TODO: need testing
-        s, e = 0, l
+        s, e = 0, compoCount
         while e != s:
             m = (s + e) // 2
             if self.__contents[m][0] > n:
@@ -1099,14 +1180,14 @@ class IntegerIntervals:
     # TODO: need testing
     def unionWith(self, interval: tuple[int, int]):
         assert self.__itvIsValid(interval), f"Invalid interval: {interval}"
-        l = len(self.__contents)
-        if l == 0:
+        compoCount = len(self.__contents)
+        if compoCount == 0:
             self.__contents.append(interval)
             self.__eleCount = self.__itvLen(interval)
             return
         # find first itv in contents that itv[1] >= interval[0] - 1
         # if not exists, append interval at end
-        s, e = 0, l
+        s, e = 0, compoCount
         while e != s:
             m = (s + e) // 2
             if self.__contents[m][1] < interval[0] - 1:
@@ -1114,14 +1195,14 @@ class IntegerIntervals:
             else:
                 e = m
         fIdx = s
-        if fIdx == l:
+        if fIdx == compoCount:
             self.__contents.append(interval)
             if self.__eleCount is not None:
                 self.__eleCount += self.__itvLen(interval)
             return
         # find last itv in contents that itv[0] <= interval[1] + 1
         # if not exists, insert interval at begin
-        s, e = 0, l
+        s, e = 0, compoCount
         while e != s:
             m = (s + e) // 2
             if self.__contents[m][0] > interval[1] + 1:
@@ -1141,8 +1222,8 @@ class IntegerIntervals:
             if self.__eleCount is not None:
                 self.__eleCount += self.__itvLen(interval)
         elif fIdx != eIdx \
-                or not (self.__contents[fIdx][0] <= interval[0] \
-                <= interval[1] <= self.__contents[fIdx][1]):
+                or not (self.__contents[fIdx][0] <= interval[0]
+                        <= interval[1] <= self.__contents[fIdx][1]):
             self.__contents[fIdx:eIdx + 1] = [
                 (min(interval[0], self.__contents[fIdx][0]),
                  max(interval[1], self.__contents[eIdx][1]))
@@ -1151,9 +1232,12 @@ class IntegerIntervals:
 
     def intersectWith(self, interval: tuple[int, int]):
         assert self.__itvIsValid(interval), f"Invalid interval: {interval}"
-        self.__contents = list(map(lambda compo: self.__itvIntersectIfIntersect(compo, interval),
-                                   filter(lambda itv: self.__itvIsIntersect(itv, interval),
-                                          self.__contents)))
+        self.__contents = list(
+                map(lambda compo: self.__itvIntersectIfIntersect(compo,
+                                                                 interval),
+                    filter(lambda itv: self.__itvIsIntersect(itv, interval),
+                           self.__contents))
+                )
         self.__eleCount = None
 
     def component(self, idx: int) -> tuple[int, int]:
@@ -1170,29 +1254,37 @@ class IntegerIntervals:
 
     def isBounded(self) -> bool:
         return self.isEmpty() \
-                or (self.__contents[0][0] > -float('Inf') \
-                and self.__contents[-1][1] < float('Inf'))
+                or (self.__contents[0][0] > -float('Inf')
+                    and self.__contents[-1][1] < float('Inf'))
 
     def isSupersetOf(self, interval: tuple[int, int]) -> bool:
         assert self.__itvIsValid(interval), f"Invalid interval: {interval}"
-        l = len(self.__contents)
-        if l == 0:
+        compoCount = len(self.__contents)
+        if compoCount == 0:
             return False
         # TODO: need testing
-        s, e = 0, l
+        s, e = 0, compoCount
         while e != s:
             m = (s + e) // 2
             if self.__contents[m][0] > interval[0]:
                 e = m
             else:
                 s = m + 1
-        return s != 0 \
-                and self.__contents[s - 1][0] <= interval[0] \
-                and interval[1] <= self.__contents[s - 1][1]
+        return (s != 0
+                and self.__contents[s - 1][0] <= interval[0]
+                and interval[1] <= self.__contents[s - 1][1])
+
+    def setMinus(self, interval: tuple[int, int]):
+        assert self.__itvIsValid(interval), f"Invalid interval: {interval}"
+        self.__contents = [newItv
+                           for itv in self.__contents
+                           for newItv in self.__itvSetminus(itv, interval)]
+        self.__eleCount = None
 
     def clear(self):
         self.__contents.clear()
         self.__eleCount = 0
+
 
 def allPairDistances(nodes: _tp.Iterable[int],
                      distFunc: _tp.Callable[[int, int], _tp.Optional[float]]
@@ -1211,19 +1303,20 @@ def allPairDistances(nodes: _tp.Iterable[int],
         expected to take two arguments:
             source: int, the starting node
             terminal: int, the ending
-        expected to return a float representing the edge length, or None if no such edge exists
+        expected to return a float representing the edge length,
+        or None if no such edge exists
 
     Return
     -----
     a dict that takes a tuple of 2 int (from `nodes`)
-    and return the minimal (directed) distance between them (or float('Inf') if unreachable)
+    and return the minimal (directed) distance between them
+    (or float('Inf') if unreachable)
 
     Note
     -----
     n^3 time complexity, n^2 space complexity
     """
     nodeSeq = tuple(nodes)
-    n = len(nodeSeq)
     minDistDict: dict[tuple[int, int], float] = dict()
     for i in nodeSeq:
         for j in nodeSeq:
@@ -1241,7 +1334,8 @@ def allPairDistances(nodes: _tp.Iterable[int],
                         minDistDict[(i, k)] + minDistDict[(k, j)])
     return minDistDict
 
-def findSeqPeriod(seq: _tp.Sequence[T],
+
+def findSeqPeriod(seq: _tp.Sequence[_T],
                   cond: _tp.Optional[_tp.Callable[[int], bool]] = None
                   ) -> _tp.Optional[tuple[int, int]]:
     """
@@ -1273,19 +1367,22 @@ def findSeqPeriod(seq: _tp.Sequence[T],
     -----
     l^2 time complexity, 1 space complexity
     should speed up if we test multiple of gcd of suffix item counter,
-        but somehow it is slower than naive search (AoC 2022 d17 whole sol took ~6s/~2s)
-        (possible due to gcd == 1)
+        but somehow it is slower than naive search
+        (AoC 2022 d17 whole sol took ~6s/~2s)
     """
-    l = len(seq)
-    if l <= 1:
-        return (l, 0)
+    seqLen = len(seq)
+    if seqLen <= 1:
+        return (seqLen, 0)
     currOptimal = None
-    for t in inclusiveRange(1, l // 2, None):
+    for t in inclusiveRange(1, seqLen // 2, None):
         if cond is not None and not cond(t):
             continue
-        rep = firstIdxSuchThat(range(1, l // t),
-                               lambda i: seq[(l - (i + 1) * t):(l - i * t)] != seq[l - t:])
-        remainLen = l - ((rep + 1) if rep is not None else (l // t)) * t
+        rep = firstIdxSuchThat(
+                range(1, seqLen // t),
+                lambda i: seq[(seqLen - (i + 1) * t):(seqLen - i * t)] != seq[seqLen - t:])
+        remainLen = seqLen - t * ((rep + 1)
+                                  if rep is not None
+                                  else (seqLen // t))
         if currOptimal is None or remainLen < currOptimal[1]:
             currOptimal = (t, remainLen)
     return currOptimal
@@ -1339,11 +1436,15 @@ def integerLattice(dim: int,
         for pt in integerLattice(dim - 1, norm, p, excludeNeg, excludeZero):
             yield (0,) + pt
         for coor in range(1, int(norm) + 1):
-            remainNorm = norm if p == float('Inf') else (norm ** p - coor ** p) ** (1 / p)
-            for pt in integerLattice(dim - 1, remainNorm, p, excludeNeg, excludeZero=False):
+            remainNorm = (norm
+                          if p == float('Inf')
+                          else (norm ** p - coor ** p) ** (1 / p))
+            for pt in integerLattice(dim - 1, remainNorm, p,
+                                     excludeNeg, excludeZero=False):
                 if not excludeNeg:
                     yield (-coor,) + pt
                 yield (coor,) + pt
+
 
 class Point:
     """
@@ -1367,7 +1468,9 @@ class Point:
     def dim(self) -> int:
         return len(self.__coor)
 
-    def __getitem__(self, dim: _tp.Union[int, slice]) -> _tp.Union[float, tuple[float, ...]]:
+    def __getitem__(self,
+                    dim: _tp.Union[int, slice]
+                    ) -> _tp.Union[float, tuple[float, ...]]:
         if isinstance(dim, int):
             assert 0 <= dim < self.dim, f"Invalid dimension ({dim} not in [0, {self.dim - 1}])"
             return self.__coor[dim]
@@ -1391,7 +1494,8 @@ class Point:
         if isinstance(other, (int, float)):
             other = type(self).fromIterable((other,) * self.dim)
         assert self.dim == other.dim, f"Dimension mismatch ({self.dim} != {other.dim})"
-        return type(self)(*(self.__coor[i] + other.__coor[i] for i in range(self.dim)))
+        return type(self)(*(self.__coor[i] + other.__coor[i]
+                            for i in range(self.dim)))
 
     def __rmul__(self, scalar: float) -> 'Point':
         return type(self)(*(scalar * self.__coor[i] for i in range(self.dim)))
@@ -1416,18 +1520,18 @@ class Point:
             other = type(self).fromIterable((other,) * self.dim)
         elif not isinstance(other, type(self)):
             return NotImplemented
-        return self.dim == other.dim \
+        return (self.dim == other.dim
                 and all(self.__coor[i] == other.__coor[i]
-                        for i in range(self.dim))
+                        for i in range(self.dim)))
 
     def __lt__(self, other: object) -> bool:
         if isinstance(other, (int, float)):
             other = type(self).fromIterable((other,) * self.dim)
         elif not isinstance(other, type(self)):
             return NotImplemented
-        return self.dim == other.dim \
+        return (self.dim == other.dim
                 and all(self.__coor[i] < other.__coor[i]
-                        for i in range(self.dim))
+                        for i in range(self.dim)))
 
     def __le__(self, other: object) -> bool:
         return self.__eq__(other) or self.__lt__(other)
@@ -1437,9 +1541,9 @@ class Point:
             other = type(self).fromIterable((other,) * self.dim)
         elif not isinstance(other, type(self)):
             return NotImplemented
-        return self.dim == other.dim \
+        return (self.dim == other.dim
                 and all(self.__coor[i] > other.__coor[i]
-                        for i in range(self.dim))
+                        for i in range(self.dim)))
 
     def __ge__(self, other: object) -> bool:
         return self.__eq__(other) or self.__gt__(other)
@@ -1458,6 +1562,7 @@ class Point:
             return sum(map(abs, self.__coor))
         else:
             return sum(abs(c) ** p for c in self.__coor) ** (1 / p)
+
 
 def toBase(n: int, b: int) -> tuple[int, ...]:
     """
@@ -1485,6 +1590,7 @@ def toBase(n: int, b: int) -> tuple[int, ...]:
         (n, r) = divmod(n, b)
         res.append(r)
     return tuple(res)
+
 
 def fromBase(digits: _tp.Sequence[int],
              b: int,
@@ -1537,6 +1643,7 @@ def fromBase(digits: _tp.Sequence[int],
         x += fracPart
     return x
 
+
 def arrayAccess(arr: _tp.Sequence, coor: _tp.Sequence[int]) -> _tp.Any:
     """
     Access multi-dimensional array with a point
@@ -1557,4 +1664,3 @@ def arrayAccess(arr: _tp.Sequence, coor: _tp.Sequence[int]) -> _tp.Any:
         return arr
     else:
         return arrayAccess(arr[coor[0]], coor[1:])
-
