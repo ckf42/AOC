@@ -1534,7 +1534,13 @@ class Point:
                         for i in range(self.dim)))
 
     def __le__(self, other: object) -> bool:
-        return self.__eq__(other) or self.__lt__(other)
+        if isinstance(other, (int, float)):
+            other = type(self).fromIterable((other,) * self.dim)
+        elif not isinstance(other, type(self)):
+            return NotImplemented
+        return (self.dim == other.dim
+                and all(self.__coor[i] <= other.__coor[i]
+                        for i in range(self.dim)))
 
     def __gt__(self, other: object) -> bool:
         if isinstance(other, (int, float)):
@@ -1546,7 +1552,13 @@ class Point:
                         for i in range(self.dim)))
 
     def __ge__(self, other: object) -> bool:
-        return self.__eq__(other) or self.__gt__(other)
+        if isinstance(other, (int, float)):
+            other = type(self).fromIterable((other,) * self.dim)
+        elif not isinstance(other, type(self)):
+            return NotImplemented
+        return (self.dim == other.dim
+                and all(self.__coor[i] >= other.__coor[i]
+                        for i in range(self.dim)))
 
     def __bool__(self) -> bool:
         return any(self.__coor)
