@@ -75,8 +75,12 @@ def getInput(d: int,
                     print(rt, file=f, end='')
                 return rt
         except _ule.HTTPError as e:
-            raise ValueError(f"Failed to fetch input: {e.reason}\n"
-                             f"Detail: {e.fp.read().decode()}") from e
+            detail = e.fp.read().decode()
+            if 'Please log in to get your puzzle input.' in detail:
+                raise RuntimeError("Not logged in. Token may be invalid or expired") from e
+            else:
+                raise RuntimeError(f"Failed to fetch input: {e.reason}\n"
+                                   f"Detail: {detail}") from e
 
 
 def firstSuchThat(
@@ -694,7 +698,7 @@ def sgn(x: float) -> int:
 
 
 def argmax(arr: _tp.Iterable[_tp.Any],
-           key: _tp.Callable[[_tp.Any], float]) -> _tp.Optional[_tp.Any]:
+           key: _tp.Callable[[_tp.Any], float]=lambda x: x) -> _tp.Optional[_tp.Any]:
     """
     find where maximum occurs
 
@@ -703,8 +707,9 @@ def argmax(arr: _tp.Iterable[_tp.Any],
     arr: Iterable
         the collection of elements to look at
 
-    key: Callable[[Any], float]
+    key: Callable[[Any], float], optional
         a callable that computes the (float) key for comparison
+        defaults to the identity map
 
     Return
     -----
@@ -723,6 +728,33 @@ def argmax(arr: _tp.Iterable[_tp.Any],
             currMaxItem = item
             currMaxKey = k
     return currMaxItem
+
+def argmin(arr: _tp.Iterable[_tp.Any],
+           key: _tp.Callable[[_tp.Any], float]=lambda x: x) -> _tp.Optional[_tp.Any]:
+    """
+    find where minimum occurs
+
+    Parameter
+    -----
+    arr: Iterable
+        the collection of elements to look at
+
+    key: Callable[[Any], float], optional
+        a callable that computes the (float) key for comparison
+        defaults to the identity map
+
+    Return
+    -----
+    the first item in `arr` (as returned by its iterator) that gives the minimum `key` value
+    if there is no element in `arr`, returns None
+
+    Note
+    -----
+    Only enumerate whole `arr` once
+    Will consume `arr` if it is a generator
+    wrapper of argmax
+    """
+    return argmax(arr, lambda x: -key(x))
 
 
 def gcd(*n: int) -> int:
@@ -1166,13 +1198,12 @@ class IntegerIntervals:
     def __repr__(self) -> str:
         if len(self.__contents) == 0:
             return "Empty Collection"
-        elif len(self.__contents) == 1:
+        if len(self.__contents) == 1:
             return f"Interval{self.__contents[0]}"
-        else:
-            return "Union(" \
-                    + ", ".join("Interval[" + str(comp)[1:-1] + "]"
-                                for comp in self.__contents) \
-                    + ")"
+        return "Union(" \
+                + ", ".join("Interval[" + str(comp)[1:-1] + "]"
+                            for comp in self.__contents) \
+                + ")"
 
     def __getitem__(self, idx: int) -> tuple[int, int]:
         return self.__contents[idx]
@@ -1241,13 +1272,13 @@ class IntegerIntervals:
         self.__eleCount = None
 
     def component(self, idx: int) -> tuple[int, int]:
-        return self.__getitem__(idx)
+        return self[idx]
 
     def countComponents(self) -> int:
         return len(self.__contents)
 
     def count(self) -> int:
-        return self.__len__()
+        return len(self)
 
     def isEmpty(self) -> bool:
         return len(self.__contents) == 0
@@ -1373,7 +1404,7 @@ def findSeqPeriod(seq: _tp.Sequence[_T],
     seqLen = len(seq)
     if seqLen <= 1:
         return (seqLen, 0)
-    currOptimal = None
+    currOptimal: _tp.Optional[tuple[int, int]] = None
     for t in inclusiveRange(1, seqLen // 2, None):
         if cond is not None and not cond(t):
             continue
@@ -1425,7 +1456,7 @@ def integerLattice(dim: int,
     assert p >= 1
     if dim <= 0 or norm < 0:
         return
-    elif dim == 1:
+    if dim == 1:
         if not excludeZero:
             yield (0,)
         for coor in range(1, int(norm) + 1):
@@ -1449,6 +1480,8 @@ def integerLattice(dim: int,
 class Point:
     """
     A wrapper class for using tuple as points in Euclidean space
+    If you only need 2D points for addition and comparison only, consider using complex numbers
+    (~10x speedup for addition-intensive cases, e.g. AOC 2017 day 22)
     """
     __slots__ = ('__coor',)
 
@@ -1474,12 +1507,11 @@ class Point:
         if isinstance(dim, int):
             assert 0 <= dim < self.dim, f"Invalid dimension ({dim} not in [0, {self.dim - 1}])"
             return self.__coor[dim]
-        elif isinstance(dim, slice):
+        if isinstance(dim, slice):
             assert 0 <= dim.start and (dim.stop is None or dim.stop <= self.dim), \
                     f"Invalid slice ({dim} on dim {self.dim})"
             return self.__coor[dim]
-        else:
-            raise NotImplementedError(f"Subscript type not recognized: {type(dim)}")
+        raise NotImplementedError(f"Subscript type not recognized: {type(dim)}")
 
     def __iter__(self) -> _tp.Iterable[float]:
         yield from self.__coor
@@ -1494,8 +1526,7 @@ class Point:
         if isinstance(other, (int, float)):
             other = type(self).fromIterable((other,) * self.dim)
         assert self.dim == other.dim, f"Dimension mismatch ({self.dim} != {other.dim})"
-        return type(self)(*(self.__coor[i] + other.__coor[i]
-                            for i in range(self.dim)))
+        return type(self)(*(self.__coor[i] + other.__coor[i] for i in range(self.dim)))
 
     def __rmul__(self, scalar: float) -> 'Point':
         return type(self)(*(scalar * self.__coor[i] for i in range(self.dim)))
@@ -1534,7 +1565,13 @@ class Point:
                         for i in range(self.dim)))
 
     def __le__(self, other: object) -> bool:
-        return self.__eq__(other) or self.__lt__(other)
+        if isinstance(other, (int, float)):
+            other = type(self).fromIterable((other,) * self.dim)
+        elif not isinstance(other, type(self)):
+            return NotImplemented
+        return (self.dim == other.dim
+                and all(self.__coor[i] <= other.__coor[i]
+                        for i in range(self.dim)))
 
     def __gt__(self, other: object) -> bool:
         if isinstance(other, (int, float)):
@@ -1546,7 +1583,13 @@ class Point:
                         for i in range(self.dim)))
 
     def __ge__(self, other: object) -> bool:
-        return self.__eq__(other) or self.__gt__(other)
+        if isinstance(other, (int, float)):
+            other = type(self).fromIterable((other,) * self.dim)
+        elif not isinstance(other, type(self)):
+            return NotImplemented
+        return (self.dim == other.dim
+                and all(self.__coor[i] >= other.__coor[i]
+                        for i in range(self.dim)))
 
     def __bool__(self) -> bool:
         return any(self.__coor)
@@ -1659,8 +1702,74 @@ def arrayAccess(arr: _tp.Sequence, coor: _tp.Sequence[int]) -> _tp.Any:
     Return
     -----
     whatever is in the corresponding location of `coor`
+
+    Note
+    -----
+    MUCH SLOWER than hardcode indices
+    Only use this for (deep) array access with unknown number of layers
     """
     if len(coor) == 0:
         return arr
-    else:
-        return arrayAccess(arr[coor[0]], coor[1:])
+    return arrayAccess(arr[coor[0]], coor[1:])
+
+def matchClosingBracket(s: str,
+                        idx: int,
+                        closeBracket: str,
+                        escapeChar: _tp.Optional[str] = '\\',
+                        hasNesting: bool = True) -> _tp.Optional[int]:
+    """
+    Find the matching closing bracket
+
+    Parameter
+    -----
+    s: str
+        the string to look at
+
+    idx: int
+        the index of the opening bracket
+        also defines the character for the opening bracket
+        must not be escaped
+
+    closeBracket: str
+        a string of a single character that defines the closing bracket
+        must not be the same as the opening bracket
+
+    escapeChar: str or None, optional
+        a string of a single character that defines the escape character
+        must be different from the two brackets
+        a closing bracket that comes after an escape character is not counted
+        an escape character that comes after another escape character is not counted
+        if None, no escaping is done
+        defaults to '\\' (a single backslash)
+
+    hasNesting: bool, optional
+        determine if bracket pairs can be nested
+        if True, other opening bracket are always treated as escaped
+        if False, opening brackets appearing before a closing one are ignored0
+        defaults to True
+
+    Return
+    -----
+    a int that indicates the matching closing bracket following the escape rule,
+    or None if no such closing bracket is found
+    """
+    l = len(s)
+    assert 0 <= idx < l
+    openBracket = s[idx]
+    assert openBracket != closeBracket
+    depthCount = 0
+    ptr = idx + 1
+    isEscaped = False
+    for ptr in range(idx + 1, l):
+        if s[ptr] == escapeChar:
+            isEscaped = not isEscaped
+        else:
+            if s[ptr] == closeBracket and not isEscaped:
+                depthCount -= 1
+                if depthCount == -1:
+                    return ptr
+            elif s[ptr] == openBracket and not (not hasNesting or isEscaped):
+                depthCount += 1
+            isEscaped = False
+    return None
+

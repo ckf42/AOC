@@ -20,39 +20,66 @@ instDict = {i: tuple((int(term) if term[-1].isdigit() else term)
                      for term in l.split())
             for i, l in enumerate(inp.splitlines())}
 l = len(instDict)
-register = {'a': 7, 'b': 0, 'c': 0, 'd': 0}
-pid = 0
-while pid < l:
-    inst = instDict[pid]
-    # print(inst, register)
-    pidOffset = 1
-    if inst[0] == 'cpy':
-        if isinstance(inst[2], str):
+
+def optimizedInst(origInstDict: dict):
+    newInstDict = origInstDict.copy()
+    for i in range(1, l - 1):
+        if newInstDict[i][0] == 'dec' \
+                and newInstDict[i + 1] == ('jnz', newInstDict[i][1], -2) \
+                and newInstDict[i - 1][0] in ('inc', 'dec') \
+                and newInstDict[i - 1][1] != newInstDict[i][1]:
+            newInstDict[i - 1] = (
+                    '+=' if newInstDict[i - 1][0] == 'inc' else '-=',
+                    newInstDict[i - 1][1],
+                    newInstDict[i][1]
+            )
+            newInstDict[i] = newInstDict[i + 1] = ('nop',)
+    return newInstDict
+
+def executeInst(register):
+    unoptInstDict = instDict.copy()
+    currInstDict = optimizedInst(unoptInstDict)
+    pid = 0
+    while pid < l:
+        inst = currInstDict[pid]
+        pidOffset = 1
+        if inst[0] == 'nop':
+            pass
+        elif inst[0] == 'cpy':
             register[inst[2]] = register.get(inst[1], inst[1])
-    elif inst[0] == 'inc':
-        register[inst[1]] += 1
-    elif inst[0] == 'dec':
-        register[inst[1]] -= 1
-    elif inst[0] == 'jnz':
-        pidOffset = 1 \
-                if register.get(inst[1], inst[1]) == 0 \
-                else (inst[2]
-                      if isinstance(inst[2], int)
-                      else register[inst[2]])
-    else:
-        # tgl
-        if 0 <= (targetPid := pid + (int(inst[1])
-                                     if inst[1][-1].isdigit()
-                                     else register[inst[1]])) < l:
-            newInst = list(instDict[targetPid])
-            if len(newInst) == 2:
-                newInst[0] = ('dec' if newInst[0] == 'inc' else 'inc')
+        elif inst[0] == 'inc':
+            register[inst[1]] += 1
+        elif inst[0] == 'dec':
+            register[inst[1]] -= 1
+        elif inst[0] == 'jnz':
+            if register.get(inst[1], inst[1]) != 0:
+                pidOffset = register.get(inst[2], inst[2])
+                assert instDict[pid + pidOffset][0] != 'nop'
+        elif inst[0] == '+=':
+            register[inst[1]] += register.get(inst[2], inst[2])
+        elif inst[0] == '-=':
+            register[inst[1]] -= register.get(inst[2], inst[2])
+        elif inst[0] == 'tgl' \
+                and 0 <= (tPid := pid + register.get(inst[1], inst[1])) < l:
+            if len(unoptInstDict[tPid]) == 2:
+                if isinstance(unoptInstDict[tPid][1], int):
+                    unoptInstDict[tPid] = ('nop',)
+                else:
+                    unoptInstDict[tPid] = (
+                            'dec' if unoptInstDict[tPid][0] == 'inc' else 'inc',
+                            unoptInstDict[tPid][1])
             else:
-                newInst[0] = ('cpy' if newInst[0] == 'jnz' else 'jnz')
-            instDict[targetPid] = tuple(newInst)
-    pid += pidOffset
-print(register['a'])
+                unoptInstDict[tPid] = (
+                        'cpy' if unoptInstDict[tPid][0] == 'jnz' else 'jnz',) \
+                                + unoptInstDict[tPid][1:]
+                if unoptInstDict[tPid][0] == 'cpy' \
+                        and isinstance(unoptInstDict[tPid][2], int):
+                    unoptInstDict[tPid] = ('nop',)
+            currInstDict = optimizedInst(unoptInstDict)
+        pid += pidOffset
+    return register
 
+print(executeInst({'a': 7, 'b': 0, 'c': 0, 'd': 0})['a'])
 
-
+# print(executeInst({'a': 12, 'b': 0, 'c': 0, 'd': 0})['a'])
 

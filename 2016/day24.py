@@ -29,7 +29,7 @@ def getNei(pt):
     resList = list()
     for d in directions:
         newPt = pt + d
-        if 0 <= newPt < boardDim and util.arrayAccess(board, newPt) != '#':
+        if 0 <= newPt < boardDim and board[newPt[0]][newPt[1]] != '#':
             resList.append(newPt)
     return resList
 

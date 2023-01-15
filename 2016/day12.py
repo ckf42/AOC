@@ -12,9 +12,6 @@ instDict = {i: tuple((int(term) if term[-1].isdigit() else term)
                      for term in l.split())
             for i, l in enumerate(inp)}
 
-# part 1
-register = {'a': 0, 'b': 0, 'c': 0, 'd': 0}
-
 # optimize instructions
 for i in range(1, l - 1):
     if instDict[i][0] == 'dec' \
@@ -28,52 +25,34 @@ for i in range(1, l - 1):
         )
         instDict[i] = instDict[i + 1] = ('nop',)
 
-pid = 0
-while pid < l:
-    inst = instDict[pid]
-    pidOffset = 1
-    if inst[0] == 'cpy':
-        register[inst[2]] = register.get(inst[1], inst[1])
-    elif inst[0] == 'inc':
-        register[inst[1]] += 1
-    elif inst[0] == 'dec':
-        register[inst[1]] -= 1
-    elif inst[0] == 'jnz':
-        if register.get(inst[1], inst[1]) != 0:
-            pidOffset = inst[2]
-            assert instDict[pid + pidOffset][0] != 'nop'
-    elif inst[0] == '+=':
-        register[inst[1]] += register[inst[2]]
-    elif inst[0] == '-=':
-        register[inst[1]] -= register[inst[2]]
-    elif inst[0] == 'nop':
-        pass
-    pid += pidOffset
-print(register['a'])
+def executeInst(register):
+    pid = 0
+    while pid < l:
+        inst = instDict[pid]
+        pidOffset = 1
+        if inst[0] == 'cpy':
+            register[inst[2]] = register.get(inst[1], inst[1])
+        elif inst[0] == 'inc':
+            register[inst[1]] += 1
+        elif inst[0] == 'dec':
+            register[inst[1]] -= 1
+        elif inst[0] == 'jnz':
+            if register.get(inst[1], inst[1]) != 0:
+                pidOffset = register.get(inst[2], inst[2])
+                assert instDict[pid + pidOffset][0] != 'nop'
+        elif inst[0] == '+=':
+            register[inst[1]] += register.get(inst[2], inst[2])
+        elif inst[0] == '-=':
+            register[inst[1]] -= register.get(inst[2], inst[2])
+        elif inst[0] == 'nop':
+            pass
+        pid += pidOffset
+    return register
+
+# part 1
+print(executeInst({'a': 0, 'b': 0, 'c': 0, 'd': 0})['a'])
 
 # part 2
-register = {'a': 0, 'b': 0, 'c': 1, 'd': 0}
-pid = 0
-while pid < l:
-    inst = instDict[pid]
-    pidOffset = 1
-    if inst[0] == 'cpy':
-        register[inst[2]] = register.get(inst[1], inst[1])
-    elif inst[0] == 'inc':
-        register[inst[1]] += 1
-    elif inst[0] == 'dec':
-        register[inst[1]] -= 1
-    elif inst[0] == 'jnz':
-        if register.get(inst[1], inst[1]) != 0:
-            pidOffset = inst[2]
-            assert instDict[pid + pidOffset][0] != 'nop'
-    elif inst[0] == '+=':
-        register[inst[1]] += register[inst[2]]
-    elif inst[0] == '-=':
-        register[inst[1]] -= register[inst[2]]
-    elif inst[0] == 'nop':
-        pass
-    pid += pidOffset
-print(register['a'])
+print(executeInst({'a': 0, 'b': 0, 'c': 1, 'd': 0})['a'])
 
 

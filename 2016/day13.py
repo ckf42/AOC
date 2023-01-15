@@ -35,7 +35,7 @@ print(util.dijkstra(initPt,
 
 # part 2
 distLimit = 50
-q = deque()
+q: deque[tuple[int, util.Point]] = deque()
 q.append((0, initPt))
 visited = set()
 while len(q) != 0:
