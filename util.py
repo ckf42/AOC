@@ -1,4 +1,5 @@
 import typing as _tp
+# import collections.abc as _abc
 import urllib.request as _ulq
 import urllib.error as _ule
 import re as _re
@@ -805,7 +806,7 @@ def lcm(*n: int) -> int:
         return lcm(lcm(*n[:2]), *n[2:])
 
 
-class Heap:
+class Heap(_tp.Generic[_T]):
     """
     simple wrapper for heap based on heapq
 
@@ -817,43 +818,135 @@ class Heap:
     __slots__ = ('__data', '__key')
 
     def __init__(self,
-                 initItemList=None,
-                 key=(lambda k: k),
+                 initItemList: _tp.Optional[_tp.Iterable[_T]] = None,
+                 key: _tp.Optional[_tp.Callable[[_T], float]] = (lambda k: _tp.cast(float, k)),
                  isMinHeap: bool = True):
-        self.__data: list = list()
-        self.__key: _tp.Callable[[_tp.Any], float] = (key
-                                                      if isMinHeap
-                                                      else (lambda k: -key(k)))
+        self.__data: list[tuple[float, _T]] = list()
+        self.__key: _tp.Callable[[_T], float] = (
+                (key if isMinHeap else (lambda k: -key(k)))
+                if key is not None
+                else (lambda k: 0))
         if initItemList is not None:
-            self.__data.extend((self.__key(item), item)
-                               for item in initItemList)
-            _hq.heapify(self.__data)
+            self.extend(initItemList)
 
-    def push(self, item):
+    def push(self, item: _T):
+        """
+        Push an element in the heap
+        """
         _hq.heappush(self.__data, (self.__key(item), item))
 
-    def pop(self):
+    def extend(self, itemList: _tp.Iterable[_T]):
+        """
+        Push an iterable of elements in the heap
+        """
+        self.__data.extend((self.__key(item), item)
+                           for item in itemList)
+        _hq.heapify(self.__data)
+
+    def pop(self) -> _T:
+        """
+        Remove the top element in the heap and return it
+        """
         return _hq.heappop(self.__data)[-1]
 
-    def top(self):
+    def top(self) -> _T:
+        """
+        Get the top element while keeping it in the heap
+        """
         return self.__data[0][-1]
 
     def __len__(self) -> int:
         return len(self.__data)
 
+    def __repr__(self) -> str:
+        return 'Heap' + self.__data.__str__()
+
     def isEmpty(self) -> bool:
+        """
+        Check if the heap is empty
+        """
         return len(self.__data) == 0
 
     def resize(self, newSize: int):
-        self.__data = self.__data[:newSize]
-        _hq.heapify(self.__data)
+        """
+        Reduce the heap to at most the given size
+        The larger elements are more likely to get removed, but does not guarantee which
+        """
+        if newSize < len(self):
+            self.__data = self.__data[:newSize]
+            _hq.heapify(self.__data)
+
+    def clear(self):
+        """
+        Remove all elements in the heap
+        """
+        self.__data.clear()
+
+    def discard(self, item: _T) -> bool:
+        """
+        Remove the element in the heap if it exists, and return if any element is removed
+        If multiple copies of the same item exist in the heap with different keys,
+            does not guarantee which got removed
+        """
+        idx = firstIdxSuchThat(self.__data, lambda x: x[-1] == item)
+        if idx is not None:
+            self.__data[idx:idx + 1] = []
+            _hq.heapify(self.__data)
+            return True
+        return False
 
 
-def MinHeap(initItemList=None, key=(lambda k: k)) -> Heap:
+def MinHeap(initItemList: _tp.Optional[_tp.Iterable[_T]] = None,
+            key: _tp.Optional[_tp.Callable[[_T], float]] = (lambda k: _tp.cast(float, k))
+            ) -> Heap[_T]:
+    """
+    Wrapper function to get a min heap. See Heap.__init__ for details
+
+    Parameter
+    -----
+    initItemList: Iterable[T] or None, optional
+        the initial list
+        defaults to None
+
+    key: Callable[[T], float] or None, optional
+        the key functoin
+        defaults to identity
+
+    Return
+    -----
+    A min heap as defined with Heap
+
+    Note
+    -----
+    Wrapper function
+    """
     return Heap(initItemList=initItemList, key=key, isMinHeap=True)
 
 
-def MaxHeap(initItemList=None, key=(lambda k: k)) -> Heap:
+def MaxHeap(initItemList: _tp.Optional[_tp.Iterable[_T]] = None,
+            key: _tp.Optional[_tp.Callable[[_T], float]] = (lambda k: _tp.cast(float, k))
+            ) -> Heap[_T]:
+    """
+    Wrapper function to get a max heap. See Heap.__init__ for details
+
+    Parameter
+    -----
+    initItemList: Iterable[T] or None, optional
+        the initial list
+        defaults to None
+
+    key: Callable[[T], float] or None, optional
+        the key functoin
+        defaults to identity
+
+    Return
+    -----
+    A max heap as defined with Heap
+
+    Note
+    -----
+    Wrapper function
+    """
     return Heap(initItemList=initItemList, key=key, isMinHeap=False)
 
 
@@ -911,8 +1004,9 @@ def dijkstra(initialNode: _T,
     """
     if aStarHeuristicFunc is None:
         aStarHeuristicFunc = (lambda state: 0)
-    h = MinHeap(initItemList=((initialNode, 0),),
-                key=(lambda sc: sc[1] + aStarHeuristicFunc(sc[0])))
+    h: Heap[tuple[_T, float]] = MinHeap(
+            initItemList=((initialNode, 0),),
+            key=(lambda sc: sc[1] + aStarHeuristicFunc(sc[0])))
     visited = set()
     while not h.isEmpty():
         (currNode, currCost) = h.pop()
@@ -1416,8 +1510,46 @@ def findSeqPeriod(seq: _tp.Sequence[_T],
                                   else (seqLen // t))
         if currOptimal is None or remainLen < currOptimal[1]:
             currOptimal = (t, remainLen)
+    assert currOptimal is not None
+    if sum(currOptimal) == seqLen:
+        raise RuntimeWarning("findSeqPeriod failed to find proper period. seq may be aperiodic")
     return currOptimal
 
+def extrapolatePeriodicSeq(arr: _tp.Sequence[float], idx: int, inDiff: bool = False) -> float:
+    """
+    extrapolate a periodic sequence
+
+    Parameter
+    -----
+    arr: Sequence[float]
+        the sequence to extrapolate from
+        should be eventually periodic and long enough to contain 2 periods
+        (but longer sequence takes longer time to compute)
+
+    idx: int
+        the target index to extrapolate at
+        assumed nonnegative
+        if smaller than length of `arr`, will return the value in `arr` instead
+
+    inDiff: bool, optional
+        indicate whether the periodicity is in the difference (increment)
+        if True, will treat the difference as periodic
+        if False, will treat the value as periodic
+        defaults to False
+
+    Return
+    -----
+    a float of the extrapolated value
+    """
+    if idx < len(arr):
+        return arr[idx]
+    if inDiff:
+        periodData = findSeqPeriod(diff(arr))
+        d, m = divmod(idx - periodData[1], periodData[0])
+        return (arr[sum(periodData)] - arr[periodData[1]]) * d + arr[periodData[1] + m]
+    else:
+        periodData = findSeqPeriod(arr)
+        return arr[(idx - periodData[1]) % periodData[0] + periodData[1]]
 
 def integerLattice(dim: int,
                    norm: float,
@@ -1522,9 +1654,7 @@ class Point:
     def __len__(self) -> int:
         return self.dim
 
-    def __add__(self, other: _tp.Union['Point', float]) -> 'Point':
-        if isinstance(other, (int, float)):
-            other = type(self).fromIterable((other,) * self.dim)
+    def __add__(self, other: 'Point') -> 'Point':
         assert self.dim == other.dim, f"Dimension mismatch ({self.dim} != {other.dim})"
         return type(self)(*(self.__coor[i] + other.__coor[i] for i in range(self.dim)))
 
@@ -1605,6 +1735,153 @@ class Point:
             return sum(map(abs, self.__coor))
         else:
             return sum(abs(c) ** p for c in self.__coor) ** (1 / p)
+
+class MutPoint:
+    """
+    A wrapper class for using tuple as points in Euclidean space
+    Point but mutable and not hashable
+    If you only need 2D points for addition and comparison only, consider using complex numbers
+    (~10x speedup for addition-intensive cases, e.g. AOC 2017 day 22)
+    """
+    __slots__ = ('__coor',)
+
+    def __init__(self, *coors: float) -> None:
+        assert len(coors) != 0, "Empty coordinate"
+        self.__coor: list[float] = list(coors)
+
+    @classmethod
+    def fromIterable(cls, it: _tp.Iterable[float]) -> 'MutPoint':
+        return cls(*it)
+
+    @classmethod
+    def zero(cls, dim: int) -> 'MutPoint':
+        return cls.fromIterable((0,) * dim)
+
+    @property
+    def dim(self) -> int:
+        return len(self.__coor)
+
+    def __getitem__(self,
+                    key: _tp.Union[int, slice]
+                    ) -> _tp.Union[float, tuple[float, ...]]:
+        if isinstance(key, int):
+            assert 0 <= key < self.dim, f"Invalid dimension ({key} not in [0, {self.dim - 1}])"
+            return self.__coor[key]
+        if isinstance(key, slice):
+            assert 0 <= key.start and (key.stop is None or key.stop <= self.dim), \
+                    f"Invalid slice ({key} on dim {self.dim})"
+            return tuple(self.__coor[key])
+        raise NotImplementedError(f"Subscript type not recognized: {type(key)}")
+
+    def __setitem__(self,
+                    key: int,
+                    val: _tp.Union[int, float]):
+        assert isinstance(val, (int, float))
+        self.__coor[key] = val
+
+    def __iter__(self) -> _tp.Iterable[float]:
+        yield from self.__coor
+
+    def __repr__(self) -> str:
+        return "MutPoint(" + ", ".join(map(str, self.__coor)) + ")"
+
+    def __len__(self) -> int:
+        return self.dim
+
+    def __add__(self, other: _tp.Union[Point, 'MutPoint']) -> Point:
+        assert self.dim == other.dim, f"Dimension mismatch ({self.dim} != {other.dim})"
+        return Point(*(self.__coor[i] + other[i] for i in range(self.dim)))
+
+    def __iadd__(self, other: _tp.Union[Point, 'MutPoint']) -> 'MutPoint':
+        assert self.dim == other.dim, f"Dimension mismatch ({self.dim} != {other.dim})"
+        for i in range(len(other)):
+            self.__coor[i] += other[i]
+        return self
+
+    def __rmul__(self, scalar: float) -> Point:
+        return Point(*(scalar * self.__coor[i] for i in range(self.dim)))
+
+    def __mul__(self, scalar: float) -> Point:
+        return self.__rmul__(scalar)
+
+    def __imul__(self, other: _tp.Union[float, int, Point, 'MutPoint']) -> 'MutPoint':
+        if isinstance(other, (float, int)):
+            for i in range(self.dim):
+                self.__coor[i] *= other
+        else:
+            assert self.dim == other.dim, f"Dimension mismatch ({self.dim} != {other.dim})"
+            for i in range(len(other)):
+                self.__coor[i] *= other[i]
+        return self
+
+    def __neg__(self) -> Point:
+        return self.__rmul__(-1)
+
+    def __sub__(self, other: _tp.Union['MutPoint', Point]) -> Point:
+        return self.__add__(other.__neg__())
+
+    def __isub__(self, other: _tp.Union[Point, 'MutPoint']) -> 'MutPoint':
+        assert self.dim == other.dim, f"Dimension mismatch ({self.dim} != {other.dim})"
+        for i in range(len(other)):
+            self.__coor[i] -= other[i]
+        return self
+
+    def __pos__(self) -> Point:
+        return Point(*self.__coor)
+
+    def __abs__(self) -> Point:
+        return Point.fromIterable(map(abs, self.__coor))
+
+    def __eq__(self, other: object) -> bool:
+        if isinstance(other, (int, float)):
+            other = Point.fromIterable((other,) * self.dim)
+        elif not isinstance(other, (Point, type(self))):
+            return NotImplemented
+        return (self.dim == other.dim
+                and all(self.__coor[i] == other[i]
+                        for i in range(self.dim)))
+
+    def __lt__(self, other: object) -> bool:
+        if isinstance(other, (int, float)):
+            other = Point.fromIterable((other,) * self.dim)
+        elif not isinstance(other, (Point, type(self))):
+            return NotImplemented
+        return (self.dim == other.dim
+                and all(self.__coor[i] < other[i]
+                        for i in range(self.dim)))
+
+    def __le__(self, other: object) -> bool:
+        if isinstance(other, (int, float)):
+            other = Point.fromIterable((other,) * self.dim)
+        elif not isinstance(other, (Point, type(self))):
+            return NotImplemented
+        return (self.dim == other.dim
+                and all(self.__coor[i] <= other[i]
+                        for i in range(self.dim)))
+
+    def __gt__(self, other: object) -> bool:
+        if isinstance(other, (int, float)):
+            other = Point.fromIterable((other,) * self.dim)
+        elif not isinstance(other, (Point, type(self))):
+            return NotImplemented
+        return (self.dim == other.dim
+                and all(self.__coor[i] > other[i]
+                        for i in range(self.dim)))
+
+    def __ge__(self, other: object) -> bool:
+        if isinstance(other, (int, float)):
+            other = Point.fromIterable((other,) * self.dim)
+        elif not isinstance(other, (Point, type(self))):
+            return NotImplemented
+        return (self.dim == other.dim
+                and all(self.__coor[i] >= other[i]
+                        for i in range(self.dim)))
+
+    def __bool__(self) -> bool:
+        return any(self.__coor)
+
+    def norm(self, p: float = 2) -> float:
+        return Point(*self.__coor).norm(p)
 
 
 def toBase(n: int, b: int) -> tuple[int, ...]:
@@ -1772,4 +2049,22 @@ def matchClosingBracket(s: str,
                 depthCount += 1
             isEscaped = False
     return None
+
+def diff(arr: _tp.Sequence[float]) -> tuple[float, ...]:
+    """
+    compute the (forward) difference of a sequence
+
+    Parameters
+    -----
+    arr: Sequence[float]
+        the sequence to look at
+        assumed of length >= 2
+
+    Return
+    -----
+    A tuple of floats that is of length `len(arr) - 1`
+    where `diff[i] == arr[i + 1] - diff[i]`
+    """
+    assert len(arr) >= 2
+    return tuple(arr[i + 1] - arr[i] for i in range(len(arr) - 1))
 
