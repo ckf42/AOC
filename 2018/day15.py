@@ -14,147 +14,188 @@ inp = """\
 #..G#E#
 #.....#
 #######\
-"""
-# inp = util.getInput(d=15, y=2018)
+""" # 47 * 590 = 27730
+inp = """\
+#######
+#G..#E#
+#E#E.E#
+#G.##.#
+#...#E#
+#...E.#
+#######\
+""" # 37 * 982 = 36334
+inp = util.getInput(d=15, y=2018)
+
+debugPrint = lambda *x: None
+# debugPrint = print
 
 caveMap = inp.splitlines()
-dim = util.Point(len(caveMap), len(caveMap[0]))
-elfLoc = list(util.MutPoint(i, j)
+dim = (len(caveMap), len(caveMap[0]))
+elfLoc: list[Optional[complex]] = list(complex(i, j)
               for i in range(dim[0])
               for j in range(dim[1])
               if caveMap[i][j] == 'E')
-elfCount = len(elfLoc)
-elfHp = list(200 for _ in range(elfCount))
-gobLoc = list(util.MutPoint(i, j)
+gobLoc: list[Optional[complex]] = list(complex(i, j)
               for i in range(dim[0])
               for j in range(dim[1])
               if caveMap[i][j] == 'G')
+elfCount = len(elfLoc)
 gobCount = len(gobLoc)
-gobHp = list(200 for _ in range(gobCount))
-# idx in list, coor, isGob
-moveOrder: util.Heap[tuple[util.Point, int, bool]] = util.MinHeap(key=None)
-neighDir = (util.Point(-1, 0), util.Point(0, -1), util.Point(0, 1), util.Point(1, 0))
-# reverse dir: 3 - dIdx
 attackPower = 3
-
-def enemyIdxInRange(pt: util.Point, isGob: bool) -> tuple[int, ...]:
-    return tuple((elfLoc if isGob else gobLoc).index(newPt)
-                 for i in range(4)
-                 if ((newPt := pt + neighDir[i]) or True) \
-                         and 0 <= newPt < dim \
-                         and caveMap[newPt[0]][newPt[1]] != '#' \
-                         and newPt in (elfLoc if isGob else gobLoc))
-
-def dirToMove(pt: util.Point, isGob: bool) -> Optional[int]:
-    elfSet = frozenset(map(util.Point.fromIterable, (l for l in elfLoc if l is not None)))
-    gobSet = frozenset(map(util.Point.fromIterable, (l for l in gobLoc if l is not None)))
-    # find possible target
-    sourceDir: defaultdict[util.Point, list[int]] = defaultdict(list)
-    reachedDist: dict[util.Point, int] = dict()
-    possibleTarget: set[util.Point] = set()
-    distToTarget = util.inf
-    # dist, pt, sourceDir
-    h: util.Heap[tuple[int, util.Point, int]] = util.MinHeap(((0, pt, -1),), key=None)
-    while not h.isEmpty():
-        (currDist, currPt, sDir) = h.pop()
-        if currPt in reachedDist:
-            if currDist == reachedDist[currPt]:
-                # also a possible path, but no need to search again
-                sourceDir[currPt].append(sDir)
-            continue
-        if currDist > distToTarget:
-            # already enumerated all necessary points
-            break
-        reachedDist[currPt] = currDist
-        sourceDir[currPt].append(3 - sDir) # points to source
-        for dIdx in range(4):
-            newPt = currPt + neighDir[dIdx]
-            if not (0 <= newPt < dim) \
-                    or caveMap[newPt[0]][newPt[1]] == '#' \
-                    or newPt in (gobSet if isGob else elfSet):
-                # blocked
-                continue
-            if newPt in (elfSet if isGob else gobSet):
-                # enemy
-                possibleTarget.add(currPt)
-                distToTarget = currDist
-            else:
-                h.push((currDist + 1, newPt, dIdx))
-    if len(possibleTarget) == 0:
-        return None
-    # backtrack to pt
-    target = min(possibleTarget)
-    feasibleDir = set()
-    stack: list[tuple[int, util.Point]] = list()
-    stack.extend(((d, target) for d in sourceDir[target]))
-    while len(stack) != 0:
-        (d, loc) = stack.pop()
-        if loc == pt:
-            feasibleDir.add(3 - d)
-            if len(feasibleDir) == 4:
-                # all directions are possible, no need to keep checking
-                break
-        else:
-            newLoc = loc + neighDir[d]
-            stack.extend((((dd, newLoc) for dd in sourceDir[newLoc])))
-    return min(feasibleDir)
+elfHp = list(200 for _ in range(elfCount))
+gobHp = list(200 for _ in range(gobCount))
+directions = (-1, -1j, 1j, 1)
+# loc, isGob, idx in list
+locOrderHeap: util.Heap[tuple[complex, bool, int]] = util.MinHeap(
+        key=lambda pr: (int(pr[0].real), int(pr[0].imag)))
 
 def printCave():
+    elfSet = frozenset((l for l in elfLoc if l is not None))
+    gobSet = frozenset((l for l in gobLoc if l is not None))
+    print('elf', elfSet)
+    print('gob', gobSet)
     for i in range(dim[0]):
         for j in range(dim[1]):
             if caveMap[i][j] == '#':
                 print('#', end='')
             else:
-                pt = util.Point(i, j)
-                if pt in elfLoc:
+                pt = complex(i, j)
+                if pt in elfSet:
                     print('E', end='')
-                elif pt in gobLoc:
+                elif pt in gobSet:
                     print('G', end='')
                 else:
                     print('.', end='')
         print('')
     print('')
 
+def enemyIdxInRange(pt: complex, isGob: bool) -> Optional[int]:
+    minHpIdx = None
+    minHp = 0
+    for d in directions:
+        try:
+            currIdx = (elfLoc if isGob else gobLoc).index(pt + d)
+            currHp = (elfHp if isGob else gobHp)[currIdx]
+            if minHpIdx is None or currHp < minHp:
+                minHpIdx = currIdx
+                minHp = currHp
+        except ValueError:
+            pass
+    return minHpIdx
 
+def dirToMove(pt: complex, isGob: bool) -> Optional[int]:
+    enemySet = frozenset(loc
+                         for loc in (elfLoc if isGob else gobLoc)
+                         if loc is not None)
+    friendSet = frozenset(loc
+                          for loc in (gobLoc if isGob else elfLoc)
+                          if loc is not None)
+    # (dist, loc, source dir)
+    h: util.Heap[int, tuple[int, int], int] = util.MinHeap(key=lambda pr: pr[0])
+    h.push((0, (int(pt.real), int(pt.imag)), None))
+    targetLoc: Optional[tuple[int, int]] = None
+    currOptimal = util.inf
+    reachedDist: dict[complex, int] = dict()
+    sourceDir: defaultdict[complex, list[int]] = defaultdict(list)
+    while not h.isEmpty():
+        (currDist, currCoor, currDir) = h.pop()
+        currLoc = complex(*currCoor)
+        # debugPrint('at', currLoc)
+        if currDist > currOptimal:
+            break
+        if currLoc in reachedDist:
+            if currDist == reachedDist[currLoc]:
+                sourceDir[currLoc].append(currDir)
+            continue
+        reachedDist[currLoc] = currDist
+        sourceDir[currLoc].append(currDir)
+        for i in range(4):
+            newPt = currLoc + directions[i]
+            # debugPrint('checking', newPt)
+            (x, y) = (int(newPt.real), int(newPt.imag))
+            if not (0 <= x < dim[0]) or not (0 <= y < dim[1]) \
+                    or caveMap[x][y] == '#' or newPt in friendSet:
+                continue
+            if newPt in enemySet:
+                # debugPrint('is enemy')
+                if currOptimal >= currDist:
+                    currOptimal = currDist
+                    if targetLoc is None \
+                            or currCoor[0] < targetLoc[0] \
+                            or (currCoor[0] == targetLoc[0] and currCoor[1] < targetLoc[1]):
+                        targetLoc = currCoor
+            else:
+                h.push((currDist + 1, (x, y), i))
+    if targetLoc is None:
+        return None
+    # debugPrint(targetLoc)
+    feasibleDir = set()
+    stack = [complex(*targetLoc)]
+    # debugPrint(sourceDir)
+    while len(stack) != 0:
+        # debugPrint(stack)
+        loc = stack.pop()
+        for dIdx in sourceDir[loc]:
+            newLoc = loc - directions[dIdx]
+            if newLoc == pt:
+                feasibleDir.add(dIdx)
+            else:
+                stack.append(newLoc)
+    return min(feasibleDir)
 
 # part 1
-turnCount = 0
-while elfCount != 0 and gobCount != 0:
-    turnCount += 1
-    print(turnCount)
-    printCave()
-    moveOrder.extend(tuple((util.Point(*elfLoc[idx]), idx, False)
-                           for idx in range(elfCount)
-                           if elfLoc[idx] is not None))
-    moveOrder.extend(tuple((util.Point(*gobLoc[idx]), idx, True)
-                           for idx in range(gobCount)
-                           if gobLoc[idx] is not None))
-    while not moveOrder.isEmpty():
-        (_, entIdx, isGob) = moveOrder.pop()
-        if (gobLoc if isGob else elfLoc)[entIdx] is None:
+
+elfRemain = elfCount
+gobRemain = gobCount
+finishedTurnCount = 0
+debugPrint('init')
+printCave()
+while True:
+    debugPrint('starting turn', finishedTurnCount)
+    if elfRemain == 0:
+        debugPrint('all elf died')
+        break
+    elif gobRemain == 0:
+        debugPrint('all gob died')
+        break
+    locOrderHeap.extend((elfLoc[idx], False, idx)
+                        for idx in range(elfCount)
+                        if elfLoc[idx] is not None)
+    locOrderHeap.extend((gobLoc[idx], True, idx)
+                        for idx in range(gobCount)
+                        if gobLoc[idx] is not None)
+    while not locOrderHeap.isEmpty():
+        (currLoc, isGob, selfIdx) = locOrderHeap.pop()
+        if (gobLoc if isGob else elfLoc)[selfIdx] is None:
             continue
-        attackIdxList = enemyIdxInRange((gobLoc if isGob else elfLoc)[entIdx], isGob)
-        if len(attackIdxList) == 0:
-            mvDir = dirToMove(util.Point.fromIterable((gobLoc if isGob else elfLoc)[entIdx]),
-                              isGob)
-            if mvDir is not None:
-                (gobLoc if isGob else elfLoc)[entIdx] += neighDir[mvDir]
-                attackIdxList = enemyIdxInRange((gobLoc if isGob else elfLoc)[entIdx], isGob)
-        if len(attackIdxList) != 0:
-            targetIdx = util.argmin(attackIdxList,
-                                    lambda i: (elfHp if isGob else gobHp)[i])
-            (elfHp if isGob else gobHp)[targetIdx] -= attackPower
-            if (elfHp if isGob else gobHp)[targetIdx] <= 0:
-                # died
-                if isGob:
-                    elfLoc[targetIdx] = None
-                    elfCount -= 1
-                else:
-                    gobLoc[targetIdx] = None
-                    gobCount -= 1
-
-
+        debugPrint('turn for', 'gob' if isGob else 'elf', 'idx', selfIdx, 'at', currLoc)
+        attackIdx = enemyIdxInRange(currLoc, isGob)
+        if attackIdx is None:
+            moveDirIdx = dirToMove(currLoc, isGob)
+            if moveDirIdx is not None:
+                debugPrint('moving', '^<>v'[moveDirIdx])
+                (gobLoc if isGob else elfLoc)[selfIdx] += directions[moveDirIdx]
+                attackIdx = enemyIdxInRange(
+                        (gobLoc if isGob else elfLoc)[selfIdx],
+                        isGob)
+        if attackIdx is not None:
+            debugPrint('attacking', 'elf' if isGob else 'gob', 'idx', attackIdx)
+            if isGob:
+                elfHp[attackIdx] -= attackPower
+                if elfHp[attackIdx] <= 0:
+                    elfLoc[attackIdx] = None
+                    elfRemain -= 1
+            else:
+                gobHp[attackIdx] -= attackPower
+                if gobHp[attackIdx] <= 0:
+                    gobLoc[attackIdx] = None
+                    gobRemain -= 1
+        if elfRemain == 0 or gobRemain == 0:
+            debugPrint('last killed')
+            break
+    debugPrint(finishedTurnCount, 'turn end')
+    printCave()
+    finishedTurnCount += 1
+print(finishedTurnCount * sum(hp for hp in elfHp + gobHp if hp > 0))
 
 # part 2
-
-

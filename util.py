@@ -851,7 +851,7 @@ class Heap(_tp.Generic[_T]):
 
     def top(self) -> _T:
         """
-        Get the top element while keeping it in the heap
+        Get the top element
         """
         return self.__data[0][-1]
 
@@ -870,7 +870,7 @@ class Heap(_tp.Generic[_T]):
     def resize(self, newSize: int):
         """
         Reduce the heap to at most the given size
-        The larger elements are more likely to get removed, but does not guarantee which
+        The larger elements are more likely to get removed, but no guarantee on which
         """
         if newSize < len(self):
             self.__data = self.__data[:newSize]
@@ -888,7 +888,10 @@ class Heap(_tp.Generic[_T]):
         If multiple copies of the same item exist in the heap with different keys,
             does not guarantee which got removed
         """
-        idx = firstIdxSuchThat(self.__data, lambda x: x[-1] == item)
+        idx = next((idx
+                    for idx in range(len(self))
+                    if self.__data[idx][-1] == item),
+                   None)
         if idx is not None:
             self.__data[idx:idx + 1] = []
             _hq.heapify(self.__data)
@@ -1794,7 +1797,7 @@ class MutPoint:
 
     def __iadd__(self, other: _tp.Union[Point, 'MutPoint']) -> 'MutPoint':
         assert self.dim == other.dim, f"Dimension mismatch ({self.dim} != {other.dim})"
-        for i in range(len(other)):
+        for i in range(self.dim):
             self.__coor[i] += other[i]
         return self
 
