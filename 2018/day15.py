@@ -6,42 +6,24 @@ from collections import defaultdict
 if __name__ != '__main__':
     exit()
 
-inp = """\
-#######
-#.G...#
-#...EG#
-#.#.#G#
-#..G#E#
-#.....#
-#######\
-""" # 47 * 590 = 27730
-inp = """\
-#######
-#G..#E#
-#E#E.E#
-#G.##.#
-#...#E#
-#...E.#
-#######\
-""" # 37 * 982 = 36334
 inp = util.getInput(d=15, y=2018)
-
-debugPrint = lambda *x: None
-# debugPrint = print
 
 caveMap = inp.splitlines()
 dim = (len(caveMap), len(caveMap[0]))
-elfLoc: list[Optional[complex]] = list(complex(i, j)
-              for i in range(dim[0])
-              for j in range(dim[1])
-              if caveMap[i][j] == 'E')
-gobLoc: list[Optional[complex]] = list(complex(i, j)
-              for i in range(dim[0])
-              for j in range(dim[1])
-              if caveMap[i][j] == 'G')
+elfLoc: list[Optional[complex]] = list(
+        complex(i, j)
+        for i in range(dim[0])
+        for j in range(dim[1])
+        if caveMap[i][j] == 'E')
+gobLoc: list[Optional[complex]] = list(
+        complex(i, j)
+        for i in range(dim[0])
+        for j in range(dim[1])
+        if caveMap[i][j] == 'G')
 elfCount = len(elfLoc)
 gobCount = len(gobLoc)
-attackPower = 3
+gobAttackPower = 3
+elfAttackPower = 3
 elfHp = list(200 for _ in range(elfCount))
 gobHp = list(200 for _ in range(gobCount))
 directions = (-1, -1j, 1j, 1)
@@ -52,8 +34,6 @@ locOrderHeap: util.Heap[tuple[complex, bool, int]] = util.MinHeap(
 def printCave():
     elfSet = frozenset((l for l in elfLoc if l is not None))
     gobSet = frozenset((l for l in gobLoc if l is not None))
-    print('elf', elfSet)
-    print('gob', gobSet)
     for i in range(dim[0]):
         for j in range(dim[1]):
             if caveMap[i][j] == '#':
@@ -90,6 +70,7 @@ def dirToMove(pt: complex, isGob: bool) -> Optional[int]:
     friendSet = frozenset(loc
                           for loc in (gobLoc if isGob else elfLoc)
                           if loc is not None)
+    # NOTE: this part is too slow
     # (dist, loc, source dir)
     h: util.Heap[int, tuple[int, int], int] = util.MinHeap(key=lambda pr: pr[0])
     h.push((0, (int(pt.real), int(pt.imag)), None))
@@ -100,7 +81,6 @@ def dirToMove(pt: complex, isGob: bool) -> Optional[int]:
     while not h.isEmpty():
         (currDist, currCoor, currDir) = h.pop()
         currLoc = complex(*currCoor)
-        # debugPrint('at', currLoc)
         if currDist > currOptimal:
             break
         if currLoc in reachedDist:
@@ -111,13 +91,11 @@ def dirToMove(pt: complex, isGob: bool) -> Optional[int]:
         sourceDir[currLoc].append(currDir)
         for i in range(4):
             newPt = currLoc + directions[i]
-            # debugPrint('checking', newPt)
             (x, y) = (int(newPt.real), int(newPt.imag))
             if not (0 <= x < dim[0]) or not (0 <= y < dim[1]) \
                     or caveMap[x][y] == '#' or newPt in friendSet:
                 continue
             if newPt in enemySet:
-                # debugPrint('is enemy')
                 if currOptimal >= currDist:
                     currOptimal = currDist
                     if targetLoc is None \
@@ -128,12 +106,9 @@ def dirToMove(pt: complex, isGob: bool) -> Optional[int]:
                 h.push((currDist + 1, (x, y), i))
     if targetLoc is None:
         return None
-    # debugPrint(targetLoc)
     feasibleDir = set()
     stack = [complex(*targetLoc)]
-    # debugPrint(sourceDir)
     while len(stack) != 0:
-        # debugPrint(stack)
         loc = stack.pop()
         for dIdx in sourceDir[loc]:
             newLoc = loc - directions[dIdx]
@@ -148,15 +123,11 @@ def dirToMove(pt: complex, isGob: bool) -> Optional[int]:
 elfRemain = elfCount
 gobRemain = gobCount
 finishedTurnCount = 0
-debugPrint('init')
 printCave()
 while True:
-    debugPrint('starting turn', finishedTurnCount)
     if elfRemain == 0:
-        debugPrint('all elf died')
         break
     elif gobRemain == 0:
-        debugPrint('all gob died')
         break
     locOrderHeap.extend((elfLoc[idx], False, idx)
                         for idx in range(elfCount)
@@ -168,34 +139,100 @@ while True:
         (currLoc, isGob, selfIdx) = locOrderHeap.pop()
         if (gobLoc if isGob else elfLoc)[selfIdx] is None:
             continue
-        debugPrint('turn for', 'gob' if isGob else 'elf', 'idx', selfIdx, 'at', currLoc)
+        if elfRemain == 0 or gobRemain == 0:
+            break
         attackIdx = enemyIdxInRange(currLoc, isGob)
         if attackIdx is None:
             moveDirIdx = dirToMove(currLoc, isGob)
             if moveDirIdx is not None:
-                debugPrint('moving', '^<>v'[moveDirIdx])
                 (gobLoc if isGob else elfLoc)[selfIdx] += directions[moveDirIdx]
                 attackIdx = enemyIdxInRange(
                         (gobLoc if isGob else elfLoc)[selfIdx],
                         isGob)
         if attackIdx is not None:
-            debugPrint('attacking', 'elf' if isGob else 'gob', 'idx', attackIdx)
             if isGob:
-                elfHp[attackIdx] -= attackPower
+                elfHp[attackIdx] -= gobAttackPower
                 if elfHp[attackIdx] <= 0:
                     elfLoc[attackIdx] = None
                     elfRemain -= 1
             else:
-                gobHp[attackIdx] -= attackPower
+                gobHp[attackIdx] -= elfAttackPower
                 if gobHp[attackIdx] <= 0:
                     gobLoc[attackIdx] = None
                     gobRemain -= 1
-        if elfRemain == 0 or gobRemain == 0:
-            debugPrint('last killed')
-            break
-    debugPrint(finishedTurnCount, 'turn end')
+    if not locOrderHeap.isEmpty() and (elfRemain == 0 or gobRemain == 0):
+        break
     printCave()
     finishedTurnCount += 1
+print('turn count', finishedTurnCount)
+print('remain hp', sum(hp for hp in elfHp + gobHp if hp > 0))
 print(finishedTurnCount * sum(hp for hp in elfHp + gobHp if hp > 0))
 
 # part 2
+
+elfLocCopy = list(complex(i, j)
+                  for i in range(dim[0])
+                  for j in range(dim[1])
+                  if caveMap[i][j] == 'E')
+gobLocCopy = list(complex(i, j)
+                  for i in range(dim[0])
+                  for j in range(dim[1])
+                  if caveMap[i][j] == 'G')
+while True:
+    elfAttackPower += 1
+    gobRemain = gobCount
+    elfLoc[:] = elfLocCopy.copy()
+    gobLoc[:] = gobLocCopy.copy()
+    elfHp[:] = list(200 for _ in range(elfCount))
+    gobHp[:] = list(200 for _ in range(gobCount))
+    finishedTurnCount = 0
+    # printCave()
+    hasElfDied = False
+    locOrderHeap.clear()
+    while True:
+        if gobRemain == 0:
+            break
+        locOrderHeap.extend((elfLoc[idx], False, idx)
+                            for idx in range(elfCount)
+                            if elfLoc[idx] is not None)
+        locOrderHeap.extend((gobLoc[idx], True, idx)
+                            for idx in range(gobCount)
+                            if gobLoc[idx] is not None)
+        while not locOrderHeap.isEmpty():
+            (currLoc, isGob, selfIdx) = locOrderHeap.pop()
+            if (gobLoc if isGob else elfLoc)[selfIdx] is None:
+                continue
+            if gobRemain == 0:
+                break
+            attackIdx = enemyIdxInRange(currLoc, isGob)
+            if attackIdx is None:
+                moveDirIdx = dirToMove(currLoc, isGob)
+                if moveDirIdx is not None:
+                    (gobLoc if isGob else elfLoc)[selfIdx] += directions[moveDirIdx]
+                    attackIdx = enemyIdxInRange(
+                            (gobLoc if isGob else elfLoc)[selfIdx],
+                            isGob)
+            if attackIdx is not None:
+                if isGob:
+                    elfHp[attackIdx] -= gobAttackPower
+                    if elfHp[attackIdx] <= 0:
+                        hasElfDied = True
+                        break
+                else:
+                    gobHp[attackIdx] -= elfAttackPower
+                    if gobHp[attackIdx] <= 0:
+                        gobLoc[attackIdx] = None
+                        gobRemain -= 1
+        if hasElfDied:
+            break
+        elif not locOrderHeap.isEmpty() and gobRemain == 0:
+            break
+        # printCave()
+        finishedTurnCount += 1
+    if not hasElfDied:
+        print('elf attack power', elfAttackPower)
+        print('turn count', finishedTurnCount)
+        print('remain hp', sum(hp for hp in elfHp + gobHp if hp > 0))
+        print(finishedTurnCount * sum(hp for hp in elfHp + gobHp if hp > 0))
+        break
+
