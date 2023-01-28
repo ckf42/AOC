@@ -1,4 +1,5 @@
 import typing as _tp
+import typing_extensions as _tpx
 # import collections.abc as _abc
 import urllib.request as _ulq
 import urllib.error as _ule
@@ -6,6 +7,7 @@ import re as _re
 import functools as _ft
 import itertools as _it
 import heapq as _hq
+import dataclasses as _dc
 
 
 if __name__ == '__main__':
@@ -16,6 +18,7 @@ _S = _tp.TypeVar('_S')
 
 # helper var
 inf = float('Inf')
+intInf = _tp.cast(int, float('inf'))
 
 # helper functions
 add = (lambda x, y: x + y)
@@ -194,8 +197,7 @@ def lastSuchThat(
     Only use if you cannot reverse arr (e.g. arr is generator)
     """
     lastTrue: tuple[_tp.Optional[int], _tp.Optional[_T]] = (None, None)
-    filterObj = filter(lambda t: cond(t[1]), enumerate(arr))
-    while (o := next(filterObj, None)) is not None:
+    while (o := next(filter(lambda t: cond(t[1]), enumerate(arr)), None)) is not None:
         lastTrue = o
     return lastTrue
 
@@ -245,7 +247,7 @@ def lastAccumSuchThat(
         arr: _tp.Iterable[_T],
         func: _tp.Callable[[_T, _T], _T],
         cond: _tp.Callable[[_T], bool]
-        ) -> tuple[_tp.Optional[int], _tp.Optional[_T], _tp.Optional[_T]]:
+        ) -> _tp.Union[tuple[int, _T, _T], tuple[None, None, None]]:
     """
     find the last element that the condition holds cumulativly.
     similar to firstAccumSuch that
@@ -279,15 +281,15 @@ def lastAccumSuchThat(
     If `arr` is a generator, it will be consumed after the returned element,
     or the whole `arr` will be consumed if no such element is found
     """
-    lastTrue: tuple[_tp.Optional[int], _tp.Optional[_T], _tp.Optional[_T]] = (None, None, None)
-    filterObj = filter(lambda t: cond(t[2]),
-                       zip(_it.count(0), arr, _it.accumulate(arr, func)))
-    while (o := next(filterObj, None)) is not None:
+    lastTrue: _tp.Union[tuple[int, _T, _T], tuple[None, None, None]] = (None, None, None)
+    while (o := next(filter(lambda t: cond(t[2]),
+                            zip(_it.count(0), arr, _it.accumulate(arr, func))),
+                     None)) is not None:
         lastTrue = o
     return lastTrue
 
 
-def flatten(arr: _tp.Any, level: int = 1):
+def flatten(arr: _tp.Any, level: int = 1) -> _tp.Any:
     """
     flatten an iterable of iterables
 
@@ -367,7 +369,7 @@ def prod(arr: _tp.Iterable[float]) -> float:
     -----
     `arr` will be consumed if it is a generator
     """
-    return _ft.reduce(lambda x, y: x * y, arr)
+    return _ft.reduce(mul, arr)
 
 
 def splitAt(arr: _tp.Sequence[_T],
@@ -498,11 +500,10 @@ def splitIntoGp(
     If `allowRemain` is False but `arr` is not of length of a integer multiple of `gpSize`,
         will raise `IndexError` for index out of range
     """
-    lArr = len(arr)
-    return tuple(tuple(arr[gpInit:(min(gpInit + gpSize, lArr)
+    return tuple(tuple(arr[gpInit:(min(gpInit + gpSize, len(arr))
                                    if allowRemain
                                    else gpInit + gpSize)])
-                 for gpInit in range(0, lArr, gpSize))
+                 for gpInit in range(0, len(arr), gpSize))
 
 
 def takeFromEvery(arr: _tp.Sequence[_T],
@@ -534,10 +535,9 @@ def takeFromEvery(arr: _tp.Sequence[_T],
     if `takeFromRemain` is False, will only take `arr[idx + k * gpSize]`
         if `len(arr) >= (k + 1) * gpSize` (`[k * gpSize:(k + 1) * gpSize]` is valid)
     """
-    lArr = len(arr)
     return tuple(arr[gpInit + idx]
-                 for gpInit in range(0, lArr, gpSize)
-                 if takeFromRemain or gpInit + gpSize <= lArr)
+                 for gpInit in range(0, len(arr), gpSize)
+                 if takeFromRemain or gpInit + gpSize <= len(arr))
 
 
 def sub(originalSym: _tp.Iterable[_T],
@@ -572,7 +572,7 @@ def sub(originalSym: _tp.Iterable[_T],
         replaced with the corresponding one in `targetSym`
     if `discard` is True, symbols in `arr` but not in `originalSym` are discarded
     """
-    replacementDict = {k: v for k, v in zip(originalSym, targetSym)}
+    replacementDict = dict(zip(originalSym, targetSym))
     return tuple(replacementDict.get(c, c)
                  for c in arr
                  if not discard or c in replacementDict)
@@ -606,7 +606,7 @@ def subChar(originalSym: str, targetSym: str, s: str) -> str:
 
 
 def multiMap(arr: _tp.Iterable[_T],
-             funcTuple: tuple[_tp.Callable[[_T], _S]]
+             funcTuple: tuple[_tp.Callable[[_T], _S], ...]
              ) -> tuple[tuple[_S, ...], ...]:
     """
     `map` with multiple functions
@@ -645,9 +645,8 @@ def takeApart(
     if `seq[i]` has length less than `seq[0]`, will raise `IndexError`
     if `seq[i]` has length larger than `seq[0]`, the sequence will be truncated
     """
-    return multiMap(seq,
-                    tuple((lambda x, idx=i: x[idx])
-                          for i in range(len(seq[0]))))
+    return tuple(tuple(s[i] for s in seq) for i in range(len(seq[0])))
+
 
 def transpose(
         seq: _tp.Sequence[_tp.Sequence[_T]]) -> tuple[tuple[_T, ...], ...]:
@@ -673,7 +672,7 @@ def rangeBound(
     a tuple containing 2-tuples of float numbers
     `rangeBound[i]` is the (min, max) of `seq[i]`
     """
-    return takeApart(multiMap(seq, (min, max)))
+    return tuple((min(s), max(s)) for s in seq)
 
 
 def sgn(x: float) -> int:
@@ -698,8 +697,9 @@ def sgn(x: float) -> int:
         return 1 if x > 0 else -1
 
 
-def argmax(arr: _tp.Iterable[_tp.Any],
-           key: _tp.Callable[[_tp.Any], float]=lambda x: x) -> _tp.Optional[_tp.Any]:
+def argmax(arr: _tp.Iterable[_T],
+           key: _tp.Callable[[_T], float] = lambda x: _tp.cast(float, x)
+           ) -> _tp.Optional[_T]:
     """
     find where maximum occurs
 
@@ -730,8 +730,9 @@ def argmax(arr: _tp.Iterable[_tp.Any],
             currMaxKey = k
     return currMaxItem
 
-def argmin(arr: _tp.Iterable[_tp.Any],
-           key: _tp.Callable[[_tp.Any], float]=lambda x: x) -> _tp.Optional[_tp.Any]:
+def argmin(arr: _tp.Iterable[_T],
+           key: _tp.Callable[[_T], float] = lambda x: _tp.cast(float, x)
+           ) -> _tp.Optional[_T]:
     """
     find where minimum occurs
 
@@ -810,22 +811,40 @@ class Heap(_tp.Generic[_T]):
     """
     simple wrapper for heap based on heapq
 
+    init Parameter
+    -----
+    initItemList: Iterable[T] or None, optional
+        the initial list of items in heap
+        None is same as an empty iterable (no items)
+        defaults to None
+
+    key: Callable[[T], float] or None, optional
+        the key callable used to order items
+        the key value is computed when item is pushed
+        if None, the items themselves will be used to compare (must be comparable)
+        defaults to None
+
     Note
     -----
     See https://stackoverflow.com/a/8875823
+
+    Using None (or equivalently a function that returns non-float) as key
+        may lead to deteriorating performance
     """
 
-    __slots__ = ('__data', '__key')
+    __slots__ = ('__data', '__key', '__itemDict', '__idx')
 
     def __init__(self,
                  initItemList: _tp.Optional[_tp.Iterable[_T]] = None,
-                 key: _tp.Optional[_tp.Callable[[_T], float]] = (lambda k: _tp.cast(float, k)),
-                 isMinHeap: bool = True):
-        self.__data: list[tuple[float, _T]] = list()
+                 key: _tp.Optional[_tp.Callable[[_T], float]] = None):
+        # NOTE: type hint inaccurate. If key is None, __data should have type list[tuple[_T, int]]
+        self.__data: list[tuple[float, int]] = list()
         self.__key: _tp.Callable[[_T], float] = (
-                (key if isMinHeap else (lambda k: -key(k)))
+                key
                 if key is not None
-                else (lambda k: 0))
+                else (lambda k: _tp.cast(float, k)))
+        self.__itemDict: dict[int, _T] = dict()
+        self.__idx: int = 0
         if initItemList is not None:
             self.extend(initItemList)
 
@@ -833,33 +852,37 @@ class Heap(_tp.Generic[_T]):
         """
         Push an element in the heap
         """
-        _hq.heappush(self.__data, (self.__key(item), item))
+        self.__itemDict[self.__idx] = item
+        _hq.heappush(self.__data, (self.__key(item), self.__idx))
+        self.__idx += 1
 
     def extend(self, itemList: _tp.Iterable[_T]):
         """
         Push an iterable of elements in the heap
         """
-        self.__data.extend((self.__key(item), item)
-                           for item in itemList)
+        for item in itemList:
+            self.__itemDict[self.__idx] = item
+            self.__data.append((self.__key(item), self.__idx))
+            self.__idx += 1
         _hq.heapify(self.__data)
 
     def pop(self) -> _T:
         """
         Remove the top element in the heap and return it
         """
-        return _hq.heappop(self.__data)[-1]
+        return self.__itemDict.pop(_hq.heappop(self.__data)[-1])
 
     def top(self) -> _T:
         """
         Get the top element
         """
-        return self.__data[0][-1]
+        return self.__itemDict[self.__data[0][-1]]
 
     def __len__(self) -> int:
         return len(self.__data)
 
     def __repr__(self) -> str:
-        return 'Heap' + self.__data.__str__()
+        return f'Heap (at 0x{id(self):x}) of {len(self)} item{"s" if len(self) >= 2 else ""}'
 
     def isEmpty(self) -> bool:
         """
@@ -869,11 +892,13 @@ class Heap(_tp.Generic[_T]):
 
     def resize(self, newSize: int):
         """
-        Reduce the heap to at most the given size
+        Reduce the heap to (at most) the given size
         The larger elements are more likely to get removed, but no guarantee on which
         """
         if newSize < len(self):
-            self.__data = self.__data[:newSize]
+            for idxPair in self.__data[newSize:]:
+                self.__itemDict.pop(idxPair[-1])
+            self.__data[:] = self.__data[:newSize]
             _hq.heapify(self.__data)
 
     def clear(self):
@@ -881,26 +906,27 @@ class Heap(_tp.Generic[_T]):
         Remove all elements in the heap
         """
         self.__data.clear()
+        self.__itemDict.clear()
+        self.__idx = 0
 
     def discard(self, item: _T) -> bool:
         """
         Remove the element in the heap if it exists, and return if any element is removed
-        If multiple copies of the same item exist in the heap with different keys,
+        If multiple copies of the same item exist in the heap (possibly with different keys),
             does not guarantee which got removed
         """
-        idx = next((idx
-                    for idx in range(len(self))
-                    if self.__data[idx][-1] == item),
-                   None)
-        if idx is not None:
-            self.__data[idx:idx + 1] = []
-            _hq.heapify(self.__data)
-            return True
-        return False
+        dataIdx = next((idx
+                        for idx in range(len(self.__data))
+                        if self.__itemDict[self.__data[idx][-1]] == item),
+                       None)
+        if dataIdx is None:
+            return False
+        self.__itemDict.pop(self.__data.pop(dataIdx)[-1])
+        return True
 
 
 def MinHeap(initItemList: _tp.Optional[_tp.Iterable[_T]] = None,
-            key: _tp.Optional[_tp.Callable[[_T], float]] = (lambda k: _tp.cast(float, k))
+            key: _tp.Optional[_tp.Callable[[_T], float]] = None
             ) -> Heap[_T]:
     """
     Wrapper function to get a min heap. See Heap.__init__ for details
@@ -912,8 +938,9 @@ def MinHeap(initItemList: _tp.Optional[_tp.Iterable[_T]] = None,
         defaults to None
 
     key: Callable[[T], float] or None, optional
-        the key functoin
-        defaults to identity
+        the key function
+        if None, the items themselves will be used to compare (must be comparable)
+        defaults to None
 
     Return
     -----
@@ -923,11 +950,11 @@ def MinHeap(initItemList: _tp.Optional[_tp.Iterable[_T]] = None,
     -----
     Wrapper function
     """
-    return Heap(initItemList=initItemList, key=key, isMinHeap=True)
+    return Heap(initItemList=initItemList, key=key)
 
 
 def MaxHeap(initItemList: _tp.Optional[_tp.Iterable[_T]] = None,
-            key: _tp.Optional[_tp.Callable[[_T], float]] = (lambda k: _tp.cast(float, k))
+            key: _tp.Optional[_tp.Callable[[_T], float]] = None
             ) -> Heap[_T]:
     """
     Wrapper function to get a max heap. See Heap.__init__ for details
@@ -939,8 +966,10 @@ def MaxHeap(initItemList: _tp.Optional[_tp.Iterable[_T]] = None,
         defaults to None
 
     key: Callable[[T], float] or None, optional
-        the key functoin
-        defaults to identity
+        the key function
+        if None, the object itself will be used for comparison
+        (must be comparable and can be multiplied with -1)
+        defaults to None
 
     Return
     -----
@@ -949,15 +978,20 @@ def MaxHeap(initItemList: _tp.Optional[_tp.Iterable[_T]] = None,
     Note
     -----
     Wrapper function
+    MaxHeap is just MinHeap with key().__neg__
     """
-    return Heap(initItemList=initItemList, key=key, isMinHeap=False)
+    # TODO: make MaxHeap work for tuple-val key
+    if key is None:
+        key = (lambda k: _tp.cast(float, k))
+    assert key is not None
+    return Heap(initItemList=initItemList, key=lambda x: -key(x))
 
 
 def dijkstra(initialNode: _T,
              costFunc: _tp.Callable[[_T, _T, float], float],
              neighbourListFunc: _tp.Callable[[_T], _tp.Iterable[_T]],
              goalCheckerFunc: _tp.Callable[[_T], bool],
-             aStarHeuristicFunc: _tp.Optional[_tp.Callable[[_T], float]] = None
+             aStarHeuristicFunc: _tp.Callable[[_T], float] = (lambda st: 0)
              ) -> _tp.Optional[tuple[_T, float]]:
     """
     search for minimal cost path via Dijkstra / A*
@@ -985,12 +1019,11 @@ def dijkstra(initialNode: _T,
         expected to take 1 positional argument (`node`, the node in question)
         expected to return a bool denoting whether `node` is accepted as a goal
 
-    aStarHeuristicFunc: Callable[[T], float] or None, optional
+    aStarHeuristicFunc: Callable[[T], float], optional
         a heuristic distance for A*
         for details, please check the theory for A* algorithm
         expected to be a callable that takes a node and returns the estimated cost to a goal
-        if None, the heuristic cost is constant zero
-        defaults to None
+        defaults to the constant zero callable
 
     Return
     -----
@@ -1005,21 +1038,26 @@ def dijkstra(initialNode: _T,
     if you need something more complicated (e.g. getting all goal states, callback),
         just implement the algorithm yourself
     """
-    if aStarHeuristicFunc is None:
-        aStarHeuristicFunc = (lambda state: 0)
     h: Heap[tuple[_T, float]] = MinHeap(
             initItemList=((initialNode, 0),),
             key=(lambda sc: sc[1] + aStarHeuristicFunc(sc[0])))
     visited = set()
-    while not h.isEmpty():
-        (currNode, currCost) = h.pop()
-        if goalCheckerFunc(currNode):
-            return (currNode, currCost)
-        if currNode in visited:
-            continue
-        visited.add(currNode)
-        for nextNode in neighbourListFunc(currNode):
-            h.push((nextNode, costFunc(nextNode, currNode, currCost)))
+    try:
+        while not h.isEmpty():
+            (currNode, currCost) = h.pop()
+            if goalCheckerFunc(currNode):
+                return (currNode, currCost)
+            if currNode in visited:
+                continue
+            visited.add(currNode)
+            for nextNode in neighbourListFunc(currNode):
+                nodeToPush = (nextNode, costFunc(nextNode, currNode, currCost))
+                if nodeToPush not in visited:
+                    h.push(nodeToPush)
+    except KeyboardInterrupt as e:
+        print(f"Heap size={len(h)}\nVisited node count={len(visited)}\n"
+              f"Killed at node {currNode} with cost {currCost}")
+        raise e
     return None
 
 def clip(x: float,
@@ -1183,7 +1221,7 @@ def consoleChar(b: _tp.Union[bool, None]) -> str:
         U+0020 (SPACE) if False
         U+2592 (MEDIUM SHADE) if is None
     """
-    return u'\u2592' if b is None else (u'\u2588' if b else u'\u0020')
+    return '\u2592' if b is None else ('\u2588' if b else '\u0020')
 
 
 def rangeLen(arr: _tp.Sequence) -> range:
@@ -1294,7 +1332,7 @@ class IntegerIntervals:
 
     def __repr__(self) -> str:
         if len(self.__contents) == 0:
-            return "Empty Collection"
+            return "Empty Collection of Interval"
         if len(self.__contents) == 1:
             return f"Interval{self.__contents[0]}"
         return "Union(" \
@@ -1307,6 +1345,9 @@ class IntegerIntervals:
 
     # TODO: need testing
     def unionWith(self, interval: tuple[int, int]):
+        """
+        Add an interval to the collection
+        """
         assert self.__itvIsValid(interval), f"Invalid interval: {interval}"
         compoCount = len(self.__contents)
         if compoCount == 0:
@@ -1359,33 +1400,52 @@ class IntegerIntervals:
             self.__eleCount = None
 
     def intersectWith(self, interval: tuple[int, int]):
+        """
+        Compute the intersection of the collection with the interval
+        """
         assert self.__itvIsValid(interval), f"Invalid interval: {interval}"
-        self.__contents = list(
-                map(lambda compo: self.__itvIntersectIfIntersect(compo,
-                                                                 interval),
+        self.__contents[:] = list(
+                map(lambda compo: self.__itvIntersectIfIntersect(compo, interval),
                     filter(lambda itv: self.__itvIsIntersect(itv, interval),
-                           self.__contents))
-                )
+                           self.__contents)))
         self.__eleCount = None
 
     def component(self, idx: int) -> tuple[int, int]:
+        """
+        Return the connection component at `idx`
+        """
         return self[idx]
 
     def countComponents(self) -> int:
+        """
+        Return the number of connected components in the collection
+        """
         return len(self.__contents)
 
     def count(self) -> int:
+        """
+        Return the number of integers included in the collection
+        """
         return len(self)
 
     def isEmpty(self) -> bool:
+        """
+        Return whether the collection is empty set
+        """
         return len(self.__contents) == 0
 
     def isBounded(self) -> bool:
+        """
+        Return whether the collection is bounded
+        """
         return self.isEmpty() \
                 or (self.__contents[0][0] > -float('Inf')
                     and self.__contents[-1][1] < float('Inf'))
 
     def isSupersetOf(self, interval: tuple[int, int]) -> bool:
+        """
+        Return whether the collection contains the given interval
+        """
         assert self.__itvIsValid(interval), f"Invalid interval: {interval}"
         compoCount = len(self.__contents)
         if compoCount == 0:
@@ -1403,13 +1463,19 @@ class IntegerIntervals:
                 and interval[1] <= self.__contents[s - 1][1])
 
     def setMinus(self, interval: tuple[int, int]):
+        """
+        Remove the given interval from the collection
+        """
         assert self.__itvIsValid(interval), f"Invalid interval: {interval}"
-        self.__contents = [newItv
-                           for itv in self.__contents
-                           for newItv in self.__itvSetminus(itv, interval)]
+        self.__contents[:] = [newItv
+                              for itv in self.__contents
+                              for newItv in self.__itvSetminus(itv, interval)]
         self.__eleCount = None
 
     def clear(self):
+        """
+        Reset the whole collection
+        """
         self.__contents.clear()
         self.__eleCount = 0
 
@@ -1908,7 +1974,7 @@ def toBase(n: int, b: int) -> tuple[int, ...]:
     assert n >= 0
     if n == 0:
         return (0,)
-    res: list[int] = list()
+    res = list()
     while n != 0:
         (n, r) = divmod(n, b)
         res.append(r)
@@ -1985,18 +2051,21 @@ def arrayAccess(arr: _tp.Sequence, coor: _tp.Sequence[int]) -> _tp.Any:
 
     Note
     -----
-    MUCH SLOWER than hardcode indices
+    MUCH SLOWER than hardcoded indices
     Only use this for (deep) array access with unknown number of layers
     """
-    if len(coor) == 0:
-        return arr
-    return arrayAccess(arr[coor[0]], coor[1:])
+    coorPtr = 0
+    while coorPtr < len(coor):
+        arr = arr[coor[coorPtr]]
+        coorPtr += 1
+    return arr
 
-def matchClosingBracket(s: str,
-                        idx: int,
-                        closeBracket: str,
-                        escapeChar: _tp.Optional[str] = '\\',
-                        hasNesting: bool = True) -> _tp.Optional[int]:
+def matchClosingBracket(
+        s: str,
+        idx: int,
+        closeBracket: str,
+        escapeChar: _tp.Optional[str] = '\\',
+        hasNesting: bool = True) -> _tp.Optional[int]:
     """
     Find the matching closing bracket
 
@@ -2070,4 +2139,231 @@ def diff(arr: _tp.Sequence[float]) -> tuple[float, ...]:
     """
     assert len(arr) >= 2
     return tuple(arr[i + 1] - arr[i] for i in range(len(arr) - 1))
+
+class DisjointSet:
+    __slots__ = ('__parent', '__gpSize')
+
+    def __init__(self, itemCount: int) -> None:
+        self.__parent: list[int] = list(range(itemCount))
+        self.__gpSize: list[int] = list(1 for _ in range(itemCount))
+
+    def __len__(self) -> int:
+        return len(self.__parent)
+
+    def __repr__(self) -> str:
+        return f"Disjoint set with {len(self.__parent)} " \
+                + f"element{'s' if len(self.__parent) > 1 else ''}" \
+                + f" at 0x{id(self):x}"
+
+    def getRep(self, idx: int) -> int:
+        """
+        Return an index that is in the same group
+        Indices in the same group have the same representative index
+        """
+        while self.__parent[idx] != idx:
+            (idx, self.__parent[idx]) = (self.__parent[idx], self.__parent[self.__parent[idx]])
+        return idx
+
+    def isSameGroup(self, idx1: int, idx2: int) -> bool:
+        """
+        Return whether the two indices are in the same group
+        """
+        return self.getRep(idx1) == self.getRep(idx2)
+
+    def union(self, idx1: int, idx2: int) -> None:
+        """
+        Union the groups of the two indices
+        """
+        idx1 = self.getRep(idx1)
+        idx2 = self.getRep(idx2)
+        if idx1 == idx2:
+            return
+        if self.__gpSize[idx1] < self.__gpSize[idx2]:
+            (idx1, idx2) = (idx2, idx1)
+        self.__parent[idx2] = idx1
+        self.__gpSize[idx1] += self.__gpSize[idx2]
+
+    def __compress(self):
+        """
+        Compress the structure
+        ~O(n ItLn(n)) ~ O(n) time complexity
+        """
+        for idx in range(len(self.__parent)):
+            self.__parent[idx] = self.getRep(idx)
+
+    def groupCount(self) -> int:
+        """
+        Return the number of groups
+        """
+        self.__compress()
+        return len(frozenset(self.__parent))
+
+    def entriesInSameGroup(self, idx: int) -> frozenset[int]:
+        """
+        Return the indices that are in the same group as `idx`
+        """
+        self.__compress()
+        return frozenset(filter(lambda i: self.__parent[i] == self.__parent[idx],
+                                self.__parent))
+
+    def groupSize(self, idx: int) -> int:
+        """
+        Return the size of the group that `idx` belongs to
+        """
+        self.__compress()
+        return self.__parent.count(self.__parent[idx])
+
+
+class SegmentTree:
+    """
+    Prop-down segment tree
+    Can be used for hit count at a range
+
+    NOTE: uses a lot of memory
+    On AOC2018 day3, requires 168k nodes on 1301 2D squares in 1k x 1k square
+    Arguably takes more than equivalent numpy solution
+    """
+    __slots__ = ('__dim', '__nodeList')
+
+    RangeType: _tpx.TypeAlias = tuple[tuple[int, int], ...]
+
+    @_dc.dataclass
+    class __node:
+        """
+        Helper class for the node
+        """
+        dom: 'SegmentTree.RangeType' # prod [a, b)
+        divPt: tuple[int, ...] = _dc.field(init=False) # c
+        val: int
+        child: dict[tuple[bool, ...], int] = _dc.field(init=False, default_factory=dict)
+        # False: [a, c), True: [c, b)
+
+        def __post_init__(self):
+            tempDivPt: list[int] = list()
+            for itv in self.dom:
+                if itv == (-intInf, intInf):
+                    tempDivPt.append(0)
+                elif itv[0] == -intInf:
+                    tempDivPt.append((itv[1] * 2) \
+                            if itv[1] < 0 \
+                            else (-4 if itv[1] == 0 else 0))
+                elif itv[1] == intInf:
+                    tempDivPt.append((itv[0] * 2) \
+                            if itv[0] > 0 \
+                            else (4 if itv[0] == 0 else 0))
+                else:
+                    tempDivPt.append(sum(itv) // 2)
+            self.divPt = tuple(tempDivPt)
+
+    def __init__(self, dim: int):
+        self.__dim: int = dim
+        self.__nodeList: list['SegmentTree.__node'] = [
+            self.__node(tuple((-intInf, intInf) for _ in range(dim)), 0)
+        ]
+
+    @property
+    def dim(self) -> int:
+        """
+        Get the dimension of the tree
+        """
+        return self.__dim
+
+    def __nodeCount(self) -> int:
+        """
+        Return the number of nodes stored
+        """
+        return len(self.__nodeList)
+
+    def __incre(self, ptr: int, interval: 'SegmentTree.RangeType', val: int):
+        """
+        increment interval by val
+        interval assumed as [a, b)
+        assume interval \\subseteq __nodeList[ptr].dom
+        """
+        if self.__nodeList[ptr].dom == interval:
+            stack: list[int] = [ptr]
+            while len(stack) != 0:
+                cPtr = stack.pop()
+                self.__nodeList[cPtr].val += val
+                stack.extend(self.__nodeList[cPtr].child.values())
+        else:
+            involvedRange: frozenset[tuple[bool, ...]] = frozenset((tuple(),))
+            for i in range(self.__dim):
+                if len(involvedRange) == 0:
+                    break
+                possibleRange: tuple[bool, ...] = \
+                        ((False,) if interval[i][0] < self.__nodeList[ptr].divPt[i] else tuple()) \
+                        + ((True,) if self.__nodeList[ptr].divPt[i] < interval[i][1] else tuple())
+                if len(possibleRange) == 0:
+                    involvedRange = frozenset()
+                    break
+                involvedRange = frozenset(n + (choice,)
+                                          for n in involvedRange
+                                          for choice in possibleRange)
+            for m in involvedRange:
+                if m not in self.__nodeList[ptr].child:
+                    self.__nodeList[ptr].child[m] = len(self.__nodeList)
+                    self.__nodeList.append(self.__node(
+                        tuple(((self.__nodeList[ptr].divPt[d],
+                                self.__nodeList[ptr].dom[d][1])
+                               if m[d]
+                               else (self.__nodeList[ptr].dom[d][0],
+                                     self.__nodeList[ptr].divPt[d]))
+                              for d in range(self.__dim)),
+                        self.__nodeList[ptr].val))
+                self.__incre(self.__nodeList[ptr].child[m],
+                           tuple(((max(self.__nodeList[ptr].divPt[d], interval[d][0]),
+                                   interval[d][1])
+                                  if m[d]
+                                  else (interval[d][0],
+                                        min(self.__nodeList[ptr].divPt[d], interval[d][1])))
+                                 for d in range(self.__dim)),
+                           val)
+
+    def add(self, interval: 'SegmentTree.RangeType', val: int = 1):
+        """
+        Add a new interval
+
+        Parameter
+        -----
+        interval: tuple[tuple[int, int], ...]
+            the range of the new interval
+            Assumed of format (itv, ...) where itv = [a, b) is the slice
+
+        val: int
+            the hit count
+        """
+        assert len(interval) == self.__dim, "Dim mismatch"
+        assert all(len(itv) == 2 and itv[0] < itv[1] for itv in interval), "Not a valid range"
+        self.__incre(0, interval, val)
+
+    def getAtPoint(self, pt: tuple[int, ...]) -> int:
+        """
+        Get the hit count at the given point
+        """
+        assert len(pt) == self.__dim, "Dim mismatch"
+        if len(self.__nodeList) == 0:
+            return 0
+        ptr = 0
+        while (m := tuple(self.__nodeList[ptr].divPt[d] <= pt[d]
+                          for d in range(self.__dim))) in self.__nodeList[ptr].child:
+            ptr = self.__nodeList[ptr].child[m]
+        return self.__nodeList[ptr].val
+
+    def maxHit(self) -> tuple[tuple['SegmentTree.RangeType', ...], int]:
+        """
+        Find the max hit
+
+        Return
+        -----
+        a tuple that consists of
+            a tuple of ranges, each represents a range that has the maximal hit count
+            a integer that represents the maximal hit count
+        """
+        leafIdx = tuple(i for i, n in enumerate(self.__nodeList) if len(n.child) == 0)
+        maxVal = max(self.__nodeList[i].val for i in leafIdx)
+        return (tuple(self.__nodeList[idx].dom
+                      for idx in leafIdx
+                      if self.__nodeList[idx].val == maxVal),
+                maxVal)
 
