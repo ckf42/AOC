@@ -8,6 +8,9 @@ import functools as _ft
 import itertools as _it
 import heapq as _hq
 import dataclasses as _dc
+# check inf and nan
+from math import isinf as _isinf
+from math import isnan as _isnan
 
 
 if __name__ == '__main__':
@@ -90,7 +93,7 @@ def getInput(d: int,
 def firstSuchThat(
         arr: _tp.Iterable[_T],
         cond: _tp.Callable[[_T], bool]
-        ) -> tuple[_tp.Optional[int], _tp.Optional[_T]]:
+        ) -> _tp.Union[tuple[int, _T], tuple[None, None]]:
     """
     find the first element that the condition holds
 
@@ -168,7 +171,7 @@ def firstIdxSuchThat(arr: _tp.Sequence[_T],
 def lastSuchThat(
         arr: _tp.Iterable[_T],
         cond: _tp.Callable[[_T], bool]
-        ) -> tuple[_tp.Optional[int], _tp.Optional[_T]]:
+        ) -> _tp.Union[tuple[int, _T], tuple[None, None]]:
     """
     find the last element that the condition holds. similar to `firstSuchThat`
 
@@ -196,7 +199,7 @@ def lastSuchThat(
     Slower than firstSuchThat on [::-1] as it always go through whole arr
     Only use if you cannot reverse arr (e.g. arr is generator)
     """
-    lastTrue: tuple[_tp.Optional[int], _tp.Optional[_T]] = (None, None)
+    lastTrue: _tp.Union[tuple[int, _T], tuple[None, None]] = (None, None)
     while (o := next(filter(lambda t: cond(t[1]), enumerate(arr)), None)) is not None:
         lastTrue = o
     return lastTrue
@@ -206,7 +209,7 @@ def firstAccumSuchThat(
         arr: _tp.Iterable[_T],
         func: _tp.Callable[[_T, _T], _T],
         cond: _tp.Callable[[_T], bool]
-        ) -> tuple[_tp.Optional[int], _tp.Optional[_T], _tp.Optional[_T]]:
+        ) -> _tp.Union[tuple[int, _T, _T], tuple[None, None, None]]:
     """
     find the first element that the condition holds cumulatively
 
@@ -352,7 +355,11 @@ def cycInd(arr: _tp.Sequence[_T], index: int) -> _T:
     return arr[index % len(arr)]
 
 
-def prod(arr: _tp.Iterable[float]) -> float:
+@_tp.overload
+def prod(arr: _tp.Iterable[int]) -> int: ...
+@_tp.overload
+def prod(arr: _tp.Iterable[float]) -> float: ...
+def prod(arr):
     """
     compute the product of elements. similar to the builtin `sum`
 
@@ -540,6 +547,16 @@ def takeFromEvery(arr: _tp.Sequence[_T],
                  if takeFromRemain or gpInit + gpSize <= len(arr))
 
 
+@_tp.overload
+def sub(originalSym: _tp.Iterable[_T],
+        targetSym: _tp.Iterable[_S],
+        arr: _tp.Iterable[_T],
+        discard: _tp.Literal[True]) -> tuple[_S, ...]: ...
+@_tp.overload
+def sub(originalSym: _tp.Iterable[_T],
+        targetSym: _tp.Iterable[_S],
+        arr: _tp.Iterable[_T],
+        discard: _tp.Literal[False]) -> tuple[_tp.Union[_T, _S], ...]: ...
 def sub(originalSym: _tp.Iterable[_T],
         targetSym: _tp.Iterable[_S],
         arr: _tp.Iterable[_T],
@@ -656,9 +673,15 @@ def transpose(
     return takeApart(seq)
 
 
+@_tp.overload
+def rangeBound(
+        seq: _tp.Sequence[_tp.Sequence[int]]
+        ) -> tuple[tuple[int, int], ...]: ...
+@_tp.overload
 def rangeBound(
         seq: _tp.Sequence[_tp.Sequence[float]]
-        ) -> tuple[tuple[float, float], ...]:
+        ) -> tuple[tuple[float, float], ...]: ...
+def rangeBound(seq):
     """
     find the range of numbers
 
@@ -1602,6 +1625,7 @@ def extrapolatePeriodicSeq(arr: _tp.Sequence[float], idx: int, inDiff: bool = Fa
 
     inDiff: bool, optional
         indicate whether the periodicity is in the difference (increment)
+        although setting True works for value-periodic sequence, the performance may deteriorate
         if True, will treat the difference as periodic
         if False, will treat the value as periodic
         defaults to False
@@ -1614,10 +1638,12 @@ def extrapolatePeriodicSeq(arr: _tp.Sequence[float], idx: int, inDiff: bool = Fa
         return arr[idx]
     if inDiff:
         periodData = findSeqPeriod(diff(arr))
+        assert periodData is not None
         d, m = divmod(idx - periodData[1], periodData[0])
         return (arr[sum(periodData)] - arr[periodData[1]]) * d + arr[periodData[1] + m]
     else:
         periodData = findSeqPeriod(arr)
+        assert periodData is not None
         return arr[(idx - periodData[1]) % periodData[0] + periodData[1]]
 
 def integerLattice(dim: int,
@@ -1811,6 +1837,8 @@ class MutPoint:
     Point but mutable and not hashable
     If you only need 2D points for addition and comparison only, consider using complex numbers
     (~10x speedup for addition-intensive cases, e.g. AOC 2017 day 22)
+
+    TODO: make this and `Point` inherite from an abstract base class
     """
     __slots__ = ('__coor',)
 
@@ -1981,6 +2009,14 @@ def toBase(n: int, b: int) -> tuple[int, ...]:
     return tuple(res)
 
 
+@_tp.overload
+def fromBase(digits: _tp.Sequence[int],
+             b: int,
+             fractionalPartLen: _tp.Literal[0]) -> int: ...
+@_tp.overload
+def fromBase(digits: _tp.Sequence[int],
+             b: int,
+             fractionalPartLen: int) -> _tp.Union[int, float]: ...
 def fromBase(digits: _tp.Sequence[int],
              b: int,
              fractionalPartLen: int = 0) -> _tp.Union[int, float]:
@@ -2213,15 +2249,14 @@ class DisjointSet:
         self.__compress()
         return self.__parent.count(self.__parent[idx])
 
-
 class SegmentTree:
     """
     Prop-down segment tree
-    Can be used for hit count at a range
+    Each update only affects subranges
+    Can be used for hit count on a range
 
-    NOTE: uses a lot of memory
-    On AOC2018 day3, requires 168k nodes on 1301 2D squares in 1k x 1k square
-    Arguably takes more than equivalent numpy solution
+    NOTE: a bit too slow
+    TODO: need more testing
     """
     __slots__ = ('__dim', '__nodeList')
 
@@ -2232,28 +2267,82 @@ class SegmentTree:
         """
         Helper class for the node
         """
-        dom: 'SegmentTree.RangeType' # prod [a, b)
-        divPt: tuple[int, ...] = _dc.field(init=False) # c
+        # domain of node, in form prod [a, b)
+        dom: 'SegmentTree.RangeType'
+        # division point to determine child
+        divPt: _tp.Optional[tuple[int, ...]] = _dc.field(init=False, default=None) # c
+        # value of this node
         val: int
-        child: dict[tuple[bool, ...], int] = _dc.field(init=False, default_factory=dict)
+        # index of child by location mark
         # False: [a, c), True: [c, b)
+        child: dict[tuple[bool, ...], int] = _dc.field(init=False, default_factory=dict)
+        # vol that belongs to this node, nan = needs to recalculate
+        effVol: _tp.Union[int, float] = _dc.field(init=False, default=float('nan'))
 
         def __post_init__(self):
-            tempDivPt: list[int] = list()
-            for itv in self.dom:
-                if itv == (-intInf, intInf):
-                    tempDivPt.append(0)
-                elif itv[0] == -intInf:
-                    tempDivPt.append((itv[1] * 2) \
-                            if itv[1] < 0 \
-                            else (-4 if itv[1] == 0 else 0))
-                elif itv[1] == intInf:
-                    tempDivPt.append((itv[0] * 2) \
-                            if itv[0] > 0 \
-                            else (4 if itv[0] == 0 else 0))
-                else:
-                    tempDivPt.append(sum(itv) // 2)
-            self.divPt = tuple(tempDivPt)
+            self.effVol = prod(itv[1] - itv[0] for itv in self.dom)
+
+        @classmethod
+        def __getDivVal(cls, itv: tuple[int, int], domItv: tuple[int, int]) -> int:
+            """
+            Helper function for new divPt
+            if itv is properly contained in domItv, uses itv[0]
+            else if itv is not domItc, uses the endpoint that is different
+            otherwise, uses a mid point
+            """
+            if domItv[0] + 1 <= itv[0] and itv[1] < domItv[1] - 1:
+                return itv[0]
+            elif itv[0] != domItv[0]:
+                return itv[0]
+            elif itv[1] != domItv[1]:
+                return itv[1]
+            elif domItv == (-intInf, intInf):
+                return 0
+            elif domItv[0] == -intInf:
+                return (domItv[1] * 2) \
+                        if domItv[1] < 0 \
+                        else (-4 if domItv[1] == 0 else 0)
+            elif domItv[1] == intInf:
+                return (domItv[0] * 2) \
+                        if domItv[0] > 0 \
+                        else (4 if domItv[0] == 0 else 0)
+            else:
+                return sum(domItv) // 2
+
+        def setDivPt(self, interval: 'SegmentTree.RangeType'):
+            """
+            Set divPt according to interval
+            Assumed interval \\subseteq self.dom
+            Does not check if divPt is set
+            """
+            self.divPt = tuple(self.__getDivVal(interval[d], self.dom[d])
+                               for d in range(len(self.dom)))
+
+        def getChildDom(self, m: tuple[bool, ...]) -> 'SegmentTree.RangeType':
+            """
+            Compute what the domain of the designated location mark is
+            Assumed divPt is set
+            """
+            assert self.divPt is not None, "Attempt to get child domain on node without divPt"
+            assert len(m) == len(self.dom), "Dimension mismatch"
+            return tuple(((self.divPt[d], self.dom[d][1])
+                          if m[d]
+                          else (self.dom[d][0], self.divPt[d]))
+                         for d in range(len(self.dom)))
+
+        def recalEffVol(self):
+            """
+            Recalculate effVol
+            Time complexity: ~2 ** dim
+            """
+            totalVol = 0
+            for m in _it.product((False, True), repeat=len(self.dom)):
+                if m not in self.child:
+                    totalVol += prod(itv[1] - itv[0] for itv in self.getChildDom(m))
+                if _isinf(totalVol):
+                    break
+            self.effVol = totalVol
+
 
     def __init__(self, dim: int):
         self.__dim: int = dim
@@ -2264,14 +2353,11 @@ class SegmentTree:
     @property
     def dim(self) -> int:
         """
-        Get the dimension of the tree
+        Dimension of the tree
         """
         return self.__dim
 
-    def __nodeCount(self) -> int:
-        """
-        Return the number of nodes stored
-        """
+    def __len__(self) -> int:
         return len(self.__nodeList)
 
     def __incre(self, ptr: int, interval: 'SegmentTree.RangeType', val: int):
@@ -2281,19 +2367,29 @@ class SegmentTree:
         assume interval \\subseteq __nodeList[ptr].dom
         """
         if self.__nodeList[ptr].dom == interval:
+            # update nodes and children therein
             stack: list[int] = [ptr]
             while len(stack) != 0:
                 cPtr = stack.pop()
                 self.__nodeList[cPtr].val += val
                 stack.extend(self.__nodeList[cPtr].child.values())
         else:
+            if self.__nodeList[ptr].divPt is None:
+                # do not know how to subdivide yet
+                self.__nodeList[ptr].setDivPt(interval)
+            assert self.__nodeList[ptr].divPt is not None
+            # child identifiers that we need propagate search
             involvedRange: frozenset[tuple[bool, ...]] = frozenset((tuple(),))
             for i in range(self.__dim):
                 if len(involvedRange) == 0:
                     break
                 possibleRange: tuple[bool, ...] = \
-                        ((False,) if interval[i][0] < self.__nodeList[ptr].divPt[i] else tuple()) \
-                        + ((True,) if self.__nodeList[ptr].divPt[i] < interval[i][1] else tuple())
+                        ((False,)
+                         if interval[i][0] < self.__nodeList[ptr].divPt[i]
+                         else tuple()) \
+                        + ((True,)
+                           if self.__nodeList[ptr].divPt[i] < interval[i][1]
+                           else tuple())
                 if len(possibleRange) == 0:
                     involvedRange = frozenset()
                     break
@@ -2302,23 +2398,21 @@ class SegmentTree:
                                           for choice in possibleRange)
             for m in involvedRange:
                 if m not in self.__nodeList[ptr].child:
+                    # does not have this child yet, need to create new one
                     self.__nodeList[ptr].child[m] = len(self.__nodeList)
                     self.__nodeList.append(self.__node(
-                        tuple(((self.__nodeList[ptr].divPt[d],
-                                self.__nodeList[ptr].dom[d][1])
-                               if m[d]
-                               else (self.__nodeList[ptr].dom[d][0],
-                                     self.__nodeList[ptr].divPt[d]))
-                              for d in range(self.__dim)),
+                        self.__nodeList[ptr].getChildDom(m),
                         self.__nodeList[ptr].val))
-                self.__incre(self.__nodeList[ptr].child[m],
-                           tuple(((max(self.__nodeList[ptr].divPt[d], interval[d][0]),
-                                   interval[d][1])
-                                  if m[d]
-                                  else (interval[d][0],
-                                        min(self.__nodeList[ptr].divPt[d], interval[d][1])))
-                                 for d in range(self.__dim)),
-                           val)
+                    self.__nodeList[ptr].effVol -= self.__nodeList[len(self.__nodeList) - 1].effVol
+                self.__incre(
+                        self.__nodeList[ptr].child[m],
+                        tuple(((max(self.__nodeList[ptr].divPt[d], interval[d][0]),
+                                interval[d][1])
+                               if m[d]
+                               else (interval[d][0],
+                                     min(self.__nodeList[ptr].divPt[d], interval[d][1])))
+                              for d in range(self.__dim)),
+                        val)
 
     def add(self, interval: 'SegmentTree.RangeType', val: int = 1):
         """
@@ -2341,12 +2435,13 @@ class SegmentTree:
         """
         Get the hit count at the given point
         """
-        assert len(pt) == self.__dim, "Dim mismatch"
+        assert len(pt) == self.__dim, "Dimension mismatch"
         if len(self.__nodeList) == 0:
             return 0
         ptr = 0
-        while (m := tuple(self.__nodeList[ptr].divPt[d] <= pt[d]
-                          for d in range(self.__dim))) in self.__nodeList[ptr].child:
+        while self.__nodeList[ptr].divPt is not None \
+                and (m := tuple(self.__nodeList[ptr].divPt[d] <= pt[d]
+                                for d in range(self.__dim))) in self.__nodeList[ptr].child:
             ptr = self.__nodeList[ptr].child[m]
         return self.__nodeList[ptr].val
 
@@ -2366,4 +2461,35 @@ class SegmentTree:
                       for idx in leafIdx
                       if self.__nodeList[idx].val == maxVal),
                 maxVal)
+
+    def countVal(self,
+                 valRange: _tp.Union[int, tuple[int, int]]
+                 ) -> _tp.Union[int, float]:
+        """
+        Count the (hyper)volume that is in the given range
+
+        Parameter
+        -----
+        valRange: int or tuple[int, int]
+            the range to enquiry
+            if int, only count intervals that is exactly this value
+            if tuple, count intervals with values in this range (read as [a, b))
+
+        Return
+        -----
+        The (hyper)range of intervals with the given condition,
+            which is either an integer or float('inf')
+        """
+        if isinstance(valRange, int):
+            valRange = (valRange, valRange + 1)
+        assert isinstance(valRange, tuple)
+        volCount: _tp.Union[int, float] = 0
+        for node in self.__nodeList:
+            if valRange[0] <= node.val < valRange[1]:
+                if _isnan(node.effVol):
+                    node.recalEffVol()
+                volCount += node.effVol
+            if _isinf(volCount):
+                break
+        return volCount
 
