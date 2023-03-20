@@ -292,7 +292,15 @@ def lastAccumSuchThat(
     return lastTrue
 
 
-def flatten(arr: _tp.Any, level: int = 1) -> _tp.Any:
+@_tp.overload
+def flatten(arr: _T, level: _tp.Literal[0]) -> _T: ...
+@_tp.overload
+def flatten(arr: _tp.Iterable[_tp.Iterable[_T]], level: _tp.Literal[1]) -> tuple[_T]: ...
+@_tp.overload
+def flatten(arr: _tp.Iterable[_T], level: _tp.Literal[1]) -> tuple[_T]: ...
+@_tp.overload
+def flatten(arr: _tp.Any, level: int) -> _tp.Any: ...
+def flatten(arr, level=1):
     """
     flatten an iterable of iterables
 
@@ -557,10 +565,7 @@ def sub(originalSym: _tp.Iterable[_T],
         targetSym: _tp.Iterable[_S],
         arr: _tp.Iterable[_T],
         discard: _tp.Literal[False]) -> tuple[_tp.Union[_T, _S], ...]: ...
-def sub(originalSym: _tp.Iterable[_T],
-        targetSym: _tp.Iterable[_S],
-        arr: _tp.Iterable[_T],
-        discard: bool = False) -> tuple[_tp.Union[_T, _S], ...]:
+def sub(originalSym, targetSym, arr, discard=False):
     """
     create a copy of the collection with its entry replaced
 
@@ -845,7 +850,14 @@ class Heap(_tp.Generic[_T]):
         the key callable used to order items
         the key value is computed when item is pushed
         if None, the items themselves will be used to compare (must be comparable)
+        ignored if `runtimeKeyOnly` is True
         defaults to None
+
+    runtimeKeyOnly: bool, optional
+        determine if the key must be passed in during push
+        use this if a key function may not be easily available on heap initialization
+        if True, `key` will be ignored, and `key` in `push` and `extend` cannot be None
+        defaults to False
 
     Note
     -----
@@ -855,11 +867,16 @@ class Heap(_tp.Generic[_T]):
         may lead to deteriorating performance
     """
 
-    __slots__ = ('__data', '__key', '__itemDict', '__idx')
+    __slots__ = ('__data', '__key', '__itemDict', '__idx', '__runtimeKeyOnly')
 
     def __init__(self,
                  initItemList: _tp.Optional[_tp.Iterable[_T]] = None,
-                 key: _tp.Optional[_tp.Callable[[_T], float]] = None):
+                 key: _tp.Optional[_tp.Callable[[_T], float]] = None,
+                 runtimeKeyOnly: bool = False):
+        self.__runtimeKeyOnly: bool = runtimeKeyOnly
+        if runtimeKeyOnly:
+            # mypy hack
+            key = lambda k: _tp.cast(float, None)
         # NOTE: type hint inaccurate. If key is None, __data should have type list[tuple[_T, int]]
         self.__data: list[tuple[float, int]] = list()
         self.__key: _tp.Callable[[_T], float] = (
@@ -871,21 +888,56 @@ class Heap(_tp.Generic[_T]):
         if initItemList is not None:
             self.extend(initItemList)
 
-    def push(self, item: _T):
+    def push(self, item: _T, key: _tp.Optional[float] = None):
         """
         Push an element in the heap
+
+        Parameters
+        -----
+        item: T
+            the item to be pushed in
+
+        key: float or None, optional
+            the key to use
+            must not be None if `runtimeKeyOnly` is set True
+            if not None, will ignore `key` function provided and use this value instead
+                this key will not be visible on `pop`
+            defaults to None
         """
+        if self.__runtimeKeyOnly:
+            assert key is not None, "key is None when runtimeKeyOnly is set True"
         self.__itemDict[self.__idx] = item
-        _hq.heappush(self.__data, (self.__key(item), self.__idx))
+        _hq.heappush(self.__data,
+                     (self.__key(item) if key is None else key,
+                      self.__idx))
         self.__idx += 1
 
-    def extend(self, itemList: _tp.Iterable[_T]):
+    def extend(self,
+               itemList: _tp.Iterable[_T],
+               keyList: _tp.Optional[_tp.Iterable[_tp.Optional[float]]] = None):
         """
         Push an iterable of elements in the heap
+
+        Parameters
+        -----
+        itemList: Iterable[T]
+            an iterable that contains the items to be pushed in
+
+        keyList: Iterable[T or None] or None, optional
+            the keys used
+            see description in `push`
+            if shorter than `itemList`, all remaining items will use key `None`
+            if None, will be treated as an iterable of None
         """
-        for item in itemList:
+        if keyList is None:
+            keyList = tuple()
+        keyList = _it.chain(keyList, _it.repeat(None))
+        for item, key in zip(itemList, keyList):
+            if self.__runtimeKeyOnly:
+                assert key is not None, "key is None when runtimeKeyOnly is set True"
             self.__itemDict[self.__idx] = item
-            self.__data.append((self.__key(item), self.__idx))
+            self.__data.append((self.__key(item) if key is None else key,
+                                self.__idx))
             self.__idx += 1
         _hq.heapify(self.__data)
 
@@ -945,11 +997,13 @@ class Heap(_tp.Generic[_T]):
         if dataIdx is None:
             return False
         self.__itemDict.pop(self.__data.pop(dataIdx)[-1])
+        _hq.heapify(self.__data)
         return True
 
 
 def MinHeap(initItemList: _tp.Optional[_tp.Iterable[_T]] = None,
-            key: _tp.Optional[_tp.Callable[[_T], float]] = None
+            key: _tp.Optional[_tp.Callable[[_T], float]] = None,
+            runtimeKeyOnly: bool = False
             ) -> Heap[_T]:
     """
     Wrapper function to get a min heap. See Heap.__init__ for details
@@ -965,15 +1019,21 @@ def MinHeap(initItemList: _tp.Optional[_tp.Iterable[_T]] = None,
         if None, the items themselves will be used to compare (must be comparable)
         defaults to None
 
+    runtimeKeyOnly: bool, optional
+        determine if the key must be passed in during push
+        use this if a key function may not be easily available on heap initialization
+        if True, `key` will be ignored, and `key` in `push` and `extend` cannot be None
+        defaults to False
+
     Return
     -----
     A min heap as defined with Heap
 
     Note
     -----
-    Wrapper function
+    Wrapper function for better readability
     """
-    return Heap(initItemList=initItemList, key=key)
+    return Heap(initItemList=initItemList, key=key, runtimeKeyOnly=runtimeKeyOnly)
 
 
 def MaxHeap(initItemList: _tp.Optional[_tp.Iterable[_T]] = None,
@@ -1002,12 +1062,13 @@ def MaxHeap(initItemList: _tp.Optional[_tp.Iterable[_T]] = None,
     -----
     Wrapper function
     MaxHeap is just MinHeap with key().__neg__
+    `runtimeKeyOnly` is always set to False (so `key` must be provided)
     """
     # TODO: make MaxHeap work for tuple-val key
     if key is None:
         key = (lambda k: _tp.cast(float, k))
     assert key is not None
-    return Heap(initItemList=initItemList, key=lambda x: -key(x))
+    return Heap(initItemList=initItemList, key=lambda x: -key(x), runtimeKeyOnly=False)
 
 
 def dijkstra(initialNode: _T,
@@ -1147,10 +1208,7 @@ def countOnes(n: int) -> int:
     1
     """
     b_c = getattr(int, 'bit_count', lambda x: bin(x).count('1'))
-    if n < 0:
-        return 1 + n.bit_length() - b_c(-n)
-    else:
-        return b_c(n)
+    return (1 + n.bit_length() - b_c(-n)) if n < 0 else b_c(n)
 
 
 def inclusiveRange(s: int, e: int, step: _tp.Optional[int] = 1) -> range:
@@ -1228,7 +1286,7 @@ def countItem(arr: _tp.Iterable[_T], item: _T) -> int:
     return count(arr, lambda x: x == item)
 
 
-def consoleChar(b: _tp.Union[bool, None]) -> str:
+def consoleChar(b: _tp.Optional[bool]) -> str:
     """
     helper function for displaying boolean array on console
 
@@ -1552,9 +1610,17 @@ def allPairDistances(nodes: _tp.Iterable[int],
     return minDistDict
 
 
+@_tp.overload
 def findSeqPeriod(seq: _tp.Sequence[_T],
-                  cond: _tp.Optional[_tp.Callable[[int], bool]] = None
-                  ) -> _tp.Optional[tuple[int, int]]:
+                  cond: _tp.Optional[_tp.Callable[[int], bool]],
+                  noErrorOnAperiodic: _tp.Literal[True]
+                  ) -> _tp.Optional[tuple[int, int]]: ...
+@_tp.overload
+def findSeqPeriod(seq: _tp.Sequence[_T],
+                  cond: _tp.Optional[_tp.Callable[[int], bool]],
+                  noErrorOnAperiodic: _tp.Literal[False]
+                  ) -> tuple[int, int]: ...
+def findSeqPeriod(seq, cond=None, noErrorOnAperiodic=False):
     """
     find period of (eventually) periodic sequence
 
@@ -1570,22 +1636,28 @@ def findSeqPeriod(seq: _tp.Sequence[_T],
         if None, will use every possible period
         defaults to None
 
+    noErrorOnAperiodic: bool, optional
+        determine if we should raise error if `seq` is found aperiodic
+        if False, will raise RuntimeError
+        if True, no error will be raise, and return value is None
+        defaults to False
+
     Return
     -----
     a tuple containing 2 int
         the first int is the proposed period
         the second int is the length of irregularity
     such that `seq[irregularity : irregularity + period]` is the earliest period
-    or None, if none that satisfies `cond` is found
+    if no such period is found, will
+        raise RuntimeError if `noErrorOnAperiodic` is False
+        return None instead if `noErrorOnAperiodic` is True
 
     the period returned has the minimal length of irregularities and if tie, shortest period
 
     Note
     -----
     l^2 time complexity, 1 space complexity
-    should speed up if we test multiple of gcd of suffix item counter,
-        but somehow it is slower than naive search
-        (AoC 2022 d17 whole sol took ~6s/~2s)
+    is it possible to speed up?
     """
     seqLen = len(seq)
     if seqLen <= 1:
@@ -1604,7 +1676,10 @@ def findSeqPeriod(seq: _tp.Sequence[_T],
             currOptimal = (t, remainLen)
     assert currOptimal is not None
     if sum(currOptimal) == seqLen:
-        raise RuntimeWarning("findSeqPeriod failed to find proper period. seq may be aperiodic")
+        if not noErrorOnAperiodic:
+            raise RuntimeError("findSeqPeriod failed to find proper period. seq may be aperiodic")
+        else:
+            currOptimal = None
     return currOptimal
 
 def extrapolatePeriodicSeq(arr: _tp.Sequence[float], idx: int, inDiff: bool = False) -> float:
@@ -1625,7 +1700,7 @@ def extrapolatePeriodicSeq(arr: _tp.Sequence[float], idx: int, inDiff: bool = Fa
 
     inDiff: bool, optional
         indicate whether the periodicity is in the difference (increment)
-        although setting True works for value-periodic sequence, the performance may deteriorate
+        although setting True works for value-periodic sequence, performance deteriorates
         if True, will treat the difference as periodic
         if False, will treat the value as periodic
         defaults to False
@@ -1703,13 +1778,36 @@ def integerLattice(dim: int,
                     yield (-coor,) + pt
                 yield (coor,) + pt
 
+@_tp.overload
+def complexToTuple(c: complex, asInt: _tp.Literal[False]) -> tuple[float, float]: ...
+@_tp.overload
+def complexToTuple(c: complex, asInt: _tp.Literal[True]) -> tuple[int, int]: ...
+def complexToTuple(c, asInt=True):
+    """
+    convert the coordinates of a complex number to tuple of floats
+
+    Parameters
+    -----
+    c: complex
+        the complex to convert from
+
+    asInt: bool, optional
+        determine if the output should be converted to int
+        does not check if each part is numerically int or not
+
+    Returns
+    -----
+    a tuple of 2 floats or a tuple of 2 ints, depending on `asInt`
+    """
+    return (int(c.real), int(c.imag)) if asInt else (c.real, c.imag)
 
 class Point:
     """
     A wrapper class for using tuple as points in Euclidean space
     If you only need 2D points for addition and comparison only, consider using complex numbers
-    (~10x speedup for addition-intensive cases, e.g. AOC 2017 day 22)
+    (6~10x speedup)
     """
+    # NOTE: total ordering from dataclass does not support comparison with scalars
     __slots__ = ('__coor',)
 
     def __init__(self, *coors: float) -> None:
@@ -1718,27 +1816,38 @@ class Point:
 
     @classmethod
     def fromIterable(cls, it: _tp.Iterable[float]) -> 'Point':
+        """
+        Construct a Point from an Iterable that contains the same value
+        """
         return cls(*it)
 
     @classmethod
     def zero(cls, dim: int) -> 'Point':
+        """
+        Construct a Point of zero of given dimension
+        """
         return cls.fromIterable((0,) * dim)
 
     @property
     def dim(self) -> int:
+        """
+        The dimension (number of coordinates) of the point
+        """
         return len(self.__coor)
 
-    def __getitem__(self,
-                    dim: _tp.Union[int, slice]
-                    ) -> _tp.Union[float, tuple[float, ...]]:
-        if isinstance(dim, int):
-            assert 0 <= dim < self.dim, f"Invalid dimension ({dim} not in [0, {self.dim - 1}])"
-            return self.__coor[dim]
-        if isinstance(dim, slice):
-            assert 0 <= dim.start and (dim.stop is None or dim.stop <= self.dim), \
-                    f"Invalid slice ({dim} on dim {self.dim})"
-            return self.__coor[dim]
-        raise NotImplementedError(f"Subscript type not recognized: {type(dim)}")
+    @_tp.overload
+    def __getitem__(self, key: int) -> float: ...
+    @_tp.overload
+    def __getitem__(self, key: slice) -> tuple[float, ...]: ...
+    def __getitem__(self, key):
+        if isinstance(key, int):
+            assert 0 <= key < self.dim, f"Invalid dimension ({key} not in [0, {self.dim - 1}])"
+            return self.__coor[key]
+        if isinstance(key, slice):
+            assert 0 <= key.start and (key.stop is None or key.stop <= self.dim), \
+                    f"Invalid slice ({key} on dim {self.dim})"
+            return self.__coor[key]
+        raise NotImplementedError(f"Subscript type not recognized: {type(key)}")
 
     def __iter__(self) -> _tp.Iterable[float]:
         yield from self.__coor
@@ -1749,21 +1858,45 @@ class Point:
     def __len__(self) -> int:
         return self.dim
 
-    def __add__(self, other: 'Point') -> 'Point':
+    def __add__(self, other: _tp.Union['Point', 'MutPoint']) -> 'Point':
         assert self.dim == other.dim, f"Dimension mismatch ({self.dim} != {other.dim})"
-        return type(self)(*(self.__coor[i] + other.__coor[i] for i in range(self.dim)))
+        return type(self)(*(self.__coor[i] + other[i] for i in range(self.dim)))
 
-    def __rmul__(self, scalar: float) -> 'Point':
-        return type(self)(*(scalar * self.__coor[i] for i in range(self.dim)))
+    def __rmul__(self,
+                 other: _tp.Union[int, float, 'Point', 'MutPoint']) -> 'Point':
+        if isinstance(other, (int, float)):
+            return type(self)(*(other * self.__coor[i] for i in range(self.dim)))
+        else:
+            assert self.dim == other.dim
+            return type(self)(*(other[i] * self.__coor[i]  for i in range(self.dim)))
 
-    def __mul__(self, scalar: float) -> 'Point':
-        return self.__rmul__(scalar)
+    def __mul__(self,
+                other: _tp.Union[int, float, 'Point', 'MutPoint']) -> 'Point':
+        return self.__rmul__(other)
+
+    def __truediv__(self,
+                    other: _tp.Union[int, float, 'Point', 'MutPoint']) -> 'Point':
+        if isinstance(other, (int, float)):
+            return type(self)(*(self.__coor[i] / other for i in range(self.dim)))
+        else:
+            assert self.dim == other.dim
+            return type(self)(*(self.__coor[i] / other[i] for i in range(self.dim)))
+
+    def __floordiv__(self,
+                     other: _tp.Union[int, float, 'Point', 'MutPoint']) -> 'Point':
+        if isinstance(other, (int, float)):
+            return type(self)(*(self.__coor[i] // other for i in range(self.dim)))
+        else:
+            assert self.dim == other.dim
+            return type(self)(*(self.__coor[i] // other[i]  for i in range(self.dim)))
 
     def __neg__(self) -> 'Point':
         return self.__rmul__(-1)
 
-    def __sub__(self, other: 'Point') -> 'Point':
-        return self.__add__(other.__neg__())
+    def __sub__(self,
+                other: _tp.Union['Point', 'MutPoint']) -> 'Point':
+        assert self.dim == other.dim, f"Dimension mismatch ({self.dim} != {other.dim})"
+        return type(self)(*(self.__coor[i] - other[i] for i in range(self.dim)))
 
     def __pos__(self) -> 'Point':
         return self
@@ -1777,7 +1910,7 @@ class Point:
         elif not isinstance(other, type(self)):
             return NotImplemented
         return (self.dim == other.dim
-                and all(self.__coor[i] == other.__coor[i]
+                and all(self.__coor[i] == other[i]
                         for i in range(self.dim)))
 
     def __lt__(self, other: object) -> bool:
@@ -1786,7 +1919,7 @@ class Point:
         elif not isinstance(other, type(self)):
             return NotImplemented
         return (self.dim == other.dim
-                and all(self.__coor[i] < other.__coor[i]
+                and all(self.__coor[i] < other[i]
                         for i in range(self.dim)))
 
     def __le__(self, other: object) -> bool:
@@ -1795,7 +1928,7 @@ class Point:
         elif not isinstance(other, type(self)):
             return NotImplemented
         return (self.dim == other.dim
-                and all(self.__coor[i] <= other.__coor[i]
+                and all(self.__coor[i] <= other[i]
                         for i in range(self.dim)))
 
     def __gt__(self, other: object) -> bool:
@@ -1804,7 +1937,7 @@ class Point:
         elif not isinstance(other, type(self)):
             return NotImplemented
         return (self.dim == other.dim
-                and all(self.__coor[i] > other.__coor[i]
+                and all(self.__coor[i] > other[i]
                         for i in range(self.dim)))
 
     def __ge__(self, other: object) -> bool:
@@ -1813,7 +1946,7 @@ class Point:
         elif not isinstance(other, type(self)):
             return NotImplemented
         return (self.dim == other.dim
-                and all(self.__coor[i] >= other.__coor[i]
+                and all(self.__coor[i] >= other[i]
                         for i in range(self.dim)))
 
     def __bool__(self) -> bool:
@@ -1823,6 +1956,20 @@ class Point:
         return hash(('Point type', self.dim,) + self.__coor)
 
     def norm(self, p: float = 2) -> float:
+        """
+        Return the L^p norm of the point
+
+        Parameter
+        -----
+        p: float
+            p in L^p
+            Must be between 1 and float('inf') (inclusive)
+            defaults to 2
+
+        Return
+        -----
+        a float representing the L^p norm of the point
+        """
         assert p >= 1, f"p ({p}) must be at least 1"
         if p == float('Inf'):
             return max(map(abs, self.__coor))
@@ -1836,10 +1983,9 @@ class MutPoint:
     A wrapper class for using tuple as points in Euclidean space
     Point but mutable and not hashable
     If you only need 2D points for addition and comparison only, consider using complex numbers
-    (~10x speedup for addition-intensive cases, e.g. AOC 2017 day 22)
-
-    TODO: make this and `Point` inherite from an abstract base class
+    (6~10x speedup)
     """
+    # TODO: make this and `Point` inherite from an abstract base class
     __slots__ = ('__coor',)
 
     def __init__(self, *coors: float) -> None:
@@ -1848,19 +1994,36 @@ class MutPoint:
 
     @classmethod
     def fromIterable(cls, it: _tp.Iterable[float]) -> 'MutPoint':
+        """
+        Construct a Point from an Iterable that contains the same value
+        """
         return cls(*it)
 
     @classmethod
     def zero(cls, dim: int) -> 'MutPoint':
+        """
+        Construct a Point of zero of given dimension
+        """
         return cls.fromIterable((0,) * dim)
 
     @property
     def dim(self) -> int:
+        """
+        The dimension (number of coordinates) of the point
+        """
         return len(self.__coor)
 
-    def __getitem__(self,
-                    key: _tp.Union[int, slice]
-                    ) -> _tp.Union[float, tuple[float, ...]]:
+    def asPoint(self) -> Point:
+        """
+        Return a copy of this point as (immutable) Point
+        """
+        return Point.fromIterable(self.__coor)
+
+    @_tp.overload
+    def __getitem__(self, key: int) -> float: ...
+    @_tp.overload
+    def __getitem__(self, key: slice) -> tuple[float, ...]: ...
+    def __getitem__(self, key):
         if isinstance(key, int):
             assert 0 <= key < self.dim, f"Invalid dimension ({key} not in [0, {self.dim - 1}])"
             return self.__coor[key]
@@ -1870,9 +2033,7 @@ class MutPoint:
             return tuple(self.__coor[key])
         raise NotImplementedError(f"Subscript type not recognized: {type(key)}")
 
-    def __setitem__(self,
-                    key: int,
-                    val: _tp.Union[int, float]):
+    def __setitem__(self, key: int, val: _tp.Union[int, float]):
         assert isinstance(val, (int, float))
         self.__coor[key] = val
 
@@ -1895,11 +2056,14 @@ class MutPoint:
             self.__coor[i] += other[i]
         return self
 
-    def __rmul__(self, scalar: float) -> Point:
-        return Point(*(scalar * self.__coor[i] for i in range(self.dim)))
+    def __rmul__(self, other: _tp.Union[int, float, Point, 'MutPoint']) -> Point:
+        if isinstance(other, (int, float)):
+            return Point(*(other * self.__coor[i] for i in range(self.dim)))
+        else:
+            return Point(*(other[i] * self.__coor[i] for i in range(self.dim)))
 
-    def __mul__(self, scalar: float) -> Point:
-        return self.__rmul__(scalar)
+    def __mul__(self, other: _tp.Union[int, float, Point, 'MutPoint']) -> Point:
+        return self.__rmul__(other)
 
     def __imul__(self, other: _tp.Union[float, int, Point, 'MutPoint']) -> 'MutPoint':
         if isinstance(other, (float, int)):
@@ -1907,8 +2071,46 @@ class MutPoint:
                 self.__coor[i] *= other
         else:
             assert self.dim == other.dim, f"Dimension mismatch ({self.dim} != {other.dim})"
-            for i in range(len(other)):
-                self.__coor[i] *= other[i]
+            for i, v in enumerate(other):
+                self.__coor[i] *= v
+        return self
+
+    def __truediv__(self,
+                    other: _tp.Union[int, float, Point, 'MutPoint']) -> Point:
+        if isinstance(other, (int, float)):
+            return Point(*(self.__coor[i] / other for i in range(self.dim)))
+        else:
+            assert self.dim == other.dim
+            return Point(*(self.__coor[i] / other[i] for i in range(self.dim)))
+
+    def __itruediv__(self,
+                     other: _tp.Union[int, float, Point, 'MutPoint']) -> 'MutPoint':
+        if isinstance(other, (int, float)):
+            for i in range(self.dim):
+                self.__coor[i] /= other
+        else:
+            assert self.dim == other.dim
+            for i, v in enumerate(other):
+                self.__coor[i] /= other[i]
+        return self
+
+    def __floordiv__(self,
+                     other: _tp.Union[int, float, Point, 'MutPoint']) -> Point:
+        if isinstance(other, (int, float)):
+            return Point(*(self.__coor[i] // other for i in range(self.dim)))
+        else:
+            assert self.dim == other.dim
+            return Point(*(self.__coor[i] // other[i] for i in range(self.dim)))
+
+    def __ifloordiv__(self,
+                      other: _tp.Union[int, float, Point, 'MutPoint']) -> 'MutPoint':
+        if isinstance(other, (int, float)):
+            for i in range(self.dim):
+                self.__coor[i] //= other
+        else:
+            assert self.dim == other.dim
+            for i, v in enumerate(other):
+                self.__coor[i] //= other[i]
         return self
 
     def __neg__(self) -> Point:
@@ -1919,8 +2121,8 @@ class MutPoint:
 
     def __isub__(self, other: _tp.Union[Point, 'MutPoint']) -> 'MutPoint':
         assert self.dim == other.dim, f"Dimension mismatch ({self.dim} != {other.dim})"
-        for i in range(len(other)):
-            self.__coor[i] -= other[i]
+        for i, v in enumerate(other):
+            self.__coor[i] -= v
         return self
 
     def __pos__(self) -> Point:
@@ -1978,7 +2180,21 @@ class MutPoint:
         return any(self.__coor)
 
     def norm(self, p: float = 2) -> float:
-        return Point(*self.__coor).norm(p)
+        """
+        Return the L^p norm of the point
+
+        Parameter
+        -----
+        p: float
+            p in L^p
+            Must be between 1 and float('inf') (inclusive)
+            defaults to 2
+
+        Return
+        -----
+        a float representing the L^p norm of the point
+        """
+        return self.asPoint().norm(p)
 
 
 def toBase(n: int, b: int) -> tuple[int, ...]:
@@ -2017,9 +2233,7 @@ def fromBase(digits: _tp.Sequence[int],
 def fromBase(digits: _tp.Sequence[int],
              b: int,
              fractionalPartLen: int) -> _tp.Union[int, float]: ...
-def fromBase(digits: _tp.Sequence[int],
-             b: int,
-             fractionalPartLen: int = 0) -> _tp.Union[int, float]:
+def fromBase(digits, b, fractionalPartLen=0):
     """
     Convert a number to given base
 
@@ -2172,16 +2386,23 @@ def diff(arr: _tp.Sequence[float]) -> tuple[float, ...]:
     -----
     A tuple of floats that is of length `len(arr) - 1`
     where `diff[i] == arr[i + 1] - diff[i]`
+    slower than `np.diff`
     """
     assert len(arr) >= 2
     return tuple(arr[i + 1] - arr[i] for i in range(len(arr) - 1))
 
-class DisjointSet:
+class DisjointSet(_tp.Generic[_T]):
+    """
+    A simple disjoint-set structure
+    """
     __slots__ = ('__parent', '__gpSize')
 
-    def __init__(self, itemCount: int) -> None:
-        self.__parent: list[int] = list(range(itemCount))
-        self.__gpSize: list[int] = list(1 for _ in range(itemCount))
+    def __init__(self, initItems: _tp.Union[int, _tp.Iterable[_T]] = tuple()) -> None:
+        if isinstance(initItems, int):
+            initItems = _tp.cast(_tp.Iterable, range(initItems))
+        assert not isinstance(initItems, int)
+        self.__parent: dict[_T, _T] = {k: k for k in initItems}
+        self.__gpSize: dict[_T, int] = {k: 1 for k in self.__parent}
 
     def __len__(self) -> int:
         return len(self.__parent)
@@ -2191,63 +2412,82 @@ class DisjointSet:
                 + f"element{'s' if len(self.__parent) > 1 else ''}" \
                 + f" at 0x{id(self):x}"
 
-    def getRep(self, idx: int) -> int:
-        """
-        Return an index that is in the same group
-        Indices in the same group have the same representative index
-        """
-        while self.__parent[idx] != idx:
-            (idx, self.__parent[idx]) = (self.__parent[idx], self.__parent[self.__parent[idx]])
-        return idx
+    def __contains__(self, item: _T) -> bool:
+        return item in self.__parent
 
-    def isSameGroup(self, idx1: int, idx2: int) -> bool:
+    def addItem(self, item: _T) -> None:
         """
-        Return whether the two indices are in the same group
+        Add an item in the disjoint set.
+        If item is already in the set, this function does nothing
+        If item is not in the set, it is added in a group of itself
         """
-        return self.getRep(idx1) == self.getRep(idx2)
+        if item not in self.__parent:
+            self.__parent[item] = item
+            self.__gpSize[item] = 1
 
-    def union(self, idx1: int, idx2: int) -> None:
+    def getRep(self, item: _T) -> _T:
         """
-        Union the groups of the two indices
+        Return a representative item that is in the same group
+        Items in the same group will always have the same representative item
         """
-        idx1 = self.getRep(idx1)
-        idx2 = self.getRep(idx2)
-        if idx1 == idx2:
+        if item not in self.__parent:
+            return item
+        while self.__parent[item] != item:
+            (item, self.__parent[item]) = (self.__parent[item], self.__parent[self.__parent[item]])
+        return item
+
+    def isSameGroup(self, item1: _T, item2: _T) -> bool:
+        """
+        Return whether the two items are in the same group
+        """
+        if any(k not in self.__parent for k in (item1, item2)):
+            return item1 == item2
+        return self.getRep(item1) == self.getRep(item2)
+
+    def union(self, item1: _T, item2: _T) -> None:
+        """
+        Union the groups of the two items
+        """
+        for k in (item1, item2):
+            self.addItem(k)
+        item1 = self.getRep(item1)
+        item2 = self.getRep(item2)
+        if item1 == item2:
             return
-        if self.__gpSize[idx1] < self.__gpSize[idx2]:
-            (idx1, idx2) = (idx2, idx1)
-        self.__parent[idx2] = idx1
-        self.__gpSize[idx1] += self.__gpSize[idx2]
+        if self.__gpSize[item1] < self.__gpSize[item2]:
+            (item1, item2) = (item2, item1)
+        self.__parent[item2] = item1
+        self.__gpSize[item1] += self.__gpSize[item2]
 
     def __compress(self):
         """
         Compress the structure
         ~O(n ItLn(n)) ~ O(n) time complexity
         """
-        for idx in range(len(self.__parent)):
-            self.__parent[idx] = self.getRep(idx)
+        for k in self.__parent:
+            self.__parent[k] = self.getRep(k)
 
     def groupCount(self) -> int:
         """
         Return the number of groups
         """
         self.__compress()
-        return len(frozenset(self.__parent))
+        return len(frozenset(self.__parent.values()))
 
-    def entriesInSameGroup(self, idx: int) -> frozenset[int]:
+    def entriesInSameGroup(self, item: _T) -> frozenset[_T]:
         """
-        Return the indices that are in the same group as `idx`
+        Return the indices that are in the same group as the item
         """
         self.__compress()
-        return frozenset(filter(lambda i: self.__parent[i] == self.__parent[idx],
+        return frozenset(filter(lambda i: self.__parent[i] == self.__parent[item],
                                 self.__parent))
 
-    def groupSize(self, idx: int) -> int:
+    def groupSize(self, item: _T) -> int:
         """
-        Return the size of the group that `idx` belongs to
+        Return the size of the group that the item belongs to
         """
         self.__compress()
-        return self.__parent.count(self.__parent[idx])
+        return tuple(self.__parent.values()).count(self.__parent[item])
 
 class SegmentTree:
     """
@@ -2492,4 +2732,29 @@ class SegmentTree:
             if _isinf(volCount):
                 break
         return volCount
+
+def longestCommonPrefix(listOfStr: _tp.Sequence[str]) -> str:
+    """
+    Find longest common prefix of the given strings
+
+    Parameters
+    -----
+    listOfStr: Sequence[str]
+        the strings in question
+
+    Returns
+    -----
+    the longest string that is a common prefix of all strings in `listOfStr`,
+        which may be the empty string
+    """
+    assert len(listOfStr) != 0
+    sampleStr: str = next(iter(listOfStr))
+    ptr: int = len(sampleStr)
+    for s in listOfStr:
+        ptr = min(len(s), ptr)
+        for i in range(ptr):
+            if s[i] != sampleStr[i]:
+                ptr = i
+                break
+    return sampleStr[:ptr]
 
