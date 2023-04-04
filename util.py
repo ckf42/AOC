@@ -692,7 +692,7 @@ def rangeBound(seq):
 
     Parameter
     -----
-    seq: Sequence[Sequence[float]]
+    seq: Sequence[Sequence[float or int]]
         a collection of sets of numbers
 
     Return
@@ -701,6 +701,45 @@ def rangeBound(seq):
     `rangeBound[i]` is the (min, max) of `seq[i]`
     """
     return tuple((min(s), max(s)) for s in seq)
+
+@_tp.overload
+def rangeBoundOnCoors(
+        pts: _tp.Iterable[_tp.Sequence[int]]
+        ) -> tuple[tuple[int, int], ...]: ...
+@_tp.overload
+def rangeBoundOnCoors(
+        pts: _tp.Iterable[_tp.Sequence[float]]
+        ) -> tuple[tuple[float, float], ...]: ...
+def rangeBoundOnCoors(pts):
+    """
+    find the range of coordinates of points
+
+    Parameter
+    -----
+    pts: Iterable[Sequence[float or int]]
+        a collection of sets of numbers
+        assumed to be of uniform length
+
+    Return
+    -----
+    a tuple containing 2-tuples of float numbers
+    `rangeBoundOnCoor[i]` is the (min, max) of `pt[i]`
+        over all `pt` in `pts`
+
+    Note
+    -----
+    `pts` will get consumede if it is a generator
+
+    Almost equivalent to `rangeBound(takeApart(pts))`
+    but also take non-sequence input
+    """
+    initPt = next(iter(pts))
+    minVal = list(initPt)
+    maxVal = list(initPt)
+    for pt in pts:
+        minVal[:] = (min(pr) for pr in zip(minVal, pt))
+        maxVal[:] = (max(pr) for pr in zip(maxVal, pt))
+    return takeApart((minVal, maxVal))
 
 
 def sgn(x: float) -> int:
@@ -1376,6 +1415,13 @@ class IntegerIntervals:
             # this should not happen
             raise RuntimeError(f"Case not considered: {itv1}, {itv2}")
 
+    @classmethod
+    def fromUnioning(cls, *collections: 'intervalCollections'):
+        newColl = cls()
+        for coll in collections:
+            newColl.unionWith(coll)
+        return newColl
+
     def __init__(self, *initIntervals: tuple[int, int]):
         # sorted list of 2-tuple components
         self.__contents: list[tuple[int, int]] = list()
@@ -1383,7 +1429,7 @@ class IntegerIntervals:
         self.__eleCount: _tp.Optional[int] = 0
         if len(initIntervals) != 0:
             for itv in initIntervals:
-                self.unionWith(itv)
+                self.add(itv)
 
     def __len__(self) -> int:
         if self.__eleCount is None:
@@ -1407,6 +1453,9 @@ class IntegerIntervals:
         return self.__itvContains(n, self.__contents[s - 1])
 
     def __iter__(self) -> _tp.Iterable[int]:
+        """
+        Behavior undefined if collection change mid iteration
+        """
         assert self.isBounded(), "Cannot iterate from an unbounded collection"
         for itv in self.__contents:
             yield from range(itv[0], itv[1] + 1)
@@ -1425,7 +1474,7 @@ class IntegerIntervals:
         return self.__contents[idx]
 
     # TODO: need testing
-    def unionWith(self, interval: tuple[int, int]):
+    def add(self, interval: tuple[int, int]):
         """
         Add an interval to the collection
         """
@@ -1480,6 +1529,15 @@ class IntegerIntervals:
             ]
             self.__eleCount = None
 
+    def unionWith(self, *otherCollections: 'IntegerIntervals'):
+        """
+        Update self by unioning another collection
+        wrapper on self.unionWith
+        """
+        for coll in otherCollections:
+            for itv in coll.components():
+                self.add(itv)
+
     def intersectWith(self, interval: tuple[int, int]):
         """
         Compute the intersection of the collection with the interval
@@ -1490,6 +1548,13 @@ class IntegerIntervals:
                     filter(lambda itv: self.__itvIsIntersect(itv, interval),
                            self.__contents)))
         self.__eleCount = None
+
+    def components(self) -> _tp.Iterable[tuple[int, int]]:
+        """
+        Iterater on all components, from lowest to highest
+        Behavior undefined if collection change mid iteration
+        """
+        yield from self.__contents
 
     def component(self, idx: int) -> tuple[int, int]:
         """
@@ -2343,8 +2408,8 @@ def matchClosingBracket(
 
     hasNesting: bool, optional
         determine if bracket pairs can be nested
-        if True, other opening bracket are always treated as escaped
-        if False, opening brackets appearing before a closing one are ignored0
+        if True, will only match the closing bracket that is at the right level
+        if False, other opening bracket are always treated as escaped
         defaults to True
 
     Return
