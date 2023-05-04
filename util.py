@@ -1,5 +1,4 @@
 import typing as _tp
-import typing_extensions as _tpx
 # import collections.abc as _abc
 import urllib.request as _ulq
 import urllib.error as _ule
@@ -11,6 +10,12 @@ import dataclasses as _dc
 # check inf and nan
 from math import isinf as _isinf
 from math import isnan as _isnan
+
+from sys import version_info
+if version_info.major == 3 and version_info.minor < 10: # for TypeAlias
+    from typing_extensions import TypeAlias as _TypeAlias
+else:
+    from typing import TypeAlias as _TypeAlias
 
 
 if __name__ == '__main__':
@@ -463,9 +468,9 @@ def getInts(s: str, allowNegative: bool = True) -> tuple[int, ...]:
     a tuple of int that contains all (signed, if `allowNegative` is True) integers
         that appear in `s`
     """
-    intRegex = (r'-?' if allowNegative else r'') + r'\d+'
     return tuple(map(int,
-                     _re.findall(intRegex, s)))
+                     _re.findall((r'-?' if allowNegative else r'') + r'\d+',
+                                 s)))
 
 
 def getFloats(s: str) -> tuple[float, ...]:
@@ -758,10 +763,7 @@ def sgn(x: float) -> int:
     if x > 0, returns 1
     if x < 0, returns -1
     """
-    if x == 0:
-        return 0
-    else:
-        return 1 if x > 0 else -1
+    return 0 if x == 0 else (1 if x > 0 else -1)
 
 
 def argmax(arr: _tp.Iterable[_T],
@@ -1626,9 +1628,9 @@ class IntegerIntervals:
         self.__eleCount = 0
 
 
-def allPairDistances(nodes: _tp.Iterable[int],
-                     distFunc: _tp.Callable[[int, int], _tp.Optional[float]]
-                     ) -> dict[tuple[int, int], float]:
+def allPairDistances(nodes: _tp.Iterable[_T],
+                     distFunc: _tp.Callable[[_T, _T], _tp.Optional[float]]
+                     ) -> dict[tuple[_T, _T], float]:
     """
     compute pairwise distance with Floyd-Warshall
 
@@ -1657,7 +1659,7 @@ def allPairDistances(nodes: _tp.Iterable[int],
     n^3 time complexity, n^2 space complexity
     """
     nodeSeq = tuple(nodes)
-    minDistDict: dict[tuple[int, int], float] = dict()
+    minDistDict: dict[tuple[_T, _T], float] = dict()
     for i in nodeSeq:
         for j in nodeSeq:
             if i == j:
@@ -2043,6 +2045,10 @@ class Point:
         else:
             return sum(abs(c) ** p for c in self.__coor) ** (1 / p)
 
+    def innerProd(self, other: _tp.Union['Point', 'MutPoint']) -> float:
+        assert self.dim == other.dim
+        return sum(self.__coor[i] * other.__coor[i] for i in range(self.dim))
+
 class MutPoint:
     """
     A wrapper class for using tuple as points in Euclidean space
@@ -2260,6 +2266,10 @@ class MutPoint:
         a float representing the L^p norm of the point
         """
         return self.asPoint().norm(p)
+
+    def innerProd(self, other: _tp.Union[Point, 'MutPoint']) -> float:
+        assert self.dim == other.dim
+        return sum(self.__coor[i] * other.__coor[i] for i in range(self.dim))
 
 
 def toBase(n: int, b: int) -> tuple[int, ...]:
@@ -2565,7 +2575,7 @@ class SegmentTree:
     """
     __slots__ = ('__dim', '__nodeList')
 
-    RangeType: _tpx.TypeAlias = tuple[tuple[int, int], ...]
+    RangeType: _TypeAlias = tuple[tuple[int, int], ...]
 
     @_dc.dataclass
     class __node:
@@ -2822,4 +2832,66 @@ def longestCommonPrefix(listOfStr: _tp.Sequence[str]) -> str:
                 ptr = i
                 break
     return sampleStr[:ptr]
+
+
+def segmentIntersection(ps: Point, pe: Point,
+                        qs: Point, qe: Point
+                        ) -> _tp.Union[None, Point, tuple[Point, Point]]:
+    """
+    Check if two segments have intersection
+
+    Parameters
+    -----
+    ps, pe, qs, qe: Point
+        the endpoints of the segments to check
+        assumed to be 2-dimenisonal
+        the two segments should have endpoints (ps, pe), (qs, qe) resp.
+
+    Returns
+    -----
+    Either of None, a Point, or a tuple of 2 Point
+    If the two segments have no intersection,
+        None
+    If they have a single point intersection,
+        Point that records the point
+    If they have more than one intersection,
+        a tuple of Point that denotes the intersection segment
+
+    Note
+    -----
+    from https://stackoverflow.com/a/565282
+    """
+    assert all(pt.dim == 2 for pt in (ps, pe, qs, qe))
+    r = pe - ps
+    s = qe - qs
+
+    def crossProd(pt1: Point, pt2: Point) -> float:
+        return pt1[0] * pt2[1] - pt1[1] * pt2[0]
+
+    rxs = crossProd(r, s)
+    pqxr = crossProd(ps - qs, r)
+    if rxs == 0:
+        if pqxr == 0:
+            # case 1
+            rr = r.innerProd(r)
+            t0 = (qs - ps).innerProd(r) / rr
+            t1 = t0 + r.innerProd(s) / rr
+            if t0 > t1:
+                t0, t1 = t1, t0
+            t0 = max(0, t0)
+            t1 = min(1, t1)
+            if t0 > t1:
+                return None
+            else:
+                return (ps + t0 * r, ps + t1 * r)
+        else:
+            # case 2
+            return None
+    elif 0 <= (t := -crossProd(qs - ps, s) / rxs) <= 1 \
+                and 0 <= -pqxr / rxs <= 1:
+        # case 3
+        return ps + t * r
+    else:
+        # case 4
+        return None
 
