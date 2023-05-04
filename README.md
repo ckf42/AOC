@@ -1,18 +1,14 @@
 # AOC
 
-This is my attempt on [AOC](https://adventofcode.com/)
+My solutions on [AOC](https://adventofcode.com/)
 
-Solutions written in `python`
+Solutions in python
 
-To use `util.py`, put the `session` cookie in the top dir and copy `AOCInit` to every dir
+Put `session` cookie in the top directory and copy `AOCInit` to every subdirectory
 
-Third party tools:
+Third party libraries:
 * ortools
-    * for TSP (e.g. 2015 d9) and constrain programming (e.g. 2015 d21)
 * numpy
-    * mostly for fast array read/write (e.g. 2015 d6)
 * scipy
-    * for convolution (e.g. 2015 d18)
 * sympy
-    * for number theory (e.g. 2015 d20) and intervals (e.g. 2022 d15)
 
