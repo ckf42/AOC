@@ -56,10 +56,10 @@ def getInput(d: int,
     -----
     str
     the input for question of day `d` in year `y` fetched from the website
-    the same input str will be written in cwd with filename `input{d}`
-    if this file already exists, will overwrite
+    the same input str will be written in cwd with filename `input{d}`.
+    if this file already exists and `force` is true, will overwrite
     if `force` is false and this file already exists,
-    will read frm this file instead
+    will read from this file instead
 
     Note
     -----
