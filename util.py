@@ -50,6 +50,7 @@ def getInput(d: int,
 
     force: bool, optional
         determine if the cached input should be ignored
+        Usually there is no reason to set this as True
         defaults to False
 
     Returns
@@ -869,10 +870,12 @@ def gcd(*n: int) -> int:
         return 1
     elif len(n) == 1:
         return n[0]
-    elif len(n) == 2:
-        return n[0] if n[1] == 0 else gcd(n[1], n[0] % n[1])
-    else:
+    elif len(n) > 2:
         return gcd(gcd(*n[:2]), *n[2:])
+    elif n[1] == 0:
+        return n[0]
+    else:
+        return gcd(n[1], n[0] % n[1])
 
 
 def lcm(*n: int) -> int:
@@ -1887,7 +1890,8 @@ def nearby2DGridPts(
         pt: tuple[int, int],
         bd: tuple[tuple[int, int], tuple[int, int]] \
                 | tuple[int, int] \
-                | None = None,
+                | None \
+                = None,
         isL1: bool = True
         ) -> _tp.Iterator[tuple[int, int]]:
     """
@@ -1898,13 +1902,13 @@ def nearby2DGridPts(
     pt: tuple[int, int]
         The center point
 
-    isL1: int, optional
+    isL1: bool, optional
         Determine if the points generated should be L^1 neighbours
-        if True, all points generated would have unit L^1 dist with `pt`
-        if False, all points generated would have unit L^infty dist with `pt`
+        if True, all (4) points generated would have unit L^1 dist with `pt`
+        if False, all (8) points generated would have unit L^infty dist with `pt`
         defaults to True
 
-    bd: tuple[int, int] or tuple[tuple[int, int], tuple[int, int]], optional
+    bd: None or tuple[int, int] or tuple[tuple[int, int], tuple[int, int]], optional
         The bounds of the grid, specified as two diagonal points
         If specified as `((minX, minY), (maxX, maxY))`,
             all points generated would satisfy
@@ -1923,7 +1927,7 @@ def nearby2DGridPts(
         bd = ((0, 0), bd)
     for d in integerLattice(dim=2, norm=1, p=(1 if isL1 else inf)):
         newI, newJ = pt[0] + d[0], pt[1] + d[1]
-        if newI in range(bd[0][0], bd[1][0]) and newJ in range(bd[0][1], bd[1][1]):
+        if bd[0][0] <= newI < bd[1][0] and bd[0][1] <= newJ < bd[1][1]:
             yield (newI, newJ)
 
 
@@ -1955,6 +1959,9 @@ class Point:
     A wrapper class for using tuple as points in Euclidean space
     If you only need 2D points for addition and comparison only,
         consider using complex numbers (6~10x speedup)
+
+    TODO: rewrite for better code
+    TODO: common base class with MutPoint?
     """
     # NOTE: total ordering from dataclass does not support comparison with scalars
     __slots__ = ('__coor',)
@@ -2661,7 +2668,7 @@ class SegmentTree:
     Each update only affects subranges
     Can be used for hit count on a range
 
-    NOTE: a bit too slow
+    NOTE: a bit too slow, not ready for use
     TODO: need more testing
     """
     __slots__ = ('__dim', '__nodeList')
@@ -2927,9 +2934,10 @@ def longestCommonPrefix(listOfStr: _tp.Sequence[str]) -> str:
     return sampleStr[:ptr]
 
 
-def segmentIntersection(ps: Point, pe: Point,
-                        qs: Point, qe: Point
-                        ) -> _tp.Union[None, Point, tuple[Point, Point]]:
+def segmentIntersection(
+        ps: Point, pe: Point,
+        qs: Point, qe: Point
+        ) -> _tp.Union[None, Point, tuple[Point, Point]]:
     """
     Check if two segments have intersection
 
