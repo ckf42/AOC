@@ -10,23 +10,23 @@ inpl = inp.split('\n\n')
 seedNums = util.getInts(inpl[0])
 mappings = list()
 for part in inpl[1:]:
-    mapping = dict()
+    mapping = list()
     lines = part.splitlines()
     for line in lines[1:]:
         nums = util.getInts(line)
-        mapping[(nums[1], nums[1] + nums[2] - 1)] = nums[0] - nums[1]
+        mapping.append(((nums[1], nums[1] + nums[2] - 1), nums[0] - nums[1]))
     mappings.append(mapping)
 
 # part 1
-items = list(seedNums)
-for mapping in mappings:
-    for i, item in enumerate(items):
-        for rg, offset in mapping.items():
-            if rg[0] <= item <= rg[1]:
-                items[i] = offset + item
+minSeed = util.intInf
+for seed in seedNums:
+    for mapping in mappings:
+        for rg, offset in mapping:
+            if rg[0] <= seed <= rg[1]:
+                seed += offset
                 break
-print(min(items))
-
+    minSeed = min(minSeed, seed)
+print(minSeed)
 
 # part 2
 # admittedly this can be further modularized
@@ -42,7 +42,7 @@ for mapping in mappings:
     while len(seedItvs) != 0:
         itv = seedItvs.pop()
         hasApply = False
-        for rg, offset in mapping.items():
+        for rg, offset in mapping:
             if (rg[0] <= itv[0] <= rg[1]) or (rg[0] <= itv[1] <= rg[1]):
                 intersect = (max(rg[0], itv[0]), min(rg[1], itv[1]))
                 newItvs.append((intersect[0] + offset, intersect[1] + offset))
