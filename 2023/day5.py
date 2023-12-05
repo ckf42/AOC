@@ -20,38 +20,41 @@ for part in inpl[1:]:
 # part 1
 items = list(seedNums)
 for mapping in mappings:
-    newItems = items.copy()
     for i, item in enumerate(items):
         for rg, offset in mapping.items():
             if rg[0] <= item <= rg[1]:
-                newItems[i] = offset + item
+                items[i] = offset + item
                 break
-    items = newItems
 print(min(items))
 
 
 # part 2
-seedIntervals = list(
+# admittedly this can be further modularized
+# by extending the existing util.IntegerIntervals
+# to support piecewise functions (constant shifting)
+# and various operations
+# and rewrite some inplace operations to return values
+seedItvs = list(
         (pr[0], pr[0] + pr[1] - 1)
         for pr in util.splitIntoGp(seedNums, 2))
 for mapping in mappings:
-    newIntervals = list()
-    while len(seedIntervals) != 0:
-        itv = seedIntervals.pop()
+    newItvs = list()
+    while len(seedItvs) != 0:
+        itv = seedItvs.pop()
         hasApply = False
         for rg, offset in mapping.items():
             if (rg[0] <= itv[0] <= rg[1]) or (rg[0] <= itv[1] <= rg[1]):
                 intersect = (max(rg[0], itv[0]), min(rg[1], itv[1]))
-                newIntervals.append((intersect[0] + offset, intersect[1] + offset))
+                newItvs.append((intersect[0] + offset, intersect[1] + offset))
                 if itv[0] < intersect[0]:
-                    seedIntervals.append((itv[0], intersect[0] - 1))
+                    seedItvs.append((itv[0], intersect[0] - 1))
                 if intersect[1] < itv[1]:
-                    seedIntervals.append((intersect[1] + 1, itv[1]))
+                    seedItvs.append((intersect[1] + 1, itv[1]))
                 hasApply = True
                 break
         if not hasApply:
-            newIntervals.append(itv)
-    seedIntervals = newIntervals
-print(min(seedIntervals)[0])
+            newItvs.append(itv)
+    seedItvs = newItvs
+print(min(itv[0] for itv in seedItvs))
 
 
