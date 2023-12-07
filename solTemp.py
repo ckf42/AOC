@@ -4,7 +4,10 @@ import util
 if __name__ != '__main__':
     exit()
 
-inp = util.getInput(d={{day}}, y={{year}})
+inp = """\
+
+"""
+# inp = util.getInput(d={{day}}, y={{year}})
 
 # part 1
 
