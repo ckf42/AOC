@@ -11,7 +11,7 @@ hands = tuple(
         (line.split()[0], int(line.split()[1]))
         for line in inp.splitlines())
 
-def getRanks(handList: tuple[str, ...], isPart2=False):
+def rankedOrdering(handList: tuple[str, ...], isPart2=False) -> list[int]:
     cardOrdering: str = 'AKQT98765432J' if isPart2 else 'AKQJT98765432'  # small = strong
     jRk: int = cardOrdering.index('J')
     handOrdList: tuple[tuple[int, ...], ...] = tuple(
@@ -35,7 +35,6 @@ def getRanks(handList: tuple[str, ...], isPart2=False):
         return 10 * len(c) + 5 - m
 
     def handCmp(h1: tuple[int, ...], h2: tuple[int, ...]) -> int:
-        # is hand1 stronger?
         t1, t2 = getType(h1), getType(h2)
         if t1 == t2:
             return 1 if h1 <= h2 else -1
@@ -45,10 +44,14 @@ def getRanks(handList: tuple[str, ...], isPart2=False):
                   key=cmp_to_key(lambda i, j: handCmp(handOrdList[i], handOrdList[j])))
 
 # part 1
-print(sum((i + 1) * hands[r][1]
-          for i, r in enumerate(getRanks(tuple(h[0] for h in hands), isPart2=False))))
+print(sum((rk + 1) * hands[hidx][1]
+          for rk, hidx in enumerate(
+              rankedOrdering(tuple(h[0] for h in hands),
+                             isPart2=False))))
 
 # part 2
-print(sum((i + 1) * hands[r][1]
-          for i, r in enumerate(getRanks(tuple(h[0] for h in hands), isPart2=True))))
+print(sum((rk + 1) * hands[hidx][1]
+          for rk, hidx in enumerate(
+              rankedOrdering(tuple(h[0] for h in hands),
+                             isPart2=True))))
 
