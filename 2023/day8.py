@@ -71,16 +71,16 @@ for pos in (k for k in nodes.keys() if k[-1] == 'A'):
             break
 # for each stat in pathStat,
 #     after stat[0] copies of inst,
-#     we enter a loop of length stat[1]
+#     we enter a loop of length stat[1] copies of inst
 #     with stat[0] being the smallest of such property
 #     during the process, we hit Z at time stat[2]
-# this means that the cycle is a factor of (stat[0] - stat[1]) * len(inst)
-# with stat[0] can combinatorial blowup on bad graphs
+# this means that the (minimal) cycle is a factor of stat[1] * len(inst)
+# with stat[0], stat[1] can scale up len(inst) times on bad graphs
 assert all(len(stat[2]) != 0 for stat in pathStat),\
     "Some pos never hit Z node"
 maxTails = max(stat[0] * len(inst) for stat in pathStat)
 assert all(maxTails <= zt for stat in pathStat for zt in stat[2]),\
-    "Z is hit before entering the loop. Case not implemented"
+    "Hit Z before entering the loop. Case not implemented"
 # find x == tail * len(inst) + n * period * len(inst) + (zt - tail * len(inst))
 # equiv, x % (period * len(inst)) == -zt
 # on solve_congruence giving (offset, period),
