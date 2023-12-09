@@ -1,11 +1,12 @@
-import typing as _tp
-import urllib.request as _ulq
-import urllib.error as _ule
-import re as _re
-import functools as _ft
-import itertools as _it
-import heapq as _hq
 import dataclasses as _dc
+import functools as _ft
+import heapq as _hq
+import itertools as _it
+import math as _math
+import re as _re
+import typing as _tp
+import urllib.error as _ule
+import urllib.request as _ulq
 from pathlib import Path as _Path
 # check inf and nan
 from math import isinf as _isinf
@@ -865,17 +866,14 @@ def gcd(*n: int) -> int:
     -----
     the gcd of the given integers
     if no integer is given, return 1
+
+    Note
+    -----
+    (now) a wrapper of math.gcd
     """
     if len(n) == 0:
-        return 1
-    elif len(n) == 1:
-        return n[0]
-    elif len(n) > 2:
-        return gcd(gcd(*n[:2]), *n[2:])
-    elif n[1] == 0:
-        return n[0]
-    else:
-        return gcd(n[1], n[0] % n[1])
+        return 1  # back compat behavior: math.gcd() == 0
+    return _math.gcd(*n)
 
 
 def lcm(*n: int) -> int:
@@ -891,15 +889,12 @@ def lcm(*n: int) -> int:
     -----
     the lcm of the given integers
     if no integer is given, return 1
+
+    Note
+    -----
+    (now) a wrapper of math.lcm
     """
-    if len(n) == 0:
-        return 1
-    elif len(n) == 1:
-        return n[0]
-    elif len(n) == 2:
-        return n[0] // gcd(*n) * n[1]
-    else:
-        return lcm(lcm(*n[:2]), *n[2:])
+    return _math.lcm(*n)
 
 
 class Heap(_tp.Generic[_T]):
