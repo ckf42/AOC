@@ -126,10 +126,11 @@ def firstSuchThat(
     If `arr` is a generator, it will be consumed after the returned element,
     or the whole `arr` will be consumed if no such element is found
     """
-    return next(((idx, ele)
-                 for idx, ele in enumerate(arr)
-                 if cond(ele)),
-                (None, None))
+    return next(
+            ((idx, ele)
+             for idx, ele in enumerate(arr)
+             if cond(ele)),
+            (None, None))
 
 
 def firstIdxSuchThat(arr: _tp.Sequence[_T],
@@ -179,10 +180,11 @@ def firstIdxSuchThat(arr: _tp.Sequence[_T],
     else:
         e = min(e, len(arr))
     assert e is not None
-    return next((idx + s
-                 for (idx, ele) in enumerate(arr[s:e:step])
-                 if cond(ele)),
-                None)
+    return next(
+            (idx + s
+             for (idx, ele) in enumerate(arr[s:e:step])
+             if cond(ele)),
+            None)
 
 def lastSuchThat(
         arr: _tp.Iterable[_T],
@@ -257,11 +259,12 @@ def firstAccumSuchThat(
     If `arr` is a generator, it will be consumed after the returned element,
     or the whole `arr` will be consumed if no such element is found
     """
-    return next(((idx, ele, acc)
-                 for (idx, ele, acc)
-                 in zip(_it.count(0), arr, _it.accumulate(arr, func))
-                 if cond(acc)),
-                (None, None, None))
+    return next(
+            ((idx, ele, acc)
+             for (idx, ele, acc)
+             in zip(_it.count(0), arr, _it.accumulate(arr, func))
+             if cond(acc)),
+            (None, None, None))
 
 
 def lastAccumSuchThat(
@@ -349,12 +352,13 @@ def flatten(arr, level=1):
     will also flatten str to tuple of single-char string (as it is iterable)
     """
     if isinstance(arr, _tp.Iterable) and level != 0:
-        return tuple(x
-                     for itab in ((flatten(item, max(level - 1, -1))
-                                   if isinstance(item, _tp.Iterable)
-                                   else (item,))
-                                  for item in arr)
-                     for x in itab)
+        return tuple(
+                x
+                for itab in ((flatten(item, max(level - 1, -1))
+                              if isinstance(item, _tp.Iterable)
+                              else (item,))
+                             for item in arr)
+                for x in itab)
     else:
         return arr
 
@@ -541,6 +545,10 @@ def splitIntoGp(
     If `allowRemain` is False
         but `arr` is not of length of a integer multiple of `gpSize`,
         will raise `IndexError` for index out of range
+
+    NOTE
+    -----
+    In 3.12, itertools has `batched`. Should switch to that if we hit 3.12
     """
     return tuple(tuple(arr[gpInit:(min(gpInit + gpSize, len(arr))
                                    if allowRemain
@@ -548,10 +556,11 @@ def splitIntoGp(
                  for gpInit in range(0, len(arr), gpSize))
 
 
-def takeFromEvery(arr: _tp.Sequence[_T],
-                  gpSize: int,
-                  idx: int,
-                  takeFromRemain: bool = True) -> tuple[_T, ...]:
+def takeFromEvery(
+        arr: _tp.Sequence[_T],
+        gpSize: int,
+        idx: int,
+        takeFromRemain: bool = True) -> tuple[_T, ...]:
     """
     take an element in a sequence once every given amount
 
@@ -567,7 +576,7 @@ def takeFromEvery(arr: _tp.Sequence[_T],
         the index to take from each group, start counting from 0
 
     takeFromRemain: bool, optional
-        determine if the last group may have size smaller than `gpSize`
+        determine if the last group is allowed have size smaller than `gpSize`
         defaults to True
 
     Return
@@ -577,9 +586,11 @@ def takeFromEvery(arr: _tp.Sequence[_T],
     if `takeFromRemain` is False, will only take `arr[idx + k * gpSize]`
         if `len(arr) >= (k + 1) * gpSize` (`[k * gpSize:(k + 1) * gpSize]` is valid)
     """
-    return tuple(arr[gpInit + idx]
-                 for gpInit in range(0, len(arr), gpSize)
-                 if takeFromRemain or gpInit + gpSize <= len(arr))
+    return tuple(_it.islice(
+        arr,
+        idx,
+        None if takeFromRemain else (len(arr) // gpSize) * gpSize,
+        gpSize))
 
 
 @_tp.overload
@@ -692,10 +703,14 @@ def takeApart(
     a tuple of tuples of elements from `seq`
     `takeApart[i]` contains the `i`th element in every sequence with order preserved
     `len(takeApart) == len(seq[0])` and `len(takeApart[i]) == len(seq)`
-    if `seq[i]` has length less than `seq[0]`, will raise `IndexError`
-    if `seq[i]` has length larger than `seq[0]`, the sequence will be truncated
+    all sequences are truncated to the shortest one
+
+    NOTE
+    -----
+    Old behavior is to truncate to `len(seq[0])`
+        and raise IndexError if `seq[0]` is not the shortest
     """
-    return tuple(tuple(s[i] for s in seq) for i in range(len(seq[0])))
+    return tuple(zip(*seq))
 
 
 def transpose(
@@ -750,13 +765,13 @@ def rangeBoundOnCoors(pts):
 
     Return
     -----
-    a tuple containing 2-tuples of float numbers
+    a tuple containing 2-tuples of float or int numbers
     `rangeBoundOnCoor[i]` is the (min, max) of `pt[i]`
         over all `pt` in `pts`
 
     Note
     -----
-    `pts` will get consumede if it is a generator
+    `pts` will get consumed if it is a generator
 
     Almost equivalent to `rangeBound(takeApart(pts))`
     but also take non-sequence input
@@ -765,8 +780,9 @@ def rangeBoundOnCoors(pts):
     minVal = list(initPt)
     maxVal = list(initPt)
     for pt in pts:
-        minVal[:] = (min(pr) for pr in zip(minVal, pt))
-        maxVal[:] = (max(pr) for pr in zip(maxVal, pt))
+        for i in range(len(pt)):
+            minVal[i] = min(minVal[i], pt[i])
+            maxVal[i] = max(maxVal[i], pt[i])
     return takeApart((minVal, maxVal))
 
 
@@ -789,9 +805,10 @@ def sgn(x: float) -> int:
     return 0 if x == 0 else (1 if x > 0 else -1)
 
 
-def argmax(arr: _tp.Iterable[_T],
-           key: _tp.Callable[[_T], float] = lambda x: _tp.cast(float, x)
-           ) -> _tp.Optional[_T]:
+def argmax(
+        arr: _tp.Iterable[_T],
+        key: _tp.Callable[[_T], float] = lambda x: _tp.cast(float, x)
+        ) -> _tp.Optional[_T]:
     """
     find where maximum occurs
 
@@ -823,9 +840,10 @@ def argmax(arr: _tp.Iterable[_T],
             currMaxKey = k
     return currMaxItem
 
-def argmin(arr: _tp.Iterable[_T],
-           key: _tp.Callable[[_T], float] = lambda x: _tp.cast(float, x)
-           ) -> _tp.Optional[_T]:
+def argmin(
+        arr: _tp.Iterable[_T],
+        key: _tp.Callable[[_T], float] = lambda x: _tp.cast(float, x)
+        ) -> _tp.Optional[_T]:
     """
     find where minimum occurs
 
@@ -1138,12 +1156,13 @@ def MaxHeap(initItemList: _tp.Optional[_tp.Iterable[_T]] = None,
                 runtimeKeyOnly=False)
 
 
-def dijkstra(initialNode: _T,
-             costFunc: _tp.Callable[[_T, _T, float], float],
-             neighbourListFunc: _tp.Callable[[_T], _tp.Iterable[_T]],
-             goalCheckerFunc: _tp.Callable[[_T], bool],
-             aStarHeuristicFunc: _tp.Callable[[_T], float] = (lambda st: 0)
-             ) -> _tp.Optional[tuple[_T, float]]:
+def dijkstra(
+        initialNode: _T,
+        costFunc: _tp.Callable[[_T, _T, float], float],
+        neighbourListFunc: _tp.Callable[[_T], _tp.Iterable[_T]],
+        goalCheckerFunc: _tp.Callable[[_T], bool],
+        aStarHeuristicFunc: _tp.Callable[[_T], float] = (lambda _: 0)
+        ) -> _tp.Optional[tuple[_T, float]]:
     """
     search for minimal cost path via Dijkstra / A*
 
@@ -1173,7 +1192,8 @@ def dijkstra(initialNode: _T,
     aStarHeuristicFunc: Callable[[T], float], optional
         a heuristic distance for A*
         for details, please check the theory for A* algorithm
-        expected to be a callable that takes a node and returns the estimated cost to a goal
+        expected to be a callable that takes a node
+            and returns the estimated cost to a goal
         defaults to the constant zero callable
 
     Return
@@ -1211,9 +1231,7 @@ def dijkstra(initialNode: _T,
         raise e
     return None
 
-def clip(x: float,
-         lb: _tp.Optional[float] = None,
-         ub: _tp.Optional[float] = None) -> float:
+def clip(x: float, lb: float = -inf, ub: float = inf) -> float:
     """
     clipping a value
 
@@ -1235,8 +1253,7 @@ def clip(x: float,
     the clipped value
     if `ub < lb`, will return `lb`
     """
-    return min(ub if ub is not None else inf,
-               max(lb if lb is not None else -inf, x))
+    return min(ub, max(lb, x))
 
 
 def countOnes(n: int) -> int:
@@ -1325,7 +1342,7 @@ def count(arr: _tp.Iterable[_T], cond: _tp.Callable[[_T], bool] = bool) -> int:
     -----
     wrapper of `sum` and `map`
     """
-    return sum(map(cond, arr))
+    return sum(1 if cond(ele) else 0 for ele in arr)
 
 
 def countItem(arr: _tp.Iterable[_T], item: _T) -> int:
@@ -1346,10 +1363,9 @@ def countItem(arr: _tp.Iterable[_T], item: _T) -> int:
 
     NOTE
     -----
-    wrapper of `count`
     compare by __eq__
     """
-    return count(arr, lambda x: x == item)
+    return sum(ele == item for ele in arr)
 
 
 def consoleChar(b: _tp.Optional[bool]) -> str:
@@ -1653,9 +1669,10 @@ class IntegerIntervals:
         self.__eleCount = 0
 
 
-def allPairDistances(nodes: _tp.Iterable[_T],
-                     distFunc: _tp.Callable[[_T, _T], _tp.Optional[float]]
-                     ) -> dict[tuple[_T, _T], float]:
+def allPairDistances(
+        nodes: _tp.Iterable[_T],
+        distFunc: _tp.Callable[[_T, _T], _tp.Optional[float]]
+        ) -> dict[tuple[_T, _T], float]:
     """
     compute pairwise distance with Floyd-Warshall
 
@@ -1703,15 +1720,17 @@ def allPairDistances(nodes: _tp.Iterable[_T],
 
 
 @_tp.overload
-def findSeqPeriod(seq: _tp.Sequence[_T],
-                  cond: _tp.Optional[_tp.Callable[[int], bool]],
-                  noErrorOnAperiodic: _tp.Literal[True]
-                  ) -> _tp.Optional[tuple[int, int]]: ...
+def findSeqPeriod(
+        seq: _tp.Sequence[_T],
+        cond: _tp.Optional[_tp.Callable[[int], bool]],
+        noErrorOnAperiodic: _tp.Literal[True]
+        ) -> _tp.Optional[tuple[int, int]]: ...
 @_tp.overload
-def findSeqPeriod(seq: _tp.Sequence[_T],
-                  cond: _tp.Optional[_tp.Callable[[int], bool]],
-                  noErrorOnAperiodic: _tp.Literal[False]
-                  ) -> tuple[int, int]: ...
+def findSeqPeriod(
+        seq: _tp.Sequence[_T],
+        cond: _tp.Optional[_tp.Callable[[int], bool]],
+        noErrorOnAperiodic: _tp.Literal[False]
+        ) -> tuple[int, int]: ...
 def findSeqPeriod(seq, cond=None, noErrorOnAperiodic=False):
     """
     find period of (eventually) periodic sequence
@@ -1854,7 +1873,8 @@ def integerLattice(
 
     Return
     -----
-    Generates `dim`-tuples of integers that are included in a sphere of L`p` radius `norm`.
+    Generates `dim`-tuples of integers
+        that are included in a sphere of L`p` radius `norm`.
     If excludeNeg or excludeZero is True, the corresponding tuples will be omitted.
     """
     assert p >= 1
@@ -1871,11 +1891,11 @@ def integerLattice(
         for pt in integerLattice(dim - 1, norm, p, excludeNeg, excludeZero):
             yield (0,) + pt
         for coor in range(1, int(norm) + 1):
-            remainNorm = (norm
-                          if p == float('Inf')
-                          else (norm ** p - coor ** p) ** (1 / p))
-            for pt in integerLattice(dim - 1, remainNorm, p,
-                                     excludeNeg, excludeZero=False):
+            remainNorm = norm \
+                    if p == float('Inf') \
+                    else (norm ** p - coor ** p) ** (1 / p)
+            for pt in integerLattice(
+                    dim - 1, remainNorm, p, excludeNeg, excludeZero=False):
                 if not excludeNeg:
                     yield (-coor,) + pt
                 yield (coor,) + pt
@@ -2389,13 +2409,15 @@ def toBase(n: int, b: int) -> tuple[int, ...]:
 
 
 @_tp.overload
-def fromBase(digits: _tp.Sequence[int],
-             b: int,
-             fractionalPartLen: _tp.Literal[0]) -> int: ...
+def fromBase(
+        digits: _tp.Sequence[int],
+        b: int,
+        fractionalPartLen: _tp.Literal[0]) -> int: ...
 @_tp.overload
-def fromBase(digits: _tp.Sequence[int],
-             b: int,
-             fractionalPartLen: int) -> _tp.Union[int, float]: ...
+def fromBase(
+        digits: _tp.Sequence[int],
+        b: int,
+        fractionalPartLen: int) -> _tp.Union[int, float]: ...
 def fromBase(digits, b, fractionalPartLen=0):
     """
     Convert a number to given base
@@ -2872,9 +2894,9 @@ class SegmentTree:
                       if self.__nodeList[idx].val == maxVal),
                 maxVal)
 
-    def countVal(self,
-                 valRange: _tp.Union[int, tuple[int, int]]
-                 ) -> _tp.Union[int, float]:
+    def countVal(
+            self,
+            valRange: _tp.Union[int, tuple[int, int]]) -> _tp.Union[int, float]:
         """
         Count the (hyper)volume that is in the given range
 
