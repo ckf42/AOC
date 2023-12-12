@@ -14,21 +14,21 @@ records = tuple(
 # part 1
 # DP, still too slow
 def countArrange(rec, hints):
-    rec = rec + '.'  # to pop currCombo
+    rec = rec + '.'  # to flush currCombo
     @cache
     def dp(recPtr, hintPtr, currCombo):
+        # can we tail recur? may repeat code too many times
         res = 0
         if recPtr >= len(rec) or hintPtr >= len(hints):
-            if recPtr >= len(rec):
-                res = hintPtr == len(hints)
-            else:
-                res = all(c != '#' for c in rec[recPtr:])
-            return res
+            return (hintPtr == len(hints)) \
+                    if recPtr >= len(rec) \
+                    else all(c != '#' for c in rec[recPtr:])
         if rec[recPtr] in '.?':
             # proceed as .
             newHintPtr = hintPtr
             newCombo = currCombo
             if currCombo != 0 and hints[hintPtr] == currCombo:
+                # flush currCombo
                 newHintPtr = hintPtr + 1
                 newCombo = 0
             if newCombo == 0:
@@ -41,15 +41,10 @@ def countArrange(rec, hints):
         return res
     return dp(0, 0, 0)
 
-totalArrange = 0
-for rec, hints in records:
-    totalArrange += countArrange(rec, hints)
-print(totalArrange)
+print(sum(countArrange(*rec) for rec in records))
 
 # part 2
-totalArrange = 0
-for rec, hints in records:
-    totalArrange += countArrange('?'.join(rec for _ in range(5)), hints * 5)
-print(totalArrange)
+print(sum(countArrange('?'.join(rec for _ in range(5)), hints * 5)
+          for (rec, hints) in records))
 
 
