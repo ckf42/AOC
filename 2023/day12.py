@@ -14,15 +14,15 @@ records = tuple(
 # part 1
 # DP, still too slow
 def countArrange(rec, hints):
-    rec = rec + '.'  # to flush currCombo
+    rec = rec + '.'  # to flush last currCombo
     @cache
     def dp(recPtr, hintPtr, currCombo):
         # can we tail recur? may repeat code too many times
         res = 0
-        if recPtr >= len(rec) or hintPtr >= len(hints):
-            return (hintPtr == len(hints)) \
-                    if recPtr >= len(rec) \
-                    else all(c != '#' for c in rec[recPtr:])
+        if recPtr == len(rec):  # if no more space
+            return hintPtr == len(hints)  # no more hints
+        if hintPtr == len(hints):  # if no more hints
+            return all(c != '#' for c in rec[recPtr:])  # no block
         if rec[recPtr] in '.?':
             # proceed as .
             newHintPtr = hintPtr
@@ -32,11 +32,13 @@ def countArrange(rec, hints):
                 newHintPtr = hintPtr + 1
                 newCombo = 0
             if newCombo == 0:
+                # flush succeed / nothing to flush
                 res += dp(recPtr + 1, newHintPtr, 0)
         if rec[recPtr] in '#?':
             # proceed as #
             newCombo = currCombo + 1
-            if newCombo == 0 or newCombo <= hints[hintPtr]:
+            if newCombo <= hints[hintPtr]:
+                # still not violate hint
                 res += dp(recPtr + 1, hintPtr, newCombo)
         return res
     return dp(0, 0, 0)
