@@ -1,3 +1,6 @@
+# this takes ~2m to run both parts
+# TODO: speed up this
+
 import AOCInit
 import util
 from typing import Optional
@@ -31,23 +34,23 @@ directions = (-1, -1j, 1j, 1)
 locOrderHeap: util.Heap[tuple[complex, bool, int]] = util.MinHeap(
         key=lambda pr: (int(pr[0].real), int(pr[0].imag)))
 
-def printCave():
-    elfSet = frozenset((l for l in elfLoc if l is not None))
-    gobSet = frozenset((l for l in gobLoc if l is not None))
-    for i in range(dim[0]):
-        for j in range(dim[1]):
-            if caveMap[i][j] == '#':
-                print('#', end='')
-            else:
-                pt = complex(i, j)
-                if pt in elfSet:
-                    print('E', end='')
-                elif pt in gobSet:
-                    print('G', end='')
-                else:
-                    print('.', end='')
-        print('')
-    print('')
+# def printCave():
+#     elfSet = frozenset((l for l in elfLoc if l is not None))
+#     gobSet = frozenset((l for l in gobLoc if l is not None))
+#     for i in range(dim[0]):
+#         for j in range(dim[1]):
+#             if caveMap[i][j] == '#':
+#                 print('#', end='')
+#             else:
+#                 pt = complex(i, j)
+#                 if pt in elfSet:
+#                     print('E', end='')
+#                 elif pt in gobSet:
+#                     print('G', end='')
+#                 else:
+#                     print('.', end='')
+#         print('')
+#     print('')
 
 def enemyIdxInRange(pt: complex, isGob: bool) -> Optional[int]:
     minHpIdx = None
@@ -123,7 +126,7 @@ def dirToMove(pt: complex, isGob: bool) -> Optional[int]:
 elfRemain = elfCount
 gobRemain = gobCount
 finishedTurnCount = 0
-printCave()
+# printCave()
 while True:
     if elfRemain == 0:
         break
@@ -162,7 +165,7 @@ while True:
                     gobRemain -= 1
     if not locOrderHeap.isEmpty() and (elfRemain == 0 or gobRemain == 0):
         break
-    printCave()
+    # printCave()
     finishedTurnCount += 1
 print('turn count', finishedTurnCount)
 print('remain hp', sum(hp for hp in elfHp + gobHp if hp > 0))
