@@ -2581,7 +2581,7 @@ class DisjointSet(_tp.Generic[_T]):
     """
     A simple disjoint-set structure
     """
-    __slots__ = ('__parent', '__gpSize')
+    __slots__ = ('__parent', '__gpSize', '__isCompressed')
 
     def __init__(
             self,
@@ -2592,6 +2592,9 @@ class DisjointSet(_tp.Generic[_T]):
         assert not isinstance(initItems, int)
         self.__parent: dict[_T, _T] = {k: k for k in initItems}
         self.__gpSize: dict[_T, int] = {k: 1 for k in self.__parent}
+        # book keeping: is struct guaranteed to be compressed?
+        # this should avoid repeatedly calling __compress
+        self.__isCompressed: bool = True
 
     def __len__(self) -> int:
         return len(self.__parent)
@@ -2648,14 +2651,19 @@ class DisjointSet(_tp.Generic[_T]):
             (item1, item2) = (item2, item1)
         self.__parent[item2] = item1
         self.__gpSize[item1] += self.__gpSize[item2]
+        self.__isCompressed = False
 
     def __compress(self):
         """
         Compress the structure
+        Reassign each parent to rep
         ~O(n ItLn(n)) ~ O(n) time complexity
         """
+        if self.__isCompressed:
+            return
         for k in self.__parent:
             self.__parent[k] = self.getRep(k)
+        self.__isCompressed = True
 
     def groupCount(self) -> int:
         """
@@ -2669,15 +2677,20 @@ class DisjointSet(_tp.Generic[_T]):
         Return the indices that are in the same group as the item
         """
         self.__compress()
-        return frozenset(filter(lambda i: self.__parent[i] == self.__parent[item],
-                                self.__parent))
+        return frozenset(
+                ele
+                for ele in self.__parent
+                if self.__parent[ele] == self.__parent[item])
 
     def groupSize(self, item: _T) -> int:
         """
         Return the size of the group that the item belongs to
         """
         self.__compress()
-        return tuple(self.__parent.values()).count(self.__parent[item])
+        return sum(
+                1
+                for par in self.__parent.values()
+                if par == self.__parent[item])
 
 class SegmentTree:
     """
