@@ -15,17 +15,18 @@ d = dim[0]
 # part 1
 totalSum = 0
 for j in range(d):
+    nextSpot = 0
     for i in range(d):
-        if graph[i][j] != 'O':
+        c = graph[i][j]
+        if c == '.':
             continue
-        graph[i][j] = '.'
-        newI = i
-        for ii in range(i - 1, -1, -1):
-            if graph[ii][j] != '.':
-                break
-            newI = ii
-        graph[newI][j] = 'O'
-        totalSum += d - newI
+        if c == 'O':
+            graph[i][j] = '.'
+            graph[nextSpot][j] = 'O'
+            totalSum += d - nextSpot
+            nextSpot += 1
+        else:
+            nextSpot = i + 1
 print(totalSum)
 
 
@@ -39,19 +40,21 @@ cycleDone = 0
 while True:
     for _ in range(4):
         for j in range(d):
+            nextSpot = 0
             for i in range(d):
-                if graph[i][j] != 'O':
+                if graph[i][j] == '.':
                     continue
-                graph[i][j] = '.'
-                for ii in range(i, 0, -1):
-                    if graph[ii - 1][j] != '.':
-                        graph[ii][j] = 'O'
-                        break
-                else:  # no break
-                    graph[0][j] = 'O'
-        graph = list(list(graph[d - j - 1][i]
-                          for j in range(d))
-                     for i in range(d))
+                if graph[i][j] == 'O':
+                    graph[i][j] = '.'
+                    graph[nextSpot][j] = 'O'
+                    nextSpot += 1
+                else:
+                    nextSpot = i + 1
+        # 33% of time is spent rotating
+        # how to rotate faster?
+        # may improve if we use other mem alignment (not north on i = 0)
+        graph = list(list(graph[d - j - 1][i] for j in range(d))
+                        for i in range(d))
     cycleDone += 1
     graphRep = ''.join(b for line in graph for b in line)
     if (pBegin := repToCyc.get(graphRep, None)) is not None:
