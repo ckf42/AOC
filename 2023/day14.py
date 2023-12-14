@@ -41,20 +41,22 @@ while True:
     for _ in range(4):
         for j in range(d):
             nextSpot = 0
+            # ~25% of time is spent here. Can we optimize this part?
             for i in range(d):
-                if graph[i][j] == '.':
-                    continue
-                if graph[i][j] == 'O':
-                    graph[i][j] = '.'
-                    graph[nextSpot][j] = 'O'
-                    nextSpot += 1
-                else:
-                    nextSpot = i + 1
-        # 33% of time is spent rotating
-        # how to rotate faster?
-        # may improve if we use other mem alignment (not north on i = 0)
-        graph = list(list(graph[d - j - 1][i] for j in range(d))
-                        for i in range(d))
+                # does not seem much faster than nested if
+                match graph[i][j]:
+                    case '.':
+                        continue
+                    case 'O':
+                        graph[i][j] = '.'
+                        graph[nextSpot][j] = 'O'
+                        nextSpot += 1
+                    case _:
+                        nextSpot = i + 1
+        # even faster rotation?
+        for i in range(d // 2):
+            graph[i], graph[d - 1 - i] = graph[d - 1 - i], graph[i]
+        graph = list(list(line) for line in zip(*graph))
     cycleDone += 1
     graphRep = ''.join(b for line in graph for b in line)
     if (pBegin := repToCyc.get(graphRep, None)) is not None:
