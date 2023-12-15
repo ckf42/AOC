@@ -23,24 +23,22 @@ print(sum(h(inst) for inst in instLines))
 
 
 # part 2
-boxes: list[list[tuple[str, int]]] = list(list() for _ in range(256))
+# 3.7+ dict preserve insert order
+boxes: list[dict[str, int]] = list(dict() for _ in range(256))
 for inst in instLines:
-    if '=' in inst:
+    if inst[-1] == '-':
+        label = inst[:-1]
+        bIdx = h(label)
+        try:
+            boxes[bIdx].pop(label)
+        except KeyError:
+            pass
+    else:
         label = inst[:-2]
         focalLen = int(inst[-1])
         bIdx = h(label)
-        try:
-            boxes[bIdx][tuple(p[0] for p in boxes[bIdx]).index(label)] \
-                    = (label, focalLen)
-        except ValueError:
-            boxes[bIdx].append((label, focalLen))
-    else:
-        label = inst[:-1]
-        bIdx = h(label)
-        boxes[bIdx] = list((lb, f) for lb, f in boxes[bIdx] if lb != label)
-totalPower = 0
-for boxIdx, b in enumerate(boxes, start=1):
-    for (lenIdx, (_, f)) in enumerate(b, start=1):
-        totalPower += boxIdx * lenIdx * f
-print(totalPower)
+        boxes[bIdx][label] = focalLen
+print(sum(boxIdx * lenIdx * focalLen
+          for boxIdx, box in enumerate(boxes, start=1)
+          for lenIdx, focalLen in enumerate(box.values(), start=1)))
 
