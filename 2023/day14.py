@@ -23,9 +23,9 @@ for i in range(d):
             for seg in graph[i].split('#')
             if (c := seg.count('.')) or True)
 print(sum(j + 1
-          for i in range(d)
+          for line in graph
           for j in range(d)
-          if graph[i][j] == 'O'))
+          if line[j] == 'O'))
 
 
 # part 2
@@ -59,7 +59,7 @@ while True:
         repToCyc[graphRep] = cycleDone
         # ~33% of time spent here. Optimize?
         cycToSum.append(sum(j + 1
-                            for i in range(d)
+                            for line in graph
                             for j in range(d)
-                            if graph[i][j] == 'O'))
+                            if line[j] == 'O'))
 
