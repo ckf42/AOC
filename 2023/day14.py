@@ -42,14 +42,12 @@ while True:
     for _ in range(4):
         for i in range(d):
             # ~60% of time is spent here. Optimize?
+            # is two pointer faster?
             graph[i] = '#'.join(
-                    '.' * c + 'O' * (len(seg) - c)
-                    for seg in graph[i].split('#')
-                    if (c := seg.count('.')) or True)
+                    '.' * (c := seg.count('.')) + 'O' * (len(seg) - c)
+                    for seg in graph[i].split('#'))
         # even faster rotation?
-        for i in range(d // 2):
-            graph[i], graph[d - 1 - i] = graph[d - 1 - i], graph[i]
-        graph = list(''.join(line) for line in zip(*graph))
+        graph = list(''.join(line) for line in zip(*graph[::-1]))
     cycleDone += 1
     graphRep = ''.join(line for line in graph)
     if (pBegin := repToCyc.get(graphRep, None)) is not None:
