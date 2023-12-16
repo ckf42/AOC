@@ -11,10 +11,7 @@ dim = (len(graph), len(graph[0]))
 
 assert dim[0] == dim[1], "not square"
 d = dim[0]
-
-for i in range(d // 2):
-    graph[i], graph[d - 1 - i] = graph[d - 1 - i], graph[i]
-graph = list(''.join(line) for line in zip(*graph))
+graph = list(''.join(line) for line in zip(*graph[::-1]))
 
 # part 1
 for i in range(d):
@@ -29,10 +26,8 @@ print(sum(j + 1
 
 
 # part 2
-graph = inp.splitlines()
-for i in range(d // 2):
-    graph[i], graph[d - 1 - i] = graph[d - 1 - i], graph[i]
-graph = list(''.join(line) for line in zip(*graph))
+graph = list(''.join(line)
+             for line in zip(*inp.splitlines()[::-1]))
 
 totalCyc = 1000000000
 repToCyc: dict[str, int] = dict()
