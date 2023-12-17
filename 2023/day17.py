@@ -1,5 +1,6 @@
 import AOCInit
 import util
+import heapq as hq
 
 # TODO: speed up
 
@@ -11,52 +12,55 @@ inp = util.getInput(d=17, y=2023)
 heatmap = tuple(tuple(int(c) for c in line)
                 for line in inp.splitlines())
 dim = (len(heatmap), len(heatmap[0]))
+dirList = ((1, 0), (0, 1), (0, -1), (-1, 0))
 
 # part 1
-# takes ~5s
-def nb(st):
-    node, combo, prev = st
-    nblst = list()
-    for pt in util.nearby2DGridPts(node, bd=dim, isL1=True):
-        if pt == prev:
+visited = set()
+h = [(0, (0, 0), -1)]  # cost, pos, prev dir idx
+while len(h) != 0:
+    cost, pos, prevDIdx = hq.heappop(h)
+    if (pos, prevDIdx) in visited:
+        continue
+    if pos == (dim[0] - 1, dim[1] - 1):
+        print(cost)
+        break
+    visited.add((pos, prevDIdx))
+    for dIdx in range(4):
+        if dIdx in (prevDIdx, 3 - prevDIdx):
             continue
-        sameDir = prev[0] + pt[0] == 2 * node[0] and prev[1] + pt[1] == 2 * node[1]
-        if combo == 3 and sameDir:
-            continue
-        nblst.append((pt, (combo + 1) if sameDir else 1, node))
-    return nblst
-
-print(util.dijkstra(
-    ((0, 0), 0, (0, 0)),  # pos, straight combo, prev
-    lambda nst, ost, oc: oc + heatmap[nst[0][0]][nst[0][1]],
-    nb,
-    lambda st: st[0] == (dim[0] - 1, dim[1] - 1),
-    lambda st: dim[0] - 1 - st[0][0] + dim[1] - 1 - st[0][1]
-    )[-1])
-
+        d = dirList[dIdx]
+        newCost = cost
+        newPos = pos
+        for _ in range(1, 3 + 1):
+            newPos = (newPos[0] + d[0], newPos[1] + d[1])
+            if not (0 <= newPos[0] < dim[0] and 0 <= newPos[1] < dim[1]):
+                break
+            newCost += heatmap[newPos[0]][newPos[1]]
+            if (newPos, dIdx) not in visited:
+                hq.heappush(h, (newCost, newPos, dIdx))
 
 # part 2
-# takes ~15s
-def nb2(st):
-    node, combo, prev = st
-    nblst = list()
-    for pt in util.nearby2DGridPts(node, bd=dim, isL1=True):
-        if pt == prev:
+visited = set()
+h = [(0, (0, 0), -1)]  # cost, pos, prev dir idx
+while len(h) != 0:
+    cost, pos, prevDIdx = hq.heappop(h)
+    if (pos, prevDIdx) in visited:
+        continue
+    if pos == (dim[0] - 1, dim[1] - 1):
+        print(cost)
+        break
+    visited.add((pos, prevDIdx))
+    for dIdx in range(4):
+        if dIdx in (prevDIdx, 3 - prevDIdx):
             continue
-        sameDir = prev[0] + pt[0] == 2 * node[0] and prev[1] + pt[1] == 2 * node[1]
-        if combo >= 10 and sameDir:
-            continue
-        if combo < 4 and not sameDir:
-            continue
-        nblst.append((pt, (combo + 1) if sameDir else 1, node))
-    # print(st, nblst)
-    return nblst
-
-print(util.dijkstra(
-    ((0, 0), 10, (0, 0)),  # pos, straight combo, prev
-    lambda nst, ost, oc: oc + heatmap[nst[0][0]][nst[0][1]],
-    nb2,
-    lambda st: st[1] >= 4 and (st[0] == (dim[0] - 1, dim[1] - 1)),
-    lambda st: dim[0] - 1 - st[0][0] + dim[1] - 1 - st[0][1]
-    )[-1])
+        d = dirList[dIdx]
+        newCost = cost
+        newPos = pos
+        for step in range(1, 10 + 1):
+            newPos = (newPos[0] + d[0], newPos[1] + d[1])
+            if not (0 <= newPos[0] < dim[0] and 0 <= newPos[1] < dim[1]):
+                break
+            newCost += heatmap[newPos[0]][newPos[1]]
+            if step >= 4 and (newPos, dIdx) not in visited:
+                hq.heappush(h, (newCost, newPos, dIdx))
 
