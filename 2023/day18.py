@@ -11,26 +11,22 @@ inst = tuple((ls[0], int(ls[1]), ls[2][2:-1])
              for line in inp.splitlines()
              if (ls := line.split()))
 dirList = {
-        'U': (-1, 0),
-        'D': (1, 0),
-        'L': (0, -1),
-        'R': (0, 1),
+        'U': util.Point(-1, 0),
+        'D': util.Point(1, 0),
+        'L': util.Point(0, -1),
+        'R': util.Point(0, 1),
 }
 
-pos = (0, 0)
+pos = util.Point(0, 0)
 circum = 0
 corners = list()
 for d, pathLen, _ in inst:
-    dd = dirList[d]
-    pos = (pos[0] + pathLen * dd[0], pos[1] + pathLen * dd[1])
     corners.append(pos)
+    pos += dirList[d] * pathLen
     circum += pathLen
-assert pos == (0, 0)
+assert pos == util.Point(0, 0)
 
-doubleArea = 0
-for i in range(-1, len(corners) - 1):
-    doubleArea += corners[i][0] * corners[i + 1][1] - corners[i][1] * corners[i + 1][0]
-print((abs(doubleArea) - circum) // 2 + 1 + circum)
+print(int(util.polygonArea(corners)) + 1 + circum // 2)
 
 # part 2
 digitDict = {
@@ -43,18 +39,14 @@ newInst = tuple(
         (digitDict[line[2][-1]], int(line[2][:-1], base=16))
         for line in inst)
 
-pos = (0, 0)
+pos = util.Point(0, 0)
 circum = 0
 corners = list()
 for d, pathLen in newInst:
-    dd = dirList[d]
-    pos = (pos[0] + pathLen * dd[0], pos[1] + pathLen * dd[1])
+    pos += dirList[d] * pathLen
     corners.append(pos)
     circum += pathLen
-assert pos == (0, 0)
+assert pos == util.Point(0, 0)
 
-doubleArea = 0
-for i in range(-1, len(corners) - 1):
-    doubleArea += corners[i][0] * corners[i + 1][1] - corners[i][1] * corners[i + 1][0]
-print((abs(doubleArea) - circum) // 2 + 1 + circum)
+print(int(util.polygonArea(corners)) + 1 + circum // 2)
 

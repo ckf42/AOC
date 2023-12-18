@@ -3026,3 +3026,34 @@ def segmentIntersection(
         # case 4
         return None
 
+def polygonArea(
+        vertices: _tp.Sequence[Point]
+        ) -> float:
+    """
+    Find the area of a 2D polygon with shoelace formula
+    Assumed no self intersection of edges
+
+    Parameters
+    -----
+    vertices: Sequence[Point]
+        the vertices of the polygon
+        assumed to be 2-dimenisonal and given in an edge order
+            that is, every pair of adjacent points has an edge connecting them
+            (this includes the first and the last points)
+
+    Returns
+    -----
+    a float representing the area. Always nonnegative
+
+    NOTE
+    -----
+    see https://en.wikipedia.org/wiki/Shoelace_formula
+    """
+    assert all(pt.dim == 2 for pt in vertices)
+    doubleArea: float = 0.0
+    for i in range(len(vertices)):
+        doubleArea += vertices[i][1] * vertices[i - 1][0] \
+                - vertices[i][0] * vertices[i - 1][1]
+    return abs(doubleArea) / 2.0
+
+
