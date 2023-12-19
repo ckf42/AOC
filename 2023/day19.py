@@ -27,12 +27,11 @@ for line in workflowInp.splitlines():
             wfList.append((None, wfCmd))
     workflowDict[wfName] = wfList
 
-ratingList = list()
-for line in ratingInp.splitlines():
-    ratingList.append({
-        ps[0]: int(ps[1])
-        for part in line[1:-1].split(',')
-        if (ps := part.split('=')) is not None})
+ratingList = tuple(
+        {ps[0]: int(ps[1])
+         for part in line[1:-1].split(',')
+         if (ps := part.split('=')) is not None}
+        for line in ratingInp.splitlines())
 
 # part 1
 totalRating = 0
@@ -57,45 +56,37 @@ for rating in ratingList:
 print(totalRating)
 
 # part 2
-stack: list[tuple[tuple[str, int],
-                  dict[str, tuple[int, int]]]] \
-                          = [(('in', 0), {k: (1, 4000) for k in 'xmas'})]
+stack: list[tuple[tuple[str, int], dict[str, tuple[int, int]]]] \
+        = [(('in', 0), {k: (1, 4000) for k in 'xmas'})]
 accCount = 0
 while len(stack) != 0:
     (currWf, clausePtr), ratingRg = stack.pop()
-    if currWf in ('A', 'R'):
-        if currWf == 'A':
-            accCount += util.prod(valRg[1] - valRg[0] + 1
-                                  for valRg in ratingRg.values())
+    if currWf == 'A':
+        accCount += util.prod(
+                valRg[1] - valRg[0] + 1
+                for valRg in ratingRg.values())
+        continue
+    if currWf == 'R':
         continue
     clause, dest = workflowDict[currWf][clausePtr]
     if clause is None:
-        currWf = dest
-        clausePtr = 0
-        stack.append(((currWf, clausePtr), ratingRg))
+        stack.append(((dest, 0), ratingRg))
     else:
         var, sym, lim = clause
         valRg = ratingRg[var]
         if sym == '>':
-            if lim + 1 <= valRg[0]:
-                stack.append(((dest, 0), ratingRg))
-            elif lim + 1 <= valRg[1]:
-                ratingRg[var] = (lim + 1, valRg[1])
+            if lim + 1 <= valRg[1]:
+                ratingRg[var] = (max(valRg[0], lim + 1), valRg[1])
                 stack.append(((dest, 0), ratingRg.copy()))
-                ratingRg[var] = (valRg[0], lim)
-                stack.append(((currWf, clausePtr + 1), ratingRg))
-            else:
+            if valRg[0] <= lim:
+                ratingRg[var] = (valRg[0], min(lim, valRg[1]))
                 stack.append(((currWf, clausePtr + 1), ratingRg))
         else:
-            if valRg[1] <= lim - 1:
-                stack.append(((dest, 0), ratingRg))
-            elif valRg[0] <= lim - 1:
-                ratingRg[var] = (valRg[0], lim - 1)
+            if valRg[0] <= lim - 1:
+                ratingRg[var] = (valRg[0], min(valRg[1], lim - 1))
                 stack.append(((dest, 0), ratingRg.copy()))
-                ratingRg[var] = (clause[2], valRg[1])
-                stack.append(((currWf, clausePtr + 1), ratingRg))
-            else:
+            if lim <= valRg[1]:
+                ratingRg[var] = (max(valRg[0], lim), valRg[1])
                 stack.append(((currWf, clausePtr + 1), ratingRg))
 print(accCount)
-
 
