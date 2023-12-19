@@ -2,6 +2,7 @@ import AOCInit
 import util
 
 # TODO: simpler code?
+# TODO: combine two parts
 
 if __name__ != '__main__':
     exit()
@@ -17,12 +18,11 @@ for line in workflowInp.splitlines():
     for wfCmd in line[wfStart + 1:-1].split(','):
         if ':' in wfCmd:
             clause, dest = wfCmd.split(':')
-            if '<' in clause:
-                v, val = clause.split('<')
-                wfList.append(((v, '<', int(val)), dest))
-            else:
-                v, val = clause.split('>')
-                wfList.append(((v, '>', int(val)), dest))
+            for sym in '<>':
+                if sym in clause:
+                    v, val = clause.split(sym)
+                    wfList.append(((v, sym, int(val)), dest))
+                    break
         else:
             wfList.append((None, wfCmd))
     workflowDict[wfName] = wfList
@@ -39,14 +39,15 @@ totalRating = 0
 for rating in ratingList:
     currWf = 'in'
     clausePtr = 0
-    while currWf != 'A' and currWf != 'R':
+    while currWf not in ('A', 'R'):  # in case there is wf called AR
         clause, dest = workflowDict[currWf][clausePtr]
         if clause is None:
             currWf = dest
             clausePtr = 0
         else:
-            val = rating[clause[0]]
-            if (val > clause[2] if clause[1] == '>' else val < clause[2]):
+            var, sym, lim = clause
+            val = rating[var]
+            if (val > lim if sym == '>' else val < lim):
                 currWf = dest
                 clausePtr = 0
             else:
@@ -62,7 +63,7 @@ stack: list[tuple[tuple[str, int],
 accCount = 0
 while len(stack) != 0:
     (currWf, clausePtr), ratingRg = stack.pop()
-    if currWf == 'A' or currWf == 'R':
+    if currWf in ('A', 'R'):
         if currWf == 'A':
             accCount += util.prod(valRg[1] - valRg[0] + 1
                                   for valRg in ratingRg.values())
@@ -73,25 +74,26 @@ while len(stack) != 0:
         clausePtr = 0
         stack.append(((currWf, clausePtr), ratingRg))
     else:
-        valRg = ratingRg[clause[0]]
-        if clause[1] == '>':
-            if clause[2] + 1 <= valRg[0]:
+        var, sym, lim = clause
+        valRg = ratingRg[var]
+        if sym == '>':
+            if lim + 1 <= valRg[0]:
                 stack.append(((dest, 0), ratingRg))
-            elif clause[2] + 1 <= valRg[1]:
-                ratingRg[clause[0]] = (clause[2] + 1, valRg[1])
+            elif lim + 1 <= valRg[1]:
+                ratingRg[var] = (lim + 1, valRg[1])
                 stack.append(((dest, 0), ratingRg.copy()))
-                ratingRg[clause[0]] = (valRg[0], clause[2])
-                stack.append(((currWf, clausePtr + 1), ratingRg.copy()))
+                ratingRg[var] = (valRg[0], lim)
+                stack.append(((currWf, clausePtr + 1), ratingRg))
             else:
                 stack.append(((currWf, clausePtr + 1), ratingRg))
         else:
-            if valRg[1] <= clause[2] - 1:
+            if valRg[1] <= lim - 1:
                 stack.append(((dest, 0), ratingRg))
-            elif valRg[0] <= clause[2] - 1:
-                ratingRg[clause[0]] = (valRg[0], clause[2] - 1)
+            elif valRg[0] <= lim - 1:
+                ratingRg[var] = (valRg[0], lim - 1)
                 stack.append(((dest, 0), ratingRg.copy()))
-                ratingRg[clause[0]] = (clause[2], valRg[1])
-                stack.append(((currWf, clausePtr + 1), ratingRg.copy()))
+                ratingRg[var] = (clause[2], valRg[1])
+                stack.append(((currWf, clausePtr + 1), ratingRg))
             else:
                 stack.append(((currWf, clausePtr + 1), ratingRg))
 print(accCount)
