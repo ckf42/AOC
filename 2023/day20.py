@@ -19,9 +19,11 @@ for line in inp.splitlines():
     modLinks[source] = tuple(dests.split(', '))
 
 flipState = {m: False for m, t in modTypes.items() if t == '%'}
-conjInputState: defaultdict[str, dict[str, bool]] = defaultdict(dict)
+conjInputState: dict[str, dict[str, bool]] = dict()
 for m, destLst in modLinks.items():
     for d in destLst:
+        if d not in conjInputState:
+            conjInputState[d] = dict()
         if modTypes[d] == '&':
             conjInputState[d][m] = False
 
@@ -31,31 +33,33 @@ lastConjs = tuple(m for m, destLst in modLinks.items() if 'rx' in destLst)
 assert len(lastConjs) == 1
 lastConj = lastConjs[0]
 assert modTypes[lastConj] == '&'
-loopEnds = tuple(m for m, destLst in modLinks.items() if lastConj in destLst)
+loopEnds = frozenset(m for m, destLst in modLinks.items() if lastConj in destLst)
 assert len(loopBegins) == len(loopEnds)
 assert all(modTypes[m] == '&' for m in loopEnds)
-hitHistory: dict[str, list[tuple[int, bool]]] = {m: list() for m in loopEnds}
+hitTimes: dict[str, list[int]] = {m: list() for m in loopEnds}
 
 totalCount = [0, 0]
 # no need to implement state memo: no hit in 10000 btn presses
-for step in range(1, 10000 + 1):
-    q = deque([('broadcaster', False, '')])
+step = 0
+while not all(len(h) >= 2 for h in hitTimes.values()):
+    step += 1
+    q = deque((('broadcaster', False, ''),))
     totalCount[0] += 1
     while len(q) != 0:
         m, isHigh, source = q.popleft()
-        if source in loopEnds:
-            hitHistory[source].append((step, isHigh))  # hit time, sig type
+        if isHigh and source in loopEnds:
+            hitTimes[source].append(step)  # hit time
         match modTypes[m]:
             case '':
+                # for+append seems faster than extend
                 for d in modLinks[m]:
                     q.append((d, isHigh, m))
                 totalCount[isHigh] += len(modLinks[m])
-            case '%':
-                if not isHigh:
-                    flipState[m] = not flipState[m]
-                    for d in modLinks[m]:
-                        q.append((d, flipState[m], m))
-                    totalCount[flipState[m]] += len(modLinks[m])
+            case '%' if not isHigh:
+                flipState[m] = not flipState[m]
+                for d in modLinks[m]:
+                    q.append((d, flipState[m], m))
+                totalCount[flipState[m]] += len(modLinks[m])
             case '&':
                 conjInputState[m][source] = isHigh
                 toSend = not all(conjInputState[m].values())
@@ -66,12 +70,7 @@ for step in range(1, 10000 + 1):
         print(util.prod(totalCount))
 
 # for real wtf
-# assumed cycles have no tails, otherwise need more steps
-# also may need more cycle analysis for a more concrete proof
-# period seems to be ~4000 anyway
-hitTime = {
-        m: tuple(step for step, isHigh in rec if isHigh)
-        for m, rec in hitHistory.items()}
-assert all(len(h) >= 2 for h in hitTime.values())
-print(util.lcm(*(h[1] - h[0] for h in hitTime.values())))
+# may need more cycle analysis for a more concrete proof
+# period seems to be ~4000 anyway, so ~8000 steps in total
+print(util.lcm(*(h[1] - h[0] for h in hitTimes.values())))
 
