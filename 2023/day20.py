@@ -32,46 +32,46 @@ assert len(lastConjs) == 1
 lastConj = lastConjs[0]
 assert modTypes[lastConj] == '&'
 loopEnds = tuple(m for m, destLst in modLinks.items() if lastConj in destLst)
+assert len(loopBegins) == len(loopEnds)
 assert all(modTypes[m] == '&' for m in loopEnds)
-loopHistory: dict[str, list[tuple[int, bool]]] = {m: list() for m in loopEnds}
+hitHistory: dict[str, list[tuple[int, bool]]] = {m: list() for m in loopEnds}
 
 totalCount = [0, 0]
 # no need to implement state memo: no hit in 10000 btn presses
-step = 0
 for step in range(1, 10000 + 1):
-    q = deque([('broadcaster', False, '')])  # m, is high, source
-    roundPulseCount = [1, 0]
+    q = deque([('broadcaster', False, '')])
+    totalCount[0] += 1
     while len(q) != 0:
         m, isHigh, source = q.popleft()
         if source in loopEnds:
-            loopHistory[source].append((step, isHigh))  # hit time, sig type
+            hitHistory[source].append((step, isHigh))  # hit time, sig type
         match modTypes[m]:
             case '':
                 for d in modLinks[m]:
                     q.append((d, isHigh, m))
-                roundPulseCount[isHigh] += len(modLinks[m])
+                totalCount[isHigh] += len(modLinks[m])
             case '%':
                 if not isHigh:
                     flipState[m] = not flipState[m]
                     for d in modLinks[m]:
                         q.append((d, flipState[m], m))
-                    roundPulseCount[flipState[m]] += len(modLinks[m])
+                    totalCount[flipState[m]] += len(modLinks[m])
             case '&':
                 conjInputState[m][source] = isHigh
                 toSend = not all(conjInputState[m].values())
                 for d in modLinks[m]:
                     q.append((d, toSend, m))
-                roundPulseCount[toSend] += len(modLinks[m])
-    for i in range(2):
-        totalCount[i] += roundPulseCount[i]
+                totalCount[toSend] += len(modLinks[m])
     if step == 1000:
         print(util.prod(totalCount))
 
 # for real wtf
-# assumed cycles have no tails
+# assumed cycles have no tails, otherwise need more steps
+# also may need more cycle analysis for a more concrete proof
+# period seems to be ~4000 anyway
 hitTime = {
         m: tuple(step for step, isHigh in rec if isHigh)
-        for m, rec in loopHistory.items()}
+        for m, rec in hitHistory.items()}
 assert all(len(h) >= 2 for h in hitTime.values())
 print(util.lcm(*(h[1] - h[0] for h in hitTime.values())))
 
