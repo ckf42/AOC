@@ -34,16 +34,22 @@ assert all(''.join(line[i] for line in garden).replace('S', '.') == '.' * dim[0]
 targetStep = 26501365
 n, gpIdx = divmod(targetStep, dim[0])
 
+# idea from 
+# https://old.reddit.com/r/adventofcode/comments/18nevo3/2023_day_21_solutions/kebeey6/
+# look at 
+# https://github.com/villuna/aoc23/wiki/A-Geometric-solution-to-advent-of-code-2023,-day-21 too?
 history = [1]
-posSet = frozenset((initPos,))
-# faster?
-for _ in range(dim[0] * 2 + gpIdx):
-    posSet = frozenset(
-            newPos
-            for pos in posSet
-            for newPos in util.nearby2DGridPts(pos)
-            if garden[newPos[0] % dim[0]][newPos[1] % dim[1]] != '#')
-    history.append(len(posSet))
+oldPosSet = [set((initPos,)), set()]
+frontier = oldPosSet[0].copy()
+for step in range(1, dim[0] * 2 + gpIdx + 1):
+    frontier = set(
+            nb
+            for pos in frontier
+            for nb in util.nearby2DGridPts(pos)
+            if garden[nb[0] % dim[0]][nb[1] % dim[1]] != '#' \
+                    and nb not in oldPosSet[step & 1])
+    oldPosSet[step & 1].update(frontier)
+    history.append(len(oldPosSet[step & 1]))
 
 # assume that each takeFromEvery(history, dim[0], i) is a quad func
 # of form a + b n + c n^2
