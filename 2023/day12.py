@@ -15,6 +15,7 @@ records = tuple(
 # DP, still too slow
 def countArrange(rec, hints):
     rec = rec + '.'  # to flush last currCombo
+    # cache hit is VERY low. Can we improve this?
     @cache
     def dp(recPtr, hintPtr, currCombo):
         # can we tail recur? may repeat code too many times

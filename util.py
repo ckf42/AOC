@@ -2558,7 +2558,7 @@ def matchClosingBracket(
             isEscaped = False
     return None
 
-def diff(arr: _tp.Sequence[float]) -> tuple[float, ...]:
+def diff(arr: _tp.Sequence[float], count: int = 1) -> tuple[float, ...]:
     """
     compute the (forward) difference of a sequence
 
@@ -2566,16 +2566,24 @@ def diff(arr: _tp.Sequence[float]) -> tuple[float, ...]:
     -----
     arr: Sequence[float]
         the sequence to look at
-        assumed of length >= 2
+        assumed of length >= `count + 1`
+
+    count: int
+        the number of diff to apply on `seq`
+        defaults to 1
 
     Return
     -----
-    A tuple of floats that is of length `len(arr) - 1`
-    where `diff[i] == arr[i + 1] - diff[i]`
+    On `count == 1`,
+        a tuple of floats that is of length `len(arr) - 1`
+        where `diff[i] == arr[i + 1] - diff[i]`
+    Otherwise `diff(diff(seq), count - 1)`
     slower than `np.diff`
     """
-    assert len(arr) >= 2
-    return tuple(arr[i + 1] - arr[i] for i in range(len(arr) - 1))
+    assert len(arr) >= count + 1
+    for _ in range(count):
+        arr = tuple(arr[i + 1] - arr[i] for i in range(len(arr) - 1))
+    return arr
 
 class DisjointSet(_tp.Generic[_T]):
     """

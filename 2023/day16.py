@@ -89,6 +89,8 @@ def countTiles(pos: tuple[int, int], d: tuple[int, int]) -> int:
 print(countTiles((0, 0), (0, 1)))
 
 # part 2
+# would elim exit cells give better performance?
+# this would require recording exits in above functions
 maxE = 0
 for i in range(dim[0]):
     maxE = max(maxE,
