@@ -82,7 +82,8 @@ def getInput(d: int,
             with _ulq.urlopen(
                     _ulq.Request(
                         f'https://adventofcode.com/{y}/day/{d}/input',
-                        headers={'Cookie': f'session={sKey}'})
+                        headers={'Cookie': f'session={sKey}',
+                                 'User-Agent': 'github.com/ckf42'})
                     ) as resp:
                 rt = resp.fp.read().decode()
                 with _Path(f'input{d}').open('wt') as f:
@@ -720,6 +721,42 @@ def transpose(
     """
     return takeApart(seq)
 
+
+def takeApartPad(
+        seq: _tp.Sequence[_tp.Sequence[_T]],
+        pad: _T) -> tuple[tuple[_T, ...], ...]:
+    """
+    splitting sequences of sequences, but with paddings
+
+    Parameter
+    -----
+    seq: Sequence[Sequence[T]]
+        a sequence of sequences. At least contain one sequence
+
+    pad: T
+        the item to pad short sequences with
+
+    Return
+    -----
+    a tuple of tuples of elements from `seq`
+    `takeApart[i]` contains the `i`th element in every sequence with order preserved
+    `len(takeApart) == len(seq[0])` and `len(takeApart[i]) == len(seq)`
+    all sequences are padded to the longest one with `pad`
+
+    NOTE
+    -----
+    wrapper of itertools.zip_longest
+    """
+    return tuple(_it.zip_longest(*seq, fillvalue=pad))
+
+
+def transposePad(
+        seq: _tp.Sequence[_tp.Sequence[_T]],
+        pad: _T) -> tuple[tuple[_T, ...], ...]:
+    """
+    alias of `takeApartPad`
+    """
+    return takeApartPad(seq, pad=pad)
 
 @_tp.overload
 def rangeBound(
@@ -1440,10 +1477,11 @@ class IntegerIntervals:
         return (max(itv1[0], itv2[0]), min(itv1[1], itv2[1]))
 
     @classmethod
-    def __itvSetminus(cls,
-                      itv1: tuple[int, int],
-                      itv2: tuple[int, int]
-                      ) -> tuple[tuple[int, int], ...]:
+    def __itvSetminus(
+            cls,
+            itv1: tuple[int, int],
+            itv2: tuple[int, int]
+            ) -> tuple[tuple[int, int], ...]:
         if not cls.__itvIsIntersect(itv1, itv2):
             return (itv1,)
         elif itv2[0] <= itv1[0] and itv1[1] <= itv2[1]:
@@ -2570,6 +2608,7 @@ def diff(arr: _tp.Sequence[float], count: int = 1) -> tuple[float, ...]:
 
     count: int
         the number of diff to apply on `seq`
+        assumed nonnegative
         defaults to 1
 
     Return
@@ -2580,10 +2619,12 @@ def diff(arr: _tp.Sequence[float], count: int = 1) -> tuple[float, ...]:
     Otherwise `diff(diff(seq), count - 1)`
     slower than `np.diff`
     """
-    assert len(arr) >= count + 1
+    assert count >= 0, "Cannot diff negative amount"
+    assert len(arr) >= count + 1, f"Not enough elements to diff (need {count + 1})"
+    seq = tuple(arr)
     for _ in range(count):
-        arr = tuple(arr[i + 1] - arr[i] for i in range(len(arr) - 1))
-    return arr
+        seq = tuple(seq[i + 1] - seq[i] for i in range(len(seq) - 1))
+    return seq
 
 class DisjointSet(_tp.Generic[_T]):
     """
