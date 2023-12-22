@@ -24,6 +24,7 @@ print(len(posSet))
 # part 2
 # assumptions
 # TODO: are these enough?
+# these may be sufficient as in https://redd.it/18njrqf
 assert initPos[0] == initPos[1] == dim[0] // 2
 assert dim[0] == dim[1]
 assert all(garden[i].replace('S', '.') == '.' * dim[0]
@@ -36,8 +37,8 @@ n, gpIdx = divmod(targetStep, dim[0])
 
 # idea from 
 # https://old.reddit.com/r/adventofcode/comments/18nevo3/2023_day_21_solutions/kebeey6/
-# look at 
-# https://github.com/villuna/aoc23/wiki/A-Geometric-solution-to-advent-of-code-2023,-day-21 too?
+# should have figured it out myself
+# Also look at https://redd.it/18nol3m too?
 history = [1]
 oldPosSet = [set((initPos,)), set()]
 frontier = oldPosSet[0].copy()
@@ -55,6 +56,8 @@ for step in range(1, dim[0] * 2 + gpIdx + 1):
 # of form a + b n + c n^2
 # with a, b, c possibly distinct for each i
 # TODO: prove this without fiddling with data
+# seemingly c == len(reachable pos on single tile from S) is constant
+# if proven, this can reduce steps needed for brute force to dim[0] * 2 + 1
 data = util.takeFromEvery(history, dim[0], gpIdx)
 assert len(data) >= 3
 a = data[0]
