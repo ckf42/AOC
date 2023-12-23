@@ -25,6 +25,7 @@ print(len(posSet))
 # assumptions
 # TODO: are these enough?
 # these may be sufficient as in https://redd.it/18njrqf
+# seemingly there exists a good algo: https://redd.it/18orpvg
 assert initPos[0] == initPos[1] == dim[0] // 2
 assert dim[0] == dim[1]
 assert all(garden[i].replace('S', '.') == '.' * dim[0]

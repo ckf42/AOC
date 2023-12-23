@@ -18,17 +18,17 @@ belowOf: dict[int, frozenset[int]] = dict()
 aboveOf: defaultdict[int, list[int]] = defaultdict(list)
 
 processOrder = sorted(range(brickCount),
-                      key=lambda bidx: min(bricks[bidx][0][2], bricks[bidx][1][2]))
+                      key=lambda bidx: bricks[bidx][0][2])
 for bid in processOrder:
     b = bricks[bid]
     hitData = tuple(highestBrickAt[(x, y)]
                     for x in range(b[0][0], b[1][0] + 1)
                     for y in range(b[0][1], b[1][1] + 1))
     stoppedByZ = max(z for sid, z in hitData)
-    supporters = set(sid for sid, z in hitData if z == stoppedByZ)
+    supporters = frozenset(sid for sid, z in hitData if z == stoppedByZ)
     for sid in supporters:
         aboveOf[sid].append(bid)
-    belowOf[bid] = frozenset(supporters)
+    belowOf[bid] = supporters
     for x in range(b[0][0], b[1][0] + 1):
         for y in range(b[0][1], b[1][1] + 1):
             highestBrickAt[(x, y)] = (bid, stoppedByZ + 1 + b[1][2] - b[0][2])
