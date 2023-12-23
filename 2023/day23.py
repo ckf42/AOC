@@ -1,6 +1,5 @@
 import AOCInit
 import util
-from collections import defaultdict
 
 if __name__ != '__main__':
     exit()
@@ -18,7 +17,10 @@ slideDir = {
     '^': (-1, 0),
 }
 
-# assume this contains all split points
+# assuming
+# this contains all intersect points
+# no source (<.>) and no sink (>.<)
+# no free space (only confined paths)
 nodePos = frozenset(
         (i, j)
         for i in range(dim[0])
@@ -27,73 +29,66 @@ nodePos = frozenset(
                 and sum(trailMap[nb[0]][nb[1]] != '#'
                         for nb in util.nearby2DGridPts((i, j), dim)) != 2)
 
-# part 1
-tree = defaultdict(dict)
-stack = [(startPos, startPos, (-1, -1), 0)] # curr, prev, root, step from root
-while len(stack) != 0:
-    currPos, prevPos, root, step = stack.pop()
-    if currPos in nodePos:
-        tree[root][currPos] = max(tree[root].get(currPos, 0), step)
-        root = currPos
-        step = 0
-    sym = trailMap[currPos[0]][currPos[1]]
-    nextPosLst = tuple()
-    if sym in slideDir:
-        d = slideDir[sym]
-        newPos = (currPos[0] + d[0], currPos[1] + d[1])
-        nextPosLst = (newPos,)
-    else:
-        nextPosLst = tuple(
-                nb
-                for nb in util.nearby2DGridPts(currPos, dim)
-                if trailMap[nb[0]][nb[1]] != '#')
-    for newPos in nextPosLst:
-        if newPos == prevPos:
-            continue
-        stack.append((newPos, currPos, root, step + 1))
-
-maxDist = 0
-h = [(0, startPos)]
-while len(h) != 0:
-    cost, pos = h.pop()
-    if pos == targetPos:
-        maxDist = max(maxDist, cost)
-        continue
-    for n, c in tree[pos].items():
-        h.append((c + cost, n))
-print(maxDist)
-
-
-# part 2
-# we should be able to build this by adding reverse edges from tree
-# not sure about time complexity
-flatTree = {pt: dict() for pt in nodePos}
+nodeLinks: dict[tuple[int, int], dict[tuple[int, int], int]] \
+        = {n: dict() for n in nodePos}
 for root in nodePos:
-    flatStack = list((nb, root, 1)
-                     for nb in util.nearby2DGridPts(root, dim)
-                     if trailMap[nb[0]][nb[1]] != '#')  # curr, prev, step
-    while len(flatStack) != 0:
-        currPos, prevPos, step = flatStack.pop()
-        if currPos in nodePos:
-            flatTree[root][currPos] = max(step, flatTree[root].get(currPos, 0))
+    linkStack = [(root, root, 0)]
+    while len(linkStack) != 0:
+        currPos, prevPos, step = linkStack.pop()
+        if currPos in nodePos and currPos != prevPos and currPos != root:
+            nodeLinks[root][currPos] = max(nodeLinks[root].get(currPos, 0), step)
             continue
-        for nb in util.nearby2DGridPts(currPos, dim):
+        sym = trailMap[currPos[0]][currPos[1]]
+        nextPos: tuple[tuple[int, int], ...] = tuple()
+        if sym in slideDir:
+            d = slideDir[sym]
+            nextPos = ((currPos[0] + d[0], currPos[1] + d[1]),)
+        else:
+            nextPos = tuple(
+                    nb
+                    for nb in util.nearby2DGridPts(currPos, dim)
+                    if trailMap[nb[0]][nb[1]] != '#')
+        for nb in nextPos:
             if nb == prevPos or trailMap[nb[0]][nb[1]] == '#':
                 continue
-            flatStack.append((nb, currPos, step + 1))
+            linkStack.append((nb, currPos, step + 1))
 
-# this takes too long (~1min)
-# (general) longest path problem seems to be NP(-compete)
-# maybe there are optimizations?
+# part 1
+# assume DAG
 maxDist = 0
-h = [(0, startPos, set())]
-while len(h) != 0:
-    cost, pos, visited = h.pop()
-    if pos == targetPos:
+stack = [(0, startPos)]
+while len(stack) != 0:
+    cost, node = stack.pop()
+    if node == targetPos:
         maxDist = max(maxDist, cost)
         continue
-    for n, c in flatTree[pos].items():
-        if n in visited:
-            continue
-        h.append((c + cost, n, visited.union((n,))))
+    for nb, c in nodeLinks[node].items():
+        stack.append((cost + c, nb))
 print(maxDist)
+
+# part 2
+# assume this gives the whole graph
+# this can be faster but we only have like 36 nodes
+for s in nodePos:
+    for e, w in nodeLinks[s].items():
+        w = max(w, nodeLinks[e].get(s, w))
+        nodeLinks[s][e] = w
+        nodeLinks[e][s] = w
+
+# this takes ~1min
+# longest path is NP-hard unless graph has good structure
+# TODO: optimize?
+maxDist = 0
+part2Stack: list[tuple[int,
+                       tuple[int, int],
+                       set[tuple[int, int]]]] = [(0, startPos, set())]
+while len(part2Stack) != 0:
+    cost, node, visited = part2Stack.pop()
+    if node == targetPos:
+        maxDist = max(maxDist, cost)
+        continue
+    for nb, c in nodeLinks[node].items():
+        if nb not in visited:
+            part2Stack.append((cost + c, nb, visited.union((nb,))))
+print(maxDist)
+
