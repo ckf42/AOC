@@ -15,8 +15,6 @@ stoneCount = len(stones)
 # part 1
 detectDom = (200000000000000, 400000000000000)
 
-# FIXME: util.segmentIntersection does not seem to work. Check again
-
 crosses = 0
 for i in range(stoneCount):
     ap, av = stones[i]

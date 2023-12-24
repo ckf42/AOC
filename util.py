@@ -3044,6 +3044,14 @@ def segmentIntersection(
     assert all(pt.dim == 2 for pt in (ps, pe, qs, qe))
     r = pe - ps
     s = qe - qs
+    rr = r.innerProd(r)
+    if rr == 0:
+        r, s = s, r
+        ps, qs = qs, ps
+        pe, qe = qe, pe
+        rr = r.innerProd(r)
+    if rr == 0:
+        return ps if ps == qs else None
 
     def crossProd(pt1: Point, pt2: Point) -> float:
         return pt1[0] * pt2[1] - pt1[1] * pt2[0]
@@ -3053,7 +3061,6 @@ def segmentIntersection(
     if rxs == 0:
         if pqxr == 0:
             # case 1
-            rr = r.innerProd(r)
             t0 = (qs - ps).innerProd(r) / rr
             t1 = t0 + r.innerProd(s) / rr
             if t0 > t1:
