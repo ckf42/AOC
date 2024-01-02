@@ -1354,7 +1354,7 @@ def inclusiveRange(s: int, e: int, step: _tp.Optional[int] = 1) -> range:
     (with appropriate `step` if given None)
     """
     if step is None:
-        step = sgn(e - s)
+        step = 1 if e >= s else -1
     return range(s, e + step, step)
 
 
