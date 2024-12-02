@@ -15,5 +15,5 @@ print(sum(abs(a - b) for a, b in zip(sorted(nums[0]), sorted(nums[1]))))
 
 # part 2
 c = Counter(nums[1])
-print(sum(x * c[x] for x in nums[0]))
+print(sum(x * f * c[x] for x, f in Counter(nums[0]).items()))
 
