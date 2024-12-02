@@ -3113,3 +3113,33 @@ def polygonArea(
     return abs(doubleArea) / 2.0
 
 
+def insp(inputStr: str, n: int = 5, col: int = -1) -> None:
+    """
+    Inspect the first few lines of the input
+
+    Parameters
+    -----
+    inputStr: str
+        the input.
+        assumed to be a (long) strings of lines
+
+    n: int, optional
+        the number of lines to print
+        the lines are split by str.splitlines()
+        defaults to 5
+
+    col: int, optional
+        the maximal number of char to print for each line
+        if non-positive, the whole line will be printed
+        defaults to -1
+
+    Return
+    -----
+    None
+    """
+    for _, line in zip(range(n), inputStr.splitlines()):
+        colLimit: int = len(line)
+        if col > 0:
+            colLimit = min(colLimit, col)
+        print(line[:colLimit])
+
