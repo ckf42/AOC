@@ -1,3 +1,6 @@
+#ifndef AOC_UTIL_H
+#define AOC_UTIL_H
+
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -71,3 +74,4 @@ inline std::vector<int> getInts(const std::string &s){
 
 };  // namespace util
 
+#endif
