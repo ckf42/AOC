@@ -5,9 +5,9 @@ My solutions for [AOC](https://adventofcode.com/)
 Language:
 * python (3.11; major)
 * ruby (3.2; only a few, no clue when I wrote these)
-* c++ (17; need to compile with `-lcpr`, porting)
+* c++ (17; porting)
 
-Put `session` cookie in the top directory and copy `AOCInit` to every subdirectory
+Put `session` cookie in the top directory and (for python to see `util.py`) copy `AOCInit` to every subdirectory
 
 Third party python libraries:
 * [ortools](https://developers.google.com/optimization)
@@ -16,7 +16,7 @@ Third party python libraries:
 * [sympy](https://www.sympy.org/)
 
 Third party c++ libraries:
-* [C++ Request](https://github.com/libcpr/cpr)
+* [re2](https://github.com/google/re2)
 
 ## Progress
 
