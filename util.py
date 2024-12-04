@@ -3154,7 +3154,7 @@ def diagonals(
     Parameters
     -----
     arr: Sequence[Sequence[T]]
-        the input array search
+        the input array
         Assumed to be rectangular, that is each row in arr has the same length
 
     isAntiDiag: bool, optional
@@ -3187,4 +3187,46 @@ def diagonals(
             )
             for total in range(n + m - 1)
         )
+
+
+def findPattIn2DStr(
+        strArr: _tp.Sequence[str],
+        rePattStr: _tp.Sequence[str]
+        ) -> tuple[tuple[int, int], ...]:
+    """
+    Find all (overlapping) matches of a 2D pattern in a 2D str array
+
+    Parameters
+    -----
+    arr: Sequence[str]
+        the input 2D array of str
+        each element in arr represents a (horizontal) row
+
+    rePattStr: Sequence[str]
+        the regex pattern to search for
+        will be compiled with re.compile (without flag)
+        note that the pattern are not required to have matches of same length,
+            only that the start of the pattern are on the same column
+
+    Returns
+    -----
+    a tuple of 2D coordinates as tuple[int, int]
+        each coordinate represents the location of the first character of the first row
+    """
+    n = len(strArr)
+    m = len(rePattStr)
+    if m > n:
+        return tuple()
+    resCoor: list[tuple[int, int]] = list()
+    patts: tuple[_re.Pattern, ...] = tuple(
+            _re.compile(f'(?=({pattStr}))')
+            for pattStr in rePattStr
+    )
+    for i in range(0, n - m + 1):
+        for match in patts[0].finditer(strArr[i]):
+            j = match.start()
+            if all(patt.match(strArr[i + offset][j:])
+                   for offset, patt in enumerate(patts[1:], 1)):
+                resCoor.append((i, j))
+    return tuple(resCoor)
 
