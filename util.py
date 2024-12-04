@@ -3143,3 +3143,48 @@ def insp(inputStr: str, n: int = 5, col: int = -1) -> None:
             colLimit = min(colLimit, col)
         print(line[:colLimit])
 
+
+def diagonals(
+        arr: _tp.Sequence[_tp.Sequence[_T]],
+        isAntiDiag: bool = False
+        ) -> tuple[tuple[_T, ...], ...]:
+    """
+    Collect the diagonals of a rectangular array
+
+    Parameters
+    -----
+    arr: Sequence[Sequence[T]]
+        the input array search
+        Assumed to be rectangular, that is each row in arr has the same length
+
+    isAntiDiag: bool, optional
+        determine if the anti-diagonal should be returned instead
+        defaults to False
+
+    Returns
+    -----
+    a tuple of tuple of the diagonal elements
+    if isAntiDiag is True, will return all anti-diagonals
+    the diagonal sequence will start with the element with the smallest first index,
+        and the diagonals are list from top to bottom
+        (diagonal: (0, m - 1) to (n - 1, 0); anti-diagonal: (0, 0) to (n - 1, m - 1))
+    """
+    n = len(arr)
+    m = len(arr[0])
+    if not isAntiDiag:
+        return tuple(
+            tuple(
+                arr[i][i - diff]
+                for i in range(max(0, diff), min(n, m + diff))
+            )
+            for diff in range(-m + 1, n)
+        )
+    else:
+        return tuple(
+            tuple(
+                arr[i][total - i]
+                for i in range(max(0, total - m + 1), min(n, total + 1))
+            )
+            for total in range(n + m - 1)
+        )
+
