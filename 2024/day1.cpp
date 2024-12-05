@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <cstdlib>
 #include <iostream>
+#include <sstream>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -10,12 +11,13 @@
 using ulli = unsigned long long int;
 
 int main(int, char**){
-    std::string inp = util::getInput(2024, 1);
+    std::stringstream inpStream;
+    util::getInput(2024, 1, inpStream);
     std::vector<int> nums[2];
-    for (std::string &s : util::splitline(inp)){
-        auto buff = util::getInts(s);
-        nums[0].push_back(buff[0]);
-        nums[1].push_back(buff[1]);
+    int a, b;
+    while (inpStream >> a >> b){
+        nums[0].push_back(a);
+        nums[1].push_back(b);
     }
     std::sort(nums[0].begin(), nums[0].end());
     std::sort(nums[1].begin(), nums[1].end());

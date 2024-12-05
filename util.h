@@ -10,38 +10,52 @@
 #include <vector>
 
 namespace util{
-inline std::string getInput(int year, int day){
-    std::string inputFilePath = "../" + std::to_string(year) + "/input" + std::to_string(day);
+inline void getInput(int year, int day, std::stringstream &outputStream){
+    const std::string inputFilePath = "../" + std::to_string(year) + "/input" + std::to_string(day);
     if (!std::filesystem::exists(inputFilePath)){
-        throw std::runtime_error("Input file not found");
+        throw std::runtime_error("Input file not found: " + inputFilePath.substr(3));
     }
     std::ifstream inputFile(inputFilePath);
     if (!inputFile){
-        throw std::runtime_error("Unable to read input file");
+        throw std::runtime_error("Unable to read input file: " + inputFilePath.substr(3));
     }
-    std::stringstream inputBuff;
-    inputBuff << inputFile.rdbuf();
-    return inputBuff.str();
+    outputStream << inputFile.rdbuf();
 }
 
-inline std::vector<std::string> splitline(const std::string &s){
-    std::vector<std::string> res;
-    std::stringstream ss(s);
+inline std::string getInput(int year, int day){
+    std::stringstream ss;
+    getInput(year, day, ss);
+    return ss.str();
+}
+
+inline void splitline(std::stringstream &inputStream, std::stringstream &outputStream){
     std::string buff;
-    while (std::getline(ss, buff, '\n')){
+    while (std::getline(inputStream, buff, '\n')){
+        outputStream << buff;
+    }
+}
+
+inline std::vector<std::string> splitline(std::stringstream &inputStream){
+    std::vector<std::string> res;
+    std::string buff;
+    while (std::getline(inputStream, buff, '\n')){
+        res.push_back(buff);
+    }
+    return res;
+}
+
+inline std::vector<int> getInts(std::stringstream &inputStream){
+    std::vector<int> res;
+    int buff;
+    while (inputStream >> buff){
         res.push_back(buff);
     }
     return res;
 }
 
 inline std::vector<int> getInts(const std::string &s){
-    std::vector<int> res;
     std::stringstream ss(s);
-    int buff;
-    while (ss >> buff){
-        res.push_back(buff);
-    }
-    return res;
+    return getInts(ss);
 }
 
 };  // namespace util

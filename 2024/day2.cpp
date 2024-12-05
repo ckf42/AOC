@@ -1,4 +1,5 @@
 #include <iostream>
+#include <sstream>
 #include <string>
 #include <vector>
 
@@ -25,9 +26,10 @@ bool isSafeRow(const std::vector<int> &row){
 }
 
 int main(int, char**){
-    std::string inp = util::getInput(2024, 2);
+    std::stringstream inpStream;
+    util::getInput(2024, 2, inpStream);
     std::vector<std::vector<int>> nums;
-    for (auto &s : util::splitline(inp)){
+    for (auto &s : util::splitline(inpStream)){
         nums.push_back(util::getInts(s));
     }
 
