@@ -83,7 +83,7 @@ def getInput(d: int,
                     _ulq.Request(
                         f'https://adventofcode.com/{y}/day/{d}/input',
                         headers={'Cookie': f'session={sKey}',
-                                 'User-Agent': 'github.com/ckf42'})
+                                 'User-Agent': 'github.com/ckf42/AOC'})
                     ) as resp:
                 rt = resp.fp.read().decode()
                 with _Path(f'input{d}').open('wt') as f:
