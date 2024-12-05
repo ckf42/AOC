@@ -62,14 +62,12 @@ int main(int, char**){
     for (int i = 0; i < n; ++i){
         if (isCorrOrder(sects[i], edges)){
             corrState[i] = true;
-        }
-        if (corrState[i]){
             count += sects[i][sects[i].size() / 2];
         }
     }
     std::cout << count << std::endl;
 
-    // part 1
+    // part 2
     count = 0;
     for (int i = 0; i < n; ++i){
         if (corrState[i]){

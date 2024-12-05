@@ -29,8 +29,8 @@ def isCorrOrder(sectOrder: tuple[int, ...]) -> bool:
 
 total = 0
 for i, sect in enumerate(sects):
-    corrOrder[i] = isCorrOrder(sect)
-    if corrOrder[i]:
+    if isCorrOrder(sect):
+        corrOrder[i] = True
         total += sect[len(sect) // 2]
 print(total)
 
