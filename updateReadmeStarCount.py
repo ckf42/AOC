@@ -24,17 +24,14 @@ def getStarCounts() -> dict[int, int]:
                 rt = resp.fp.read().decode()
         except ule.HTTPError as e:
             detail = e.fp.read().decode()
-            if 'Please log in to get your puzzle input.' in detail:
-                raise RuntimeError("Not logged in.") \
-                        from e
-            else:
-                raise RuntimeError(f"Failed to fetch status page: {e.reason}\n"
-                                   f"Detail: {detail}") from e
+            raise RuntimeError(f"Failed to fetch status page: {e.reason}\n"
+                                f"Detail: {detail}") from e
     assert rt is not None, "Failed to fetch status page"
     resDict: dict[int, int] = {
         int(items[0]): int(items[1])
         for items in STAR_REGEX.findall(rt)
     }
+    assert len(resDict) != 0, "Cannot find star count. Please ensure you have logged in."
     return resDict
 
 def main() -> None:
