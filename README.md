@@ -32,6 +32,11 @@ Third party c++ libraries:
 | 2021 |     32     |
 | 2022 |     50     |
 | 2023 |     50     |
-| 2024 |     10     |
+| 2024 |     12     |
 <!-- progress table end -->
+
+
+## Disclaimer
+
+No AI-powered tool (including, but not limited to, AI code generator, AI code completion tool, and AI code review tool) is used for this repo.
 
