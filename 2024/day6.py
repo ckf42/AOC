@@ -27,7 +27,7 @@ while 0 <= x < n and 0 <= y < m:
     xx = x + dirs[guardDir][0]
     yy = y + dirs[guardDir][1]
     rightDir = (guardDir + 1) % 4
-    if 0 <= xx < n and 0 <= yy < m and (xx, yy) in obs:
+    if (xx, yy) in obs:
         guardDir = rightDir
     else:
         x, y = xx, yy
@@ -45,7 +45,7 @@ def walkHasLoop(obsSet):
         xx = x + dirs[d][0]
         yy = y + dirs[d][1]
         rightDir = (d + 1) % 4
-        if 0 <= xx < n and 0 <= yy < m and (xx, yy) in obsSet:
+        if (xx, yy) in obsSet:
             d = rightDir
         else:
             x, y = xx, yy

@@ -58,6 +58,10 @@ inline std::vector<int> getInts(const std::string &s){
     return getInts(ss);
 }
 
+inline bool inRange(int x, int a, int b){
+    return x >= a && x < b;
+}
+
 };  // namespace util
 
 #endif
