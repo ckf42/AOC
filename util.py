@@ -11,12 +11,7 @@ from pathlib import Path as _Path
 # check inf and nan
 from math import isinf as _isinf
 from math import isnan as _isnan
-
-from sys import version_info as _vinfo
-if _vinfo.major == 3 and _vinfo.minor < 10: # for TypeAlias
-    from typing_extensions import TypeAlias as _TypeAlias
-else:
-    from typing import TypeAlias as _TypeAlias
+from typing import TypeAlias as _TypeAlias
 
 
 if __name__ == '__main__':
