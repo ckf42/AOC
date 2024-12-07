@@ -32,7 +32,7 @@ Third party c++ libraries:
 | 2021 |     32     |
 | 2022 |     50     |
 | 2023 |     50     |
-| 2024 |     12     |
+| 2024 |     14     |
 <!-- progress table end -->
 
 

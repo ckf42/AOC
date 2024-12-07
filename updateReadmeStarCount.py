@@ -10,9 +10,11 @@ STAR_REGEX = re.compile(
 TABLE_START = '<!-- progress table start -->'
 TABLE_END = '<!-- progress table end -->'
 
+BASE_PATH = Path(__file__).parent
+
 def getStarCounts() -> dict[int, int]:
     rt: str | None = None
-    with Path('session').open('rt') as sessKey:
+    with (BASE_PATH / 'session').open('rt') as sessKey:
         try:
             sKey = sessKey.read().strip()
             with ulq.urlopen(
@@ -35,7 +37,7 @@ def getStarCounts() -> dict[int, int]:
     return resDict
 
 def main() -> None:
-    with Path('README.md').open('rt') as f:
+    with (BASE_PATH / 'README.md').open('rt') as f:
         readmeLines = f.read().splitlines()
     assert readmeLines is not None, "Failed to read readme file"
     startIdx = readmeLines.index(TABLE_START)
@@ -49,7 +51,8 @@ def main() -> None:
         print(f"{k}: {starDict[k]}")
         tableLines.append(f'| {str(k).center(4)} | {str(starDict[k]).center(10)} |')
     readmeLines[startIdx + 1:endIdx] = tableLines
-    with Path('README.md').open('wt') as f:
+
+    with (BASE_PATH / 'README.md').open('wt') as f:
         for line in readmeLines:
             print(line, file=f)
 
