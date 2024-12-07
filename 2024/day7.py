@@ -4,6 +4,11 @@ import util
 if __name__ != '__main__':
     exit()
 
+# NOTE:
+#     from discussion thread, people seem to be doing DFS / backtracking
+#     would it be faster?
+#         this would depend if there are many dup intermediate val
+
 inp = util.getInput(d=7, y=2024)
 
 nums = tuple(
@@ -22,6 +27,7 @@ for i, rec in enumerate(nums):
             res
             for ele in buff
             for res in (ele + x, ele * x)
+            if res <= target
         )
     if target in buff:
         total += target
@@ -40,6 +46,7 @@ for i, rec in enumerate(nums):
             res
             for ele in buff
             for res in (ele + x, ele * x, int(str(ele) + str(x)))
+            if res <= target
         )
     if target in buff:
         total += target

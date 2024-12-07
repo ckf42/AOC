@@ -34,8 +34,11 @@ int main(int, char**){
         for (int j = 2; j < nums[i].size(); ++j){
             newBuff.clear();
             for (lli x : buff){
-                newBuff.insert(x + nums[i][j]);
-                newBuff.insert(x * nums[i][j]);
+                for (lli y : {x + nums[i][j], x * nums[i][j]}){
+                    if (y <= nums[i][0]){
+                        newBuff.insert(y);
+                    }
+                }
             }
             std::swap(buff, newBuff);
         }
@@ -57,9 +60,15 @@ int main(int, char**){
         for (int j = 2; j < nums[i].size(); ++j){
             newBuff.clear();
             for (lli x : buff){
-                newBuff.insert(x + nums[i][j]);
-                newBuff.insert(x * nums[i][j]);
-                newBuff.insert(std::stoll(std::to_string(x) + std::to_string(nums[i][j])));
+                for (lli y : {
+                            x + nums[i][j],
+                            x * nums[i][j],
+                            std::stoll(std::to_string(x) + std::to_string(nums[i][j]))
+                        }){
+                    if (y <= nums[i][0]){
+                        newBuff.insert(y);
+                    }
+                }
             }
             std::swap(buff, newBuff);
         }
