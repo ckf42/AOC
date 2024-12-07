@@ -31,6 +31,9 @@ inline std::string getInput(int year, int day){
 inline void splitline(std::stringstream &inputStream, std::stringstream &outputStream){
     std::string buff;
     while (std::getline(inputStream, buff, '\n')){
+        if (buff.size() == 0){
+            continue;
+        }
         outputStream << buff;
     }
 }
@@ -39,6 +42,9 @@ inline std::vector<std::string> splitline(std::stringstream &inputStream){
     std::vector<std::string> res;
     std::string buff;
     while (std::getline(inputStream, buff, '\n')){
+        if (buff.size() == 0){
+            continue;
+        }
         res.push_back(buff);
     }
     return res;
@@ -58,8 +64,22 @@ inline std::vector<int> getInts(const std::string &s){
     return getInts(ss);
 }
 
+inline std::vector<std::vector<int>> getInts(const std::vector<std::string> &lines){
+    std::vector<std::vector<int>> res;
+    for (const auto &line : lines){
+        res.push_back(getInts(line));
+    }
+    return res;
+}
+
 inline bool inRange(int x, int a, int b){
     return x >= a && x < b;
+}
+
+// C++20 comp
+template <class T, class Container>
+inline bool contains(const T &x, const Container &container){
+    return container.find(x) != container.end();
 }
 
 };  // namespace util
