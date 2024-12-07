@@ -30,19 +30,20 @@ int main(int, char**){
     std::vector<bool> evalState(n, false);
     for (int i = 0; i < n; ++i){
         std::unordered_set<lli> buff, newBuff;
-        buff.insert(nums[i][1]);
-        for (int j = 2; j < nums[i].size(); ++j){
+        buff.insert(nums[i][0]);
+        for (int j = nums[i].size() - 1; j >= 2; --j){
             newBuff.clear();
             for (lli x : buff){
-                for (lli y : {x + nums[i][j], x * nums[i][j]}){
-                    if (y <= nums[i][0]){
-                        newBuff.insert(y);
-                    }
+                if (x >= nums[i][j]){
+                    newBuff.insert(x - nums[i][j]);
+                }
+                if (x % nums[i][j] == 0){
+                    newBuff.insert(x / nums[i][j]);
                 }
             }
             std::swap(buff, newBuff);
         }
-        if (util::contains(nums[i][0], buff)){
+        if (util::contains(nums[i][1], buff)){
             evalState[i] = true;
             res += nums[i][0];
         }
@@ -56,23 +57,25 @@ int main(int, char**){
             continue;
         }
         std::unordered_set<lli> buff, newBuff;
-        buff.insert(nums[i][1]);
-        for (int j = 2; j < nums[i].size(); ++j){
+        buff.insert(nums[i][0]);
+        for (int j = nums[i].size() - 1; j >= 2; --j){
             newBuff.clear();
             for (lli x : buff){
-                for (lli y : {
-                            x + nums[i][j],
-                            x * nums[i][j],
-                            std::stoll(std::to_string(x) + std::to_string(nums[i][j]))
-                        }){
-                    if (y <= nums[i][0]){
-                        newBuff.insert(y);
-                    }
+                if (x >= nums[i][j]){
+                    newBuff.insert(x - nums[i][j]);
+                }
+                if (x % nums[i][j] == 0){
+                    newBuff.insert(x / nums[i][j]);
+                }
+                std::string strx = std::to_string(x),
+                    stry = std::to_string(nums[i][j]);
+                if (strx.size() > stry.size() && stry == strx.substr(strx.size() - stry.size())){
+                    newBuff.insert(std::stoll(strx.substr(0, strx.size() - stry.size())));
                 }
             }
             std::swap(buff, newBuff);
         }
-        if (util::contains(nums[i][0], buff)){
+        if (util::contains(nums[i][1], buff)){
             res += nums[i][0];
         }
     }

@@ -4,11 +4,6 @@ import util
 if __name__ != '__main__':
     exit()
 
-# NOTE:
-#     from discussion thread, people seem to be doing DFS / backtracking
-#     would it be faster?
-#         this would depend if there are many dup intermediate val
-
 inp = util.getInput(d=7, y=2024)
 
 nums = tuple(
@@ -20,17 +15,17 @@ nums = tuple(
 evalState = [False] * len(nums)
 total = 0
 for i, rec in enumerate(nums):
-    target = rec[0]
-    buff = set((rec[1],))
-    for x in rec[2:]:
-        buff = set(
-            res
-            for ele in buff
-            for res in (ele + x, ele * x)
-            if res <= target
-        )
-    if target in buff:
-        total += target
+    buff = set((rec[0],))
+    for x in rec[-1:1:-1]:
+        newBuff = set()
+        for y in buff:
+            if y >= x:
+                newBuff.add(y - x)
+            if y % x == 0:
+                newBuff.add(y // x)
+        buff = newBuff
+    if rec[1] in buff:
+        total += rec[0]
         evalState[i] = True
 print(total)
 
@@ -39,17 +34,19 @@ print(total)
 for i, rec in enumerate(nums):
     if evalState[i]:
         continue
-    target = rec[0]
-    buff = set((rec[1],))
-    for x in rec[2:]:
-        buff = set(
-            res
-            for ele in buff
-            for res in (ele + x, ele * x, int(str(ele) + str(x)))
-            if res <= target
-        )
-    if target in buff:
-        total += target
+    buff = set((rec[0],))
+    for x in rec[-1:1:-1]:
+        newBuff = set()
+        for y in buff:
+            if y >= x:
+                newBuff.add(y - x)
+            if y % x == 0:
+                newBuff.add(y // x)
+            if (stry := str(y)).endswith((strx := str(x))) and stry != strx:
+                newBuff.add(int(stry[:-len(strx)]))
+        buff = newBuff
+    if rec[1] in buff:
+        total += rec[0]
 print(total)
 
 
