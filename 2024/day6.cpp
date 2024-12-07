@@ -2,7 +2,6 @@
 #include <sstream>
 #include <string>
 #include <unordered_set>
-#include <utility>
 #include <vector>
 
 #include "..\util.h"
@@ -18,12 +17,12 @@ bool hasLoop(int x, int y, int n, int m, std::unordered_set<lli> &obs){
     std::unordered_set<lli> visited;
     while (util::inRange(x, 0, n) && util::inRange(y, 0, m)){
         int z = (x * m + y) * 4 + d;
-        if (visited.find(z) != visited.end()){
+        if (util::contains(z, visited)){
             return true;
         }
         visited.insert(z);
         int xx = x + dirs[d][0], yy = y + dirs[d][1];
-        if (obs.find(xx * m + yy) != obs.end()){
+        if (util::contains(xx * m + yy, obs)){
             d = (d + 1) % 4;
         } else {
             x = xx;
@@ -57,7 +56,7 @@ int main(int, char**){
     while (util::inRange(x, 0, n) && util::inRange(y, 0, m)){
         visited.insert(x * m + y);
         int xx = x + dirs[d][0], yy = y + dirs[d][1];
-        if (obs.find(xx * m + yy) != obs.end()){
+        if (util::contains(xx * m + yy, obs)){
             d = (d + 1) % 4;
         } else {
             x = xx;
