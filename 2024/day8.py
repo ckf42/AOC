@@ -24,7 +24,7 @@ for v in nodeDict.values():
     l = len(v)
     for i in range(l - 1):
         for j in range(i + 1, l):
-            if (q1 := v[i][0] - v[j][0]) % 3 == 0 and (q2 := v[i][1] - v[j][1]) % 3 == 0:
+            if (q1 := v[j][0] - v[i][0]) % 3 == 0 and (q2 := v[j][1] - v[i][1]) % 3 == 0:
                 anodes.add((v[i][0] + q1 // 3, v[i][1] + q[1] // 3))
                 anodes.add((v[j][0] - q1 // 3, v[j][1] - q[1] // 3))
             pt = (2 * v[i][0] - v[j][0], 2 * v[i][1] - v[j][1])
@@ -43,8 +43,6 @@ for v in nodeDict.values():
         for j in range(i + 1, l):
             delta = (v[j][0] - v[i][0], v[j][1] - v[i][1])
             g = util.gcd(*delta)
-            if g == 0:
-                g = max(delta)
             delta = (delta[0] // g, delta[1] // g)
             x, y = v[i]
             while True:

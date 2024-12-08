@@ -915,15 +915,17 @@ def gcd(*n: int) -> int:
 
     Return
     -----
-    the gcd of the given integers
+    the (nonnegative) gcd of the given integers
     if no integer is given, return 1
 
     Note
     -----
     (now) a wrapper of math.gcd
+
+    With zero, gcd(x, 0) == abs(x)
     """
     if len(n) == 0:
-        return 1  # back compat behavior: math.gcd() == 0
+        return 1  # incompat behavior: math.gcd() == 0
     return _math.gcd(*n)
 
 
