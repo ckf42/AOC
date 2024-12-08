@@ -42,7 +42,9 @@ for i, rec in enumerate(nums):
                 newBuff.add(y - x)
             if y % x == 0:
                 newBuff.add(y // x)
-            if (stry := str(y)).endswith((strx := str(x))) and stry != strx:
+            strx = str(x)
+            stry = str(y)
+            if len(strx) < len(stry) and stry.endswith(strx):
                 newBuff.add(int(stry[:-len(strx)]))
         buff = newBuff
     if rec[1] in buff:

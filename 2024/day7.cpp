@@ -1,4 +1,3 @@
-#include <iostream>
 #include <sstream>
 #include <string>
 #include <unordered_set>
@@ -18,9 +17,7 @@ int main(int, char**){
         std::vector<lli> numBuff;
         int idx = line.find(':');
         numBuff.push_back(std::stoll(line.substr(0, idx)));
-        for (int x : util::getInts(line.substr(idx + 1))){
-            numBuff.push_back(x);
-        }
+        util::extendVec(numBuff, util::getInts(line.substr(idx + 1)));
         nums.push_back(numBuff);
     }
 
@@ -48,7 +45,7 @@ int main(int, char**){
             res += nums[i][0];
         }
     }
-    std::cout << res << std::endl;
+    util::output(res);
 
     // part 2
     // TODO: same speed as python. need to speed up
@@ -67,7 +64,8 @@ int main(int, char**){
                 if (x % nums[i][j] == 0){
                     newBuff.insert(x / nums[i][j]);
                 }
-                std::string strx = std::to_string(x),
+                std::string
+                    strx = std::to_string(x),
                     stry = std::to_string(nums[i][j]);
                 if (strx.size() > stry.size() && stry == strx.substr(strx.size() - stry.size())){
                     newBuff.insert(std::stoll(strx.substr(0, strx.size() - stry.size())));
@@ -79,7 +77,7 @@ int main(int, char**){
             res += nums[i][0];
         }
     }
-    std::cout << res << std::endl;
+    util::output(res);
 
     return 0;
 }
