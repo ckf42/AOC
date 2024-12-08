@@ -74,6 +74,7 @@ def getInput(d: int,
     with _Path('../session').open('rt') as sessKey:
         try:
             sKey = sessKey.read().strip()
+            print("Fetching input ...")
             with _ulq.urlopen(
                     _ulq.Request(
                         f'https://adventofcode.com/{y}/day/{d}/input',
@@ -3224,4 +3225,31 @@ def findPattIn2DStr(
                    for offset, patt in enumerate(patts[1:], 1)):
                 resCoor.append((i, j))
     return tuple(resCoor)
+
+
+@_tp.overload
+def in2DRange(pt: tuple[int, int], n: int, m: int) -> bool: ...
+@_tp.overload
+def in2DRange(pt: Point, n: int, m: int) -> bool: ...
+@_tp.overload
+def in2DRange(pt: MutPoint, n: int, m: int) -> bool: ...
+def in2DRange(pt, n, m):
+    """
+    Check if a point is in the given range
+
+    Parameters
+    -----
+    pt: tuple[int, int], or Point, or MutPoint
+        the point to check
+        assumed to be of length 2 (2D point)
+
+    n, m: int
+        the range bound
+
+    Returns
+    -----
+    a bool that indicates whether pt in in the range [0, n) x [0, m)
+    """
+    assert len(pt) == 2, "Not a 2D point"
+    return 0 <= pt[0] < n and 0 <= pt[1] < m
 

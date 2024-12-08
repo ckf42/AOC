@@ -7,6 +7,7 @@
 #include <sstream>
 #include <stdexcept>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace util{
@@ -76,10 +77,28 @@ inline bool inRange(int x, int a, int b){
     return x >= a && x < b;
 }
 
+inline bool in2DRange(int x, int y, int a, int b){
+    return inRange(x, 0, a) && inRange(y, 0, b);
+}
+inline bool in2DRange(const std::pair<int, int> &x, int a, int b){
+    return in2DRange(x.first, x.second, a, b);
+}
+
 // C++20 comp
 template <class T, class Container>
 inline bool contains(const T &x, const Container &container){
     return container.find(x) != container.end();
+}
+
+template <class T, class U>
+inline void extendVec(std::vector<T> &target, const std::vector<U> &src){
+    target.reserve(target.size() + src.size());
+    target.insert(target.end(), src.cbegin(), src.cend());
+}
+
+template <class T>
+inline void output(const T &x){
+    std::cout << x << std::endl;
 }
 
 };  // namespace util
