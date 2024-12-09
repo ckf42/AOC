@@ -7,51 +7,51 @@ if __name__ != '__main__':
 inp = util.getInput(d=9, y=2024).strip()
 
 blocks = list(int(c) for c in inp)
-data = list(blocks[0::2])
-blank = list(blocks[1::2])
+n = len(blocks)
 
 # part 1
 checksum = 0
-blankPtr = 0
-currPtr = data[0]
-while blankPtr < len(data) - 1:
-    blkToMove = min(blank[blankPtr], data[-1])
-    checksum += (2 * currPtr + blkToMove - 1) * blkToMove // 2 * (len(data) - 1)
-    blank[blankPtr] -= blkToMove
-    data[-1] -= blkToMove
-    currPtr += blkToMove
-    if data[-1] == 0:
-        data.pop()
-    if blank[blankPtr] == 0:
-        blankPtr += 1
-        checksum += (currPtr * 2 + data[blankPtr] - 1) * data[blankPtr] // 2 * blankPtr
-        currPtr += data[blankPtr]
+currOffset = blocks[0]
+blankPtr = 1
+dataPtr = n - 1
+dataId = dataPtr // 2
+while blankPtr < dataPtr:
+    blkToMove = min(blocks[blankPtr], blocks[dataPtr])
+    checksum += dataId * util.rangeSum(range(currOffset, currOffset + blkToMove))
+    currOffset += blkToMove
+    blocks[blankPtr] -= blkToMove
+    blocks[dataPtr] -= blkToMove
+    if blocks[blankPtr] == 0:
+        blockLen = blocks[blankPtr + 1]
+        checksum += (blankPtr + 1) // 2 * util.rangeSum(range(currOffset, currOffset + blockLen))
+        currOffset += blockLen
+        blankPtr += 2
+    if blocks[dataPtr] == 0:
+        dataId -= 1
+        dataPtr -= 2
 print(checksum)
 
 
 # part 2
-ptr = 0
+datas = list(int(inp[c]) for c in range(0, n, 2))
+blanks = list(int(inp[c]) for c in range(1, n, 2))
 checksum = 0
-currPtr = 0
-blankOffsets = []
-dataOffsets = []
-while ptr < len(blocks):
-    dataOffsets.append(currPtr)
-    checksum += (currPtr * 2 + blocks[ptr] - 1) * blocks[ptr] // 2 * (ptr // 2)
-    currPtr += blocks[ptr]
-    blankOffsets.append(currPtr)
-    ptr += 1
-    if ptr < len(blocks):
-        currPtr += blocks[ptr]
-        ptr += 1
-data = list(blocks[0::2])
-blank = list(blocks[1::2])
-ndata = len(data)
-for i in range(ndata - 1, 0, -1):
-    idx = util.firstIdxSuchThat(blank, lambda x: x >= data[i], e=i)
+dataOffsets = [0] * len(datas)
+blankOffsets = [0] * len(blanks)
+currOffset = 0
+for ptr in range(len(blanks)):
+    checksum += ptr * util.rangeSum(range(currOffset, currOffset + datas[ptr]))
+    dataOffsets[ptr] = currOffset
+    currOffset += datas[ptr]
+    blankOffsets[ptr] = currOffset
+    currOffset += blanks[ptr]
+dataOffsets[-1] = blankOffsets[-1] + blanks[-1]
+checksum += len(blanks) * util.rangeSum(range(currOffset, currOffset + datas[-1]))
+for ptr in range(len(datas) - 1, 0, -1):
+    idx = util.firstIdxSuchThat(blanks, lambda x: x >= datas[ptr], e=ptr)
     if idx is not None:
-        blank[idx] -= data[i]
-        checksum -= i * (dataOffsets[i] - blankOffsets[idx]) * data[i]
-        blankOffsets[idx] += data[i]
+        checksum -= ptr * datas[ptr] * (dataOffsets[ptr] - blankOffsets[idx])
+        blanks[idx] -= datas[ptr]
+        blankOffsets[idx] += datas[ptr]
 print(checksum)
 

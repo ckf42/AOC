@@ -101,6 +101,16 @@ inline void output(const T &x){
     std::cout << x << std::endl;
 }
 
+template <class T>
+inline void printVec(const std::vector<T> &vec, const std::string &sep = ", "){
+    int n = vec.size();
+    std::cout << std::to_string(vec[0]);
+    for (int i = 1; i < n; ++i){
+        std::cout << sep << std::to_string(vec[i]);
+    }
+    std::cout << std::endl;
+}
+
 };  // namespace util
 
 #endif

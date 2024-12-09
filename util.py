@@ -3255,3 +3255,26 @@ def in2DRange(pt, n, m):
     assert len(pt) == 2, "Not a 2D point"
     return 0 <= pt[0] < n and 0 <= pt[1] < m
 
+def rangeSum(rg: range) -> int:
+    """
+    Compute the sum of a range.
+    Functionally equivalent to sum(rg), although faster
+
+    Parameters
+    -----
+    rg: range
+        the range to be summed on
+
+    Returns
+    -----
+    an int that represents the sum of elements in the range
+
+    Note
+    -----
+    Python does not seem to give such optimization, and naive `sum(rg)` seems to be O(n) (instead of O(1))
+    """
+    rgLen = (rg.stop - rg.start + rg.step - 1) // rg.step
+    if rgLen <= 0:
+        return 0
+    return (rg.start * 2 + rg.step * (rgLen - 1)) * rgLen // 2
+
