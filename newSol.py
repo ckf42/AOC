@@ -1,6 +1,8 @@
 import argparse
 import pathlib
 
+BASE_PATH = pathlib.Path(__file__).parent
+
 def getArgs():
     parser = argparse.ArgumentParser()
     parser.add_argument('day',
@@ -17,9 +19,9 @@ def main():
     cwd = pathlib.Path.cwd()
     year = cwd.stem
     assert year.isnumeric(), f"Cannot parse year from cwd: {year}"
-    solTempLoc = (cwd / '../solTemp.py').resolve()
+    solTempLoc = (BASE_PATH / 'solTemp.py').resolve()
     assert solTempLoc.is_file(), "Cannot find the solution template"
-    outputFilePath = cwd / f'day{args.day}.py'
+    outputFilePath = BASE_PATH / str(year) / f'day{args.day}.py'
     if not args.force:
         assert not outputFilePath.is_file(), f"{outputFilePath.name} already exists"
     fileContent = list()
@@ -27,7 +29,9 @@ def main():
         fileContent = f.readlines()
     with outputFilePath.open(mode='w') as f:
         for line in fileContent:
-            print(line.rstrip().replace('{{day}}', str(args.day)).replace('{{year}}', year),
+            print(line.rstrip()\
+                    .replace('{{day}}', str(args.day))\
+                    .replace('{{year}}', year),
                   file=f)
 
 
