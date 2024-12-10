@@ -2633,7 +2633,7 @@ class DisjointSet(_tp.Generic[_T]):
 
     def __init__(
             self,
-            initItems: _tp.Union[int, _tp.Iterable[_T]] = tuple()
+            initItems: int | _tp.Iterable[_T] = tuple()
             ) -> None:
         if isinstance(initItems, int):
             initItems = _tp.cast(_tp.Iterable, range(initItems))
@@ -2673,8 +2673,8 @@ class DisjointSet(_tp.Generic[_T]):
         if item not in self.__parent:
             return item
         while self.__parent[item] != item:
-            (item, self.__parent[item]) = \
-                    (self.__parent[item], self.__parent[self.__parent[item]])
+            item, self.__parent[item] \
+                    = self.__parent[item], self.__parent[self.__parent[item]]
         return item
 
     def isSameGroup(self, item1: _T, item2: _T) -> bool:
@@ -2739,6 +2739,26 @@ class DisjointSet(_tp.Generic[_T]):
                 1
                 for par in self.__parent.values()
                 if par == self.__parent[item])
+
+    def getGroups(self) -> _tp.Iterable[tuple[_T, ...]]:
+        """
+        Generate all groups, each stored as a tuple
+
+        No specific order is posed
+        """
+        self.__compress()
+        members = {
+            parent: []
+            for parent in frozenset(self.__parent.values())
+        }
+        for ele, par in self.__parent.items():
+            members[par].append(ele)
+        for v in members.values():
+            yield tuple(v)
+
+
+    def __iter__(self) -> _tp.Iterable[tuple[_T, ...]]:
+        yield from self.getGroups()
 
 class SegmentTree:
     """
