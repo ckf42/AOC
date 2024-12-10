@@ -1,6 +1,8 @@
 import AOCInit
 import util
 
+from collections import defaultdict
+
 if __name__ != '__main__':
     exit()
 
@@ -11,42 +13,32 @@ n = len(hikemap)
 m = len(hikemap[0])
 
 # part 1
-reach: list[list[set[int]]] = [[set() for __ in range(m)] for _ in range(n)]
-buff: list[tuple[int, int, int]] = []
-counter = 0
+buff = defaultdict(set)
 for i in range(n):
     for j in range(m):
         if hikemap[i][j] == '9':
-            buff.append((i, j, counter))
-            counter += 1
-while len(buff) != 0:
-    i, j, idx = buff.pop()
-    c = ord(hikemap[i][j])
-    for ii, jj in util.nearby2DGridPts((i, j), (n, m)):
-        if ord(hikemap[ii][jj]) == c - 1 \
-                and idx not in reach[ii][jj]:
-            reach[ii][jj].add(idx)
-            buff.append((ii, jj, idx))
-res = 0
-for i in range(n):
-    for j in range(m):
-        if hikemap[i][j] != '0':
-            continue
-        res += len(reach[i][j])
-print(res)
+            buff[(i, j)].add(i * m + j)
+for _ in range(9):
+    newBuff: defaultdict[tuple[int, int], set[int]] = defaultdict(set)
+    for pt, indices in buff.items():
+        for ii, jj in util.nearby2DGridPts(pt, (n, m)):
+            if ord(hikemap[ii][jj]) == ord(hikemap[pt[0]][pt[1]]) - 1:
+                newBuff[(ii, jj)] |= indices
+    buff = newBuff
+print(sum(len(v) for v in buff.values()))
 
 # part 2
-buffPart2 = [(i, j) for i in range(n) for j in range(m) if hikemap[i][j] == '9']
-res = 0
-while len(buffPart2) != 0:
-    i, j = buffPart2.pop()
-    if hikemap[i][j] == '0':
-        res += 1
-        continue
-    c = ord(hikemap[i][j])
-    for ii, jj in util.nearby2DGridPts((i, j), (n, m)):
-        if ord(hikemap[ii][jj]) == c - 1:
-            buffPart2.append((ii, jj))
-print(res)
-
+buffPart2 = defaultdict(int)
+for i in range(n):
+    for j in range(m):
+        if hikemap[i][j] == '9':
+            buffPart2[(i, j)] = 1
+for _ in range(9):
+    newBuffPart2: defaultdict[tuple[int, int], int] = defaultdict(int)
+    for pt, val in buffPart2.items():
+        for ii, jj in util.nearby2DGridPts(pt, (n, m)):
+            if ord(hikemap[ii][jj]) == ord(hikemap[pt[0]][pt[1]]) - 1:
+                newBuffPart2[(ii, jj)] += val
+    buffPart2 = newBuffPart2
+print(sum(buffPart2.values()))
 
