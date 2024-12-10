@@ -1,8 +1,6 @@
 import AOCInit
 import util
 
-import heapq as hq
-
 if __name__ != '__main__':
     exit()
 
@@ -39,30 +37,34 @@ blocks = list(int(c) for c in inp)
 checksum = 0
 offsets = [0] * n
 currOffset = 0
-locs = [list() for _ in range(10)]
+locs = [n] * 10
 for i in range(n):
     if (i ^ 1) & 1:
         checksum += (i // 2) * util.rangeSum(range(currOffset, currOffset + blocks[i]))
-    elif blocks[i] != 0:
-        locs[blocks[i]].append(i)
+    elif blocks[i] != 0 and locs[blocks[i]] == n:
+        locs[blocks[i]] = i
     offsets[i] = currOffset
     currOffset += blocks[i]
-for i in range(1, 10):
-    hq.heapify(locs[i])
 for i in range(n - 1, 1, -2):
     rightBlankSize = -1
     for blankSize in range(blocks[i], 10):
-        if len(locs[blankSize]) != 0 and locs[blankSize][0] > i:
-            locs[blankSize].clear()
-        if len(locs[blankSize]) != 0:
-            if rightBlankSize == -1 or locs[blankSize][0] < locs[rightBlankSize][0]:
-                rightBlankSize = blankSize
+        if locs[blankSize] != n \
+                and (locs[blankSize] > i or blocks[locs[blankSize]] != blankSize):
+            for ptr in range(locs[blankSize] + 2, i, 2):
+                if blocks[ptr] == blankSize:
+                    locs[blankSize] = ptr
+                    break
+            else:
+                locs[blankSize] = n
+        if locs[blankSize] != n \
+                and (rightBlankSize == -1 or locs[blankSize] < locs[rightBlankSize]):
+            rightBlankSize = blankSize
     if rightBlankSize != -1:
-        blankIdx = hq.heappop(locs[rightBlankSize])
+        blankIdx = locs[rightBlankSize]
         checksum -= (i // 2) * blocks[i] * (offsets[i] - offsets[blankIdx])
         blocks[blankIdx] -= blocks[i]
         offsets[blankIdx] += blocks[i]
         if blocks[blankIdx] != 0:
-            hq.heappush(locs[blocks[blankIdx]], blankIdx)
+            locs[blocks[blankIdx]] = min(locs[blocks[blankIdx]], blankIdx)
 print(checksum)
 
