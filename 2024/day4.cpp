@@ -3,7 +3,7 @@
 #include <string>
 #include <vector>
 
-#include "../util.h"
+#include "../util.hpp"
 
 constexpr char pattPart1[] = "XMAS";
 constexpr int dirs[8][3][2] = {    

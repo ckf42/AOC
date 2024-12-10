@@ -11,6 +11,7 @@
 #include <vector>
 
 namespace util{
+
 inline void getInput(int year, int day, std::stringstream &outputStream){
     const std::string inputFilePath = "../" + std::to_string(year) + "/input" + std::to_string(day);
     if (!std::filesystem::exists(inputFilePath)){
@@ -51,6 +52,25 @@ inline std::vector<std::string> splitline(std::stringstream &inputStream){
     return res;
 }
 
+inline std::vector<std::string> splitline(const std::string &s){
+    std::vector<std::string> res;
+    auto n = s.size();
+    decltype(n) ptr = 0;
+    while (ptr != n){
+        ptr = s.find_first_not_of('\n', ptr);
+        if (ptr == std::string::npos){
+            break;
+        }
+        auto idx = s.find_first_of('\n', ptr);
+        if (idx == std::string::npos){
+            idx = n;
+        }
+        res.push_back(s.substr(ptr, idx - ptr));
+        ptr = idx;
+    }
+    return res;
+}
+
 inline std::vector<int> getInts(std::stringstream &inputStream){
     std::vector<int> res;
     int buff;
@@ -84,6 +104,40 @@ inline bool in2DRange(const std::pair<int, int> &x, int a, int b){
     return in2DRange(x.first, x.second, a, b);
 }
 
+// starting from downward, then rotate anticlockwise
+constexpr int FOUR_DIRECTIONS[4][2] = {
+    {1, 0}, {0, 1}, {-1, 0}, {0, -1}
+};
+constexpr int EIGHT_DIRECTIONS[8][2] = {
+    {1, 0}, {1, 1}, {0, 1}, {-1, 1},
+    {-1, 0}, {-1, -1}, {0, -1}, {1, -1}
+};
+
+template <class T>
+std::vector<std::pair<T, T>> neighbourGridPoint(T x, T y, T n, T m, bool isFourDir = true){
+    std::vector<std::pair<T, T>> res;
+    T xx, yy;
+    // TODO: can these two branches be merged into one?
+    if (isFourDir){
+        for (const auto &offset : FOUR_DIRECTIONS){
+            xx = x + static_cast<T>(offset[0]);
+            yy = y + static_cast<T>(offset[1]);
+            if (util::in2DRange(xx, yy, n, m)){
+                res.push_back({xx, yy});
+            }
+        }
+    } else {
+        for (const auto &offset : EIGHT_DIRECTIONS){
+            xx = x + static_cast<T>(offset[0]);
+            yy = y + static_cast<T>(offset[1]);
+            if (util::in2DRange(xx, yy, n, m)){
+                res.push_back({xx, yy});
+            }
+        }
+    }
+    return res;
+}
+
 // C++20 comp
 template <class T, class Container>
 inline bool contains(const T &x, const Container &container){
@@ -98,15 +152,17 @@ inline void extendVec(std::vector<T> &target, const std::vector<U> &src){
 
 template <class T>
 inline void output(const T &x){
-    std::cout << x << std::endl;
+    using std::to_string;
+    std::cout << to_string(x) << std::endl;
 }
 
 template <class T>
 inline void printVec(const std::vector<T> &vec, const std::string &sep = ", "){
-    int n = vec.size();
-    std::cout << std::to_string(vec[0]);
-    for (int i = 1; i < n; ++i){
-        std::cout << sep << std::to_string(vec[i]);
+    using std::to_string;
+    auto n = vec.size();
+    std::cout << to_string(vec[0]);
+    for (decltype(n) i = 1; i < n; ++i){
+        std::cout << sep << to_string(vec[i]);
     }
     std::cout << std::endl;
 }

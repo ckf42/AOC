@@ -36,23 +36,17 @@ for i in range(n):
 print(res)
 
 # part 2
-reachCount: list[list[int]] = [[0] * m for _ in range(n)]
 buffPart2 = [(i, j) for i in range(n) for j in range(m) if hikemap[i][j] == '9']
-for i, j in buffPart2:
-    reachCount[i][j] = 1
+res = 0
 while len(buffPart2) != 0:
     i, j = buffPart2.pop()
+    if hikemap[i][j] == '0':
+        res += 1
+        continue
     c = ord(hikemap[i][j])
     for ii, jj in util.nearby2DGridPts((i, j), (n, m)):
         if ord(hikemap[ii][jj]) == c - 1:
-            reachCount[ii][jj] += 1
             buffPart2.append((ii, jj))
-res = 0
-for i in range(n):
-    for j in range(m):
-        if hikemap[i][j] != '0':
-            continue
-        res += reachCount[i][j]
 print(res)
 
 

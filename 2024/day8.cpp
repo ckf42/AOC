@@ -3,7 +3,7 @@
 #include <unordered_set>
 #include <vector>
 
-#include "..\util.h"
+#include "../util.hpp"
 
 int main(int, char**){
     std::stringstream inpStream;

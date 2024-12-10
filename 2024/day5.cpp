@@ -5,7 +5,7 @@
 #include <unordered_map>
 #include <unordered_set>
 
-#include "../util.h"
+#include "../util.hpp"
 
 bool isCorrOrder(
         const std::vector<int> &sect,

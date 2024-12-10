@@ -3,7 +3,8 @@
 
 #include <re2/re2.h>
 #include <re2/stringpiece.h>
-#include "../util.h"
+
+#include "../util.hpp"
 
 using ulli = unsigned long long int;
 
