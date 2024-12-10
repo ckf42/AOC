@@ -1,4 +1,5 @@
 #include <string>
+#include <unordered_map>
 #include <unordered_set>
 #include <vector>
 
@@ -9,70 +10,57 @@ int main(int, char**){
     int n = hikemap.size(), m = hikemap[0].size();
 
     // part 1
-    std::vector<std::unordered_set<int>> reach(n * m);
-    int counter = 0;
-    std::vector<int> st;
+    std::unordered_map<int, std::unordered_set<int>> buff;
     for (int i = 0; i < n; ++i){
         for (int j = 0; j < m; ++j){
             if (hikemap[i][j] == '9'){
-                st.push_back((counter++ * n + i) * m + j);
+                buff[i * m + j].insert(i * m + j);
             }
         }
     }
-    while (!st.empty()){
-        int item = st.back();
-        st.pop_back();
-        int j = item % m;
-        item /= m;
-        int idx = item / n, i = item % n;
-        for (const auto &pt : util::neighbourGridPoint(i, j, n, m)){
-            auto [ii, jj] = pt;
-            if (util::in2DRange(ii, jj, n, m) 
-                    && hikemap[ii][jj] == hikemap[i][j] - 1
-                    && !util::contains(idx, reach[ii * m + jj])){
-                reach[ii * m + jj].insert(idx);
-                st.push_back((idx * n + ii) * m + jj);
+    for (int k = 0; k < 9; ++k){
+        std::unordered_map<int, std::unordered_set<int>> newBuff;
+        for (auto &pr : buff){
+            int i = pr.first / m, j = pr.first % m;
+            for (const auto &nb : util::neighbourGridPoint(i, j, n, m)){
+                if (hikemap[nb.first][nb.second] == hikemap[i][j] - 1){
+                    newBuff[nb.first * m + nb.second].insert(pr.second.cbegin(), pr.second.cend());
+                }
             }
         }
+        std::swap(buff, newBuff);
     }
     int res = 0;
-    for (int i = 0; i < n; ++i){
-        for (int j = 0; j < m; ++j){
-            if (hikemap[i][j] == '0'){
-                res += reach[i * m + j].size();
-            }
-        }
+    for (auto &pr : buff){
+        res += pr.second.size();
     }
     util::output(res);
 
     // part 2
-    st.clear();
+    std::unordered_map<int, int> buffPart2;
     for (int i = 0; i < n; ++i){
         for (int j = 0; j < m; ++j){
             if (hikemap[i][j] == '9'){
-                st.push_back(i * m + j);
+                buffPart2[i * m + j] = 1;
             }
         }
+    }
+    for (int k = 0; k < 9; ++k){
+        std::unordered_map<int, int> newBuffPart2;
+        for (const auto &pr : buffPart2){
+            int i = pr.first / m, j = pr.first % m;
+            for (const auto &nb : util::neighbourGridPoint(i, j, n, m)){
+                if (hikemap[nb.first][nb.second] == hikemap[i][j] - 1){
+                    newBuffPart2[nb.first * m + nb.second] += pr.second;
+                }
+            }
+        }
+        std::swap(buffPart2, newBuffPart2);
     }
     res = 0;
-    while (!st.empty()){
-        int coor = st.back();
-        st.pop_back();
-        int i = coor / m, j = coor % m;
-        if (hikemap[i][j] == '0'){
-            ++res;
-            continue;
-        }
-        for (const auto &pt : util::neighbourGridPoint(i, j, n, m)){
-            auto [ii, jj] = pt;
-            if (util::in2DRange(ii, jj, n, m) && hikemap[ii][jj] == hikemap[i][j] - 1){
-                st.push_back(ii * m + jj);
-            }
-        }
+    for (const auto &pr : buffPart2){
+        res += pr.second;
     }
     util::output(res);
-
-
-
     return 0;
 }
