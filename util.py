@@ -157,13 +157,14 @@ def firstIdxSuchThat(arr: _tp.Sequence[_T],
         defaults to None
 
     step: int, optional
-        the step size to traversal the array
+        the step size to traverse the array
         defaults to 1
 
     Returns
     -----
-    int that denotes the index of the first element which `cond` returns true
-    or None if no such element exists in `arr`
+    int that denotes the index of the first element (in `arr`)
+        which `cond` returns true
+        or None if no such element exists in `arr`
 
     Note
     -----
@@ -178,7 +179,7 @@ def firstIdxSuchThat(arr: _tp.Sequence[_T],
         e = min(e, len(arr))
     assert e is not None
     return next(
-            (idx + s
+            (idx * step + s
              for (idx, ele) in enumerate(arr[s:e:step])
              if cond(ele)),
             None)

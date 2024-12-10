@@ -41,37 +41,28 @@ int main(int, char**){
     util::output(checksum);
 
     // part 2
+    std::vector<ulli> offsets(n, 0);
+    currOffset = 0;
+    checksum = 0;
     for (int i = 0; i < n; ++i){
         blocks[i] = inp[i] - '0';
+        if ((i ^ 1) & 1){
+            checksum += (i / 2) * (currOffset * 2 + blocks[i] - 1) * blocks[i] / 2;
+        }
+        offsets[i] = currOffset;
+        currOffset += blocks[i];
     }
-    std::vector<int> data((n + 1) / 2, 0), blank(n / 2);
-    std::vector<int> dataOffset((n + 1) / 2, 0), blankOffset(n / 2);
-    checksum = 0;
-    currOffset = 0;
-    ulli ptr = 0; 
-    for (; ptr < blankOffset.size(); ++ptr){
-        data[ptr] = blocks[ptr * 2];
-        blank[ptr] = blocks[ptr * 2 + 1];
-        checksum += ptr * (currOffset * 2 + data[ptr] - 1) * data[ptr] / 2;
-        dataOffset[ptr] = currOffset;
-        currOffset += data[ptr];
-        blankOffset[ptr] = currOffset;
-        currOffset += blank[ptr];
-    }
-    dataOffset.back() = blankOffset.back() + blank.back();
-    data.back() = blocks.back();
-    checksum += blank.size() * (currOffset * 2 + data.back() - 1) * data.back() / 2;
-    for (ptr = blank.size(); ptr > 0; --ptr){
-        ulli idx = 0;
-        for (; idx < ptr; ++idx){
-            if (blank[idx] >= data[ptr]){
+    for (int i = n - 1; i >= 2; i -= 2){
+        int idx = 1;
+        for (; idx < i; idx += 2){
+            if (blocks[idx] >= blocks[i]){
                 break;
             }
         }
-        if (idx != ptr){
-            checksum -= ptr * data[ptr] * (dataOffset[ptr] - blankOffset[idx]);
-            blank[idx] -= data[ptr];
-            blankOffset[idx] += data[ptr];
+        if (idx < i){
+            checksum -= (i / 2) * blocks[i] * (offsets[i] - offsets[idx]);
+            blocks[idx] -= blocks[i];
+            offsets[idx] += blocks[i];
         }
     }
     util::output(checksum);

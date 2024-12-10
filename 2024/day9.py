@@ -33,25 +33,20 @@ print(checksum)
 
 
 # part 2
-datas = list(int(inp[c]) for c in range(0, n, 2))
-blanks = list(int(inp[c]) for c in range(1, n, 2))
+blocks = list(int(c) for c in inp)
 checksum = 0
-dataOffsets = [0] * len(datas)
-blankOffsets = [0] * len(blanks)
+offsets = [0] * n
 currOffset = 0
-for ptr in range(len(blanks)):
-    checksum += ptr * util.rangeSum(range(currOffset, currOffset + datas[ptr]))
-    dataOffsets[ptr] = currOffset
-    currOffset += datas[ptr]
-    blankOffsets[ptr] = currOffset
-    currOffset += blanks[ptr]
-dataOffsets[-1] = blankOffsets[-1] + blanks[-1]
-checksum += len(blanks) * util.rangeSum(range(currOffset, currOffset + datas[-1]))
-for ptr in range(len(datas) - 1, 0, -1):
-    idx = util.firstIdxSuchThat(blanks, lambda x: x >= datas[ptr], e=ptr)
+for i in range(n):
+    if (i ^ 1) & 1:
+        checksum += (i // 2) * util.rangeSum(range(currOffset, currOffset + blocks[i]))
+    offsets[i] = currOffset
+    currOffset += blocks[i]
+for i in range(n - 1, 1, -2):
+    idx = util.firstIdxSuchThat(blocks, lambda x: x >= blocks[i], s=1, e=i, step=2)
     if idx is not None:
-        checksum -= ptr * datas[ptr] * (dataOffsets[ptr] - blankOffsets[idx])
-        blanks[idx] -= datas[ptr]
-        blankOffsets[idx] += datas[ptr]
+        checksum -= (i // 2) * blocks[i] * (offsets[i] - offsets[idx])
+        blocks[idx] -= blocks[i]
+        offsets[idx] += blocks[i]
 print(checksum)
 
