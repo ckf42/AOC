@@ -1954,12 +1954,6 @@ def nearby2DGridPts(
     pt: tuple[int, int]
         The center point
 
-    isL1: bool, optional
-        Determine if the points generated should be L^1 neighbours
-        if True, all (4) points generated would have unit L^1 dist with `pt`
-        if False, all (8) points generated would have unit L^infty dist with `pt`
-        defaults to True
-
     bd: None or tuple[int, int] or tuple[tuple[int, int], tuple[int, int]], optional
         The bounds of the grid, specified as two diagonal points
         If specified as `((minX, minY), (maxX, maxY))`,
@@ -1968,6 +1962,12 @@ def nearby2DGridPts(
         If spefified as `(maxX, maxY)`, same as `((0, 0), (maxX, maxY))`
         If None, same as `((-inf, -inf), (inf, inf))` (no bounds)
         defaults to None
+
+    isL1: bool, optional
+        Determine if the points generated should be L^1 neighbours
+        if True, all (4) points generated would have unit L^1 dist with `pt`
+        if False, all (8) points generated would have unit L^infty dist with `pt`
+        defaults to True
 
     Return
     -----
