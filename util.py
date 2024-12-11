@@ -3293,8 +3293,9 @@ def rangeSum(rg: range) -> int:
 
     Note
     -----
-    Python does not seem to give such optimization,
-        and naive `sum(rg)` seems to be O(n) (instead of O(1))
+    naive `sum(rg)` seems to be O(n) (instead of O(1))
+    CPython does not have such optimization
+    (due to lack of consensus? see https://github.com/python/cpython/issues/107868)
     """
     rgLen = (rg.stop - rg.start + rg.step - 1) // rg.step
     if rgLen <= 0:
@@ -3340,10 +3341,31 @@ class Timer:
             print("Total proc: " + self._format_(self.lastProcTime - self.initProcTime))
 
 
-def cache(user_function):
+class CachedFunction:
+    __slots__ = ('hitCount', 'missCount', 'cacheDict', 'wrapped_func')
+
+    def __init__(self, user_function):
+        self.wrapped_func = user_function
+        self.hitCount = dict()
+        self.missCount = 0
+        self.cacheDict = dict()
+
+    def __call__(self, *args):
+        if args not in self.cacheDict:
+            self.missCount += 1
+            self.hitCount[args] = 1
+            val = self.wrapped_func(*args)
+            self.cacheDict[args] = val
+            return val
+        else:
+            self.hitCount[args] += 1
+            return self.cacheDict[args]
+
+
+def cache(user_function: _tp.Callable) -> CachedFunction:
     """
-    Horrible implementation of functools.cache (maxsize = None)
-    Do not use it for anything serious, only for getting para stats
+    Horrible implementation of functools.cache (maxsize=None)
+    Do not use it for anything serious, only for inspecting para stats and debugging
 
     Parameters
     -----
@@ -3353,41 +3375,17 @@ def cache(user_function):
 
     Returns
     -----
-    a callable that passes all parameter to `user_function`
+    a CachedFunction object that can act as a Callable
+        which passes all parameters to `user_function`
 
     Note
     -----
+    wrapper of CachedFunction constructor, which can also be used as a decorator
+
     exposes
-        getMissCount(): returns an integer that indicates the number of cache misses
-        getHitDict(): returns a dict with input para as key and hit count as val
+        missCount: an integer that indicates the number of cache misses
+        hitDict: a dict with input para as key and hit count as val
+        cacheDict: the cache as a dict
     """
-    cache = dict()
-    missCount = 0
-    hitDict = dict()
-
-    def wrapped(*args):
-        nonlocal cache, missCount
-        if args not in cache:
-            missCount += 1
-            hitDict[args] = 1
-            val = user_function(*args)
-            cache[args] = val
-            return val
-        else:
-            hitDict[args] += 1
-            return cache[args]
-
-    def getHitDict():
-        nonlocal hitDict
-        return hitDict
-
-    def getMissCount():
-        nonlocal missCount
-        return missCount
-
-    wrapped.getHitDict = getHitDict
-    wrapped.getMissCount = getMissCount
-    return wrapped
-
-
+    return CachedFunction(user_function)
 
