@@ -3340,5 +3340,54 @@ class Timer:
             print("Total proc: " + self._format_(self.lastProcTime - self.initProcTime))
 
 
+def cache(user_function):
+    """
+    Horrible implementation of functools.cache (maxsize = None)
+    Do not use it for anything serious, only for getting para stats
+
+    Parameters
+    -----
+    user_function: Callable
+        the function to be cached
+        should only take positional parameters
+
+    Returns
+    -----
+    a callable that passes all parameter to `user_function`
+
+    Note
+    -----
+    exposes
+        getMissCount(): returns an integer that indicates the number of cache misses
+        getHitDict(): returns a dict with input para as key and hit count as val
+    """
+    cache = dict()
+    missCount = 0
+    hitDict = dict()
+
+    def wrapped(*args):
+        nonlocal cache, missCount
+        if args not in cache:
+            missCount += 1
+            hitDict[args] = 1
+            val = user_function(*args)
+            cache[args] = val
+            return val
+        else:
+            hitDict[args] += 1
+            return cache[args]
+
+    def getHitDict():
+        nonlocal hitDict
+        return hitDict
+
+    def getMissCount():
+        nonlocal missCount
+        return missCount
+
+    wrapped.getHitDict = getHitDict
+    wrapped.getMissCount = getMissCount
+    return wrapped
+
 
 
