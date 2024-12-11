@@ -18,8 +18,9 @@ int main(int, char**){
             }
         }
     }
+    std::unordered_map<int, std::unordered_set<int>> newBuff;
     for (int k = 0; k < 9; ++k){
-        std::unordered_map<int, std::unordered_set<int>> newBuff;
+        newBuff.clear();
         for (auto &pr : buff){
             int i = pr.first / m, j = pr.first % m;
             for (const auto &nb : util::neighbourGridPoint(i, j, n, m)){
@@ -45,8 +46,9 @@ int main(int, char**){
             }
         }
     }
+    std::unordered_map<int, int> newBuffPart2;
     for (int k = 0; k < 9; ++k){
-        std::unordered_map<int, int> newBuffPart2;
+        newBuffPart2.clear();
         for (const auto &pr : buffPart2){
             int i = pr.first / m, j = pr.first % m;
             for (const auto &nb : util::neighbourGridPoint(i, j, n, m)){

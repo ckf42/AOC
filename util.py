@@ -4,6 +4,7 @@ import heapq as _hq
 import itertools as _it
 import math as _math
 import re as _re
+import time as _time
 import typing as _tp
 import urllib.error as _ule
 import urllib.request as _ulq
@@ -3292,10 +3293,52 @@ def rangeSum(rg: range) -> int:
 
     Note
     -----
-    Python does not seem to give such optimization, and naive `sum(rg)` seems to be O(n) (instead of O(1))
+    Python does not seem to give such optimization,
+        and naive `sum(rg)` seems to be O(n) (instead of O(1))
     """
     rgLen = (rg.stop - rg.start + rg.step - 1) // rg.step
     if rgLen <= 0:
         return 0
     return (rg.start * 2 + rg.step * (rgLen - 1)) * rgLen // 2
+
+
+class Timer:
+    @classmethod
+    def _format_(cls, count_ns: int) -> str:
+        if count_ns >= 10 ** 9:
+            return f"{count_ns / (10 ** 9):.3f}s"
+        if count_ns >= 10 ** 6:
+            return f"{count_ns / (10 ** 6):.3f}ms"
+        if count_ns >= 10 ** 3:
+            return f"{count_ns / (10 ** 3):.3f}us"
+        return f"{count_ns}ns"
+
+    def __init__(self, enabled: bool = True) -> None:
+        self.start()
+        self.enabled: bool = enabled
+
+    def start(self) -> None:
+        self.enabled = True
+        self.initPerfTime: int = _time.perf_counter_ns()
+        self.initProcTime: int = _time.process_time_ns()
+        self.lastPerfTime: int = self.initPerfTime
+        self.lastProcTime: int = self.initProcTime
+
+    def check(self) -> None:
+        newPerf = _time.perf_counter_ns()
+        newProc = _time.process_time_ns()
+        if self.enabled:
+            print("> Wall: " + self._format_(newPerf - self.lastPerfTime))
+            print("> Proc: " + self._format_(newProc - self.lastProcTime))
+        self.lastPerfTime = newPerf
+        self.lastProcTime = newProc
+
+    def stop(self) -> None:
+        self.check()
+        if self.enabled:
+            print("Total wall: " + self._format_(self.lastPerfTime - self.initPerfTime))
+            print("Total proc: " + self._format_(self.lastProcTime - self.initProcTime))
+
+
+
 

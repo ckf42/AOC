@@ -1,5 +1,5 @@
-#ifndef AOC_UTIL_H
-#define AOC_UTIL_H
+#ifndef AOC_UTIL_HPP
+#define AOC_UTIL_HPP
 
 #include <filesystem>
 #include <fstream>
@@ -55,13 +55,13 @@ inline std::vector<std::string> splitline(std::stringstream &inputStream){
 inline std::vector<std::string> splitline(const std::string &s){
     std::vector<std::string> res;
     auto n = s.size();
-    decltype(n) ptr = 0;
+    decltype(n) ptr = 0, idx;
     while (ptr != n){
         ptr = s.find_first_not_of('\n', ptr);
         if (ptr == std::string::npos){
             break;
         }
-        auto idx = s.find_first_of('\n', ptr);
+        idx = s.find_first_of('\n', ptr);
         if (idx == std::string::npos){
             idx = n;
         }
@@ -71,24 +71,27 @@ inline std::vector<std::string> splitline(const std::string &s){
     return res;
 }
 
-inline std::vector<int> getInts(std::stringstream &inputStream){
-    std::vector<int> res;
-    int buff;
+template <class T = int>
+inline std::vector<T> getInts(std::stringstream &inputStream){
+    std::vector<T> res;
+    T buff;
     while (inputStream >> buff){
         res.push_back(buff);
     }
     return res;
 }
 
-inline std::vector<int> getInts(const std::string &s){
+template <class T = int>
+inline std::vector<T> getInts(const std::string &s){
     std::stringstream ss(s);
-    return getInts(ss);
+    return getInts<T>(ss);
 }
 
-inline std::vector<std::vector<int>> getInts(const std::vector<std::string> &lines){
-    std::vector<std::vector<int>> res;
-    for (const auto &line : lines){
-        res.push_back(getInts(line));
+template <class T = int>
+inline std::vector<std::vector<T>> getInts(const std::vector<std::string> &lines){
+    std::vector<std::vector<T>> res;
+    for (const std::string &line : lines){
+        res.push_back(getInts<T>(line));
     }
     return res;
 }

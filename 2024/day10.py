@@ -12,6 +12,8 @@ hikemap = inp.splitlines()
 n = len(hikemap)
 m = len(hikemap[0])
 
+timer = util.Timer()
+
 # part 1
 buff = defaultdict(set)
 for i in range(n):
@@ -27,6 +29,8 @@ for _ in range(9):
     buff = newBuff
 print(sum(len(v) for v in buff.values()))
 
+timer.check()
+
 # part 2
 buffPart2 = defaultdict(int)
 for i in range(n):
@@ -41,4 +45,6 @@ for _ in range(9):
                 newBuffPart2[(ii, jj)] += val
     buffPart2 = newBuffPart2
 print(sum(buffPart2.values()))
+
+timer.stop()
 
