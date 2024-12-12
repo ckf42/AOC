@@ -3454,20 +3454,113 @@ class BlockGeometry:
         """
         return len(self.edges)
 
+    @staticmethod
+    def __getCorner__(
+            e1: Edge, e2: Edge,
+            takeInternal: bool = False
+            ) -> tuple[int, int] | None:
+        """
+        Return the corner block of two edges
+        If `takeInternal` is False,
+            the corner block is the block with two common sides with the edges
+            which is outside the component if the corner is an inward one
+        If `takeInternal` is True,
+            the corner block is the block on the (extended) intersection
+        If the two edges are not adjacent, returns None
+        """
+        p1 = e1.endpoints[1]
+        p2 = e2.endpoints[0]
+        if p1 == p2:
+            return p1
+        d1 = e1.outward_dir
+        d2 = e2.outward_dir
+        if (p := (p1[0] + d1[0], p1[1] + d1[1])) == (p2[0] + d2[0], p2[1] + d2[1]):
+            return (p1[0] - d2[0], p1[1] - d2[1]) if takeInternal else p
+        return None
+
     @_ft.cached_property
     def corners(self) -> tuple[tuple[int, int], ...]:
         """
-        Returns a tuple of endpoints of the edges
+        Returns a tuple of corners of the edges
+
+        A corner of two adjacent edges is the block that has two common sides with the edges
+        If it belongs to the component, the corner is an outward corner
+        If it does not belong to the component, the corner is an inward corner
+        (in particular, the difference between adjacent corners may not be an edge)
 
         The order is guaranteed to be counter-clockwise on each continuous loop
             equivalently, the inside of the component is always
                 on the left of the edge formed by adjacent corners
-            that is, if `(x, y)` is the (unit) direction along edge `(corner[k], corner[k + 1])`
-                than on any block `(a, b)` on this edge,
-                `(a + y, b - x)` is guaranteed to be outside the component
+            that is, if `(x, y)` is the (unit) direction
+                along the edge defined by two adjacent corners
+                then `(y, -x)` is the outward direction of the edge
         No ordering among loops is specified
         """
-        return tuple(e.endpoints[0] for e in self.edges)
+        blockList: list[tuple[int, int]] = []
+        edgeCount = self.countEdge
+        loopStart = 0
+        ptr = 0
+        while ptr + 1 < edgeCount:
+            blk = self.__getCorner__(self.edges[ptr], self.edges[ptr + 1])
+            if blk is not None:
+                blockList.append(blk)
+                ptr += 1
+            else:
+                blk = self.__getCorner__(self.edges[ptr], self.edges[loopStart])
+                assert blk is not None
+                blockList.append(blk)
+                loopStart = ptr + 1
+                ptr = loopStart
+        if loopStart < edgeCount:
+            blk = self.__getCorner__(self.edges[-1], self.edges[loopStart])
+            assert blk is not None
+            blockList.append(blk)
+        return tuple(blockList)
+
+
+    @_ft.cached_property
+    def boundaryEnds(self) -> tuple[tuple[int, int], ...]:
+        """
+        Returns a tuple of endpoints of boundaries
+
+        Unlike corners(), these endpoints are guaranteed to be in the component
+        An outward corner is also a boundary endpoint
+        For an inward corner, the corresponding boundary endpoint
+            is the block that is diagonal with it
+
+        If the component has multiple edge loops (e.g. has holes),
+            the same block may appear multiple times (as part of different loops)
+
+        The order is guaranteed to be counter-clockwise on each continuous loop
+            equivalently, the inside of the component is always
+                on the left of the edge formed by adjacent corners
+            that is, if `(x, y)` is the (unit) direction
+                along the edge defined by two adjacent corners
+                then `(y, -x)` is the outward direction of the edge
+        No ordering among loops is specified
+
+        Effectly the same as corner() except inward corners are handled differently
+        """
+        blockList: list[tuple[int, int]] = []
+        edgeCount = self.countEdge
+        loopStart = 0
+        ptr = 0
+        while ptr + 1 < edgeCount:
+            blk = self.__getCorner__(self.edges[ptr], self.edges[ptr + 1], True)
+            if blk is not None:
+                blockList.append(blk)
+                ptr += 1
+            else:
+                blk = self.__getCorner__(self.edges[ptr], self.edges[loopStart], True)
+                assert blk is not None
+                blockList.append(blk)
+                loopStart = ptr + 1
+                ptr = loopStart
+        if loopStart < edgeCount:
+            blk = self.__getCorner__(self.edges[-1], self.edges[loopStart], True)
+            assert blk is not None
+            blockList.append(blk)
+        return tuple(blockList)
 
 def gridCompGeometry(
         grid: _tp.Sequence[_tp.Sequence[_T]]
