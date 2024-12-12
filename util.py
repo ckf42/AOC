@@ -3326,6 +3326,8 @@ class Timer:
         self.lastProcTime: int = self.initProcTime
 
     def check(self) -> None:
+        if not self.enabled:
+            return
         newPerf = _time.perf_counter_ns()
         newProc = _time.process_time_ns()
         if self.enabled:
@@ -3335,10 +3337,13 @@ class Timer:
         self.lastProcTime = newProc
 
     def stop(self) -> None:
+        if not self.enabled:
+            return
         self.check()
         if self.enabled:
             print("Total wall: " + self._format_(self.lastPerfTime - self.initPerfTime))
             print("Total proc: " + self._format_(self.lastProcTime - self.initProcTime))
+        self.enabled = False
 
 
 class CachedFunction:
