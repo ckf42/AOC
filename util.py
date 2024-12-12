@@ -1,5 +1,6 @@
 import dataclasses as _dc
 import functools as _ft
+import collections as _coll
 import heapq as _hq
 import itertools as _it
 import math as _math
@@ -3393,4 +3394,136 @@ def cache(user_function: _tp.Callable) -> CachedFunction:
         cacheDict: the cache as a dict
     """
     return CachedFunction(user_function)
+
+@_dc.dataclass(frozen=True)
+class BlockGeometry:
+    @_dc.dataclass(unsafe_hash=True, frozen=True)
+    class Edge:
+        endpoints: tuple[tuple[int, int], tuple[int, int]]
+        outward_dir: tuple[int, int]
+
+        @property
+        def isHorizontal(self) -> bool:
+            return self.outward_dir[0] == 0
+
+        @property
+        def length(self) -> int:
+            return sum(abs(a - b) for a, b in zip(*self.endpoints)) + 1
+
+    comp: frozenset[tuple[int, int]]
+    edges: frozenset[Edge]
+
+    @property
+    def area(self) -> int:
+        return len(self.comp)
+
+    @_ft.cached_property
+    def perimeter(self) -> int:
+        return sum(e.length for e in self.edges)
+
+    @property
+    def countEdge(self) -> int:
+        return len(self.edges)
+
+    @_ft.cached_property
+    def corners(self) -> tuple[tuple[int, int], ...]:
+        return tuple(frozenset(p for e in self.edges for p in e.endpoints))
+
+def gridCompGeometry(
+        grid: _tp.Sequence[_tp.Sequence[_T]]
+        ) -> tuple[tuple[_T, BlockGeometry], ...]:
+    """
+    Compute some geometry on components on a 2D grid
+
+    Parameters
+    -----
+    grid: Sequence[Sequence[T]]
+        the 2D grid
+        assumed each element in grid has the same length
+        the (connected) component in the grid is defined
+            by the coordinates with the same value on the grid
+
+    Returns
+    -----
+    a tuple of tuples each containing
+        a symbol of type T that is used to identify the component
+        a BlockGeometry object that describes the component
+
+    Note
+    -----
+    Each BlockGeometry object represents only a single connected component
+
+    TODO
+    -----
+    Algo looks bad
+    """
+    n = len(grid)
+    m = len(grid[0])
+    compList: list[tuple[_T, BlockGeometry]] = []
+    visited: set[tuple[int, int]] = set()
+    for i in range(n):
+        for j in range(m):
+            if (i, j) in visited:
+                continue
+            buff = [(i, j)]
+            tag = grid[i][j]
+            comp = set()
+            sideEdges = set()
+            while len(buff) != 0:
+                x, y = buff.pop()
+                if (x, y) in visited:
+                    continue
+                visited.add((x, y))
+                comp.add((x, y))
+                for dx, dy in integerLattice(2, 1, 1):
+                    xx = x + dx
+                    yy = y + dy
+                    if in2DRange((xx, yy), n, m) and grid[xx][yy] == tag:
+                        buff.append((xx, yy))
+                    else:
+                        sideEdges.add((
+                            x, y,
+                            dx != 0,
+                            dx + dy < 0
+                        ))
+            edgeLists: list[BlockGeometry.Edge] = []
+            while len(sideEdges) != 0:
+                x, y, isHorizEdge, isOutDirDec = sideEdges.pop()
+                moveDir = (0, 1) if isHorizEdge else (1, 0)
+                deltaInc = 1
+                while True:
+                    pt = (
+                            x + deltaInc * moveDir[0], y + deltaInc * moveDir[1],
+                            isHorizEdge, isOutDirDec
+                    )
+                    if pt not in sideEdges:
+                        break
+                    sideEdges.remove(pt)
+                    deltaInc += 1
+                deltaInc -= 1
+                deltaDec = 1
+                while True:
+                    pt = (
+                            x - deltaDec * moveDir[0], y - deltaDec * moveDir[1],
+                            isHorizEdge, isOutDirDec
+                    )
+                    if pt not in sideEdges:
+                        break
+                    sideEdges.remove(pt)
+                    deltaDec += 1
+                deltaDec -= 1
+                edgeLists.append(BlockGeometry.Edge(
+                    (
+                        (x + deltaInc * moveDir[0],
+                         y + deltaInc * moveDir[1]),
+                        (x - deltaDec * moveDir[0],
+                         y - deltaDec * moveDir[1])
+                    ),
+                    ((0, 1), (1, 0), (0, -1), (-1, 0))[isHorizEdge + isOutDirDec * 2]
+                ))
+            compList.append((tag, BlockGeometry(frozenset(comp), frozenset(edgeLists))))
+    return tuple(compList)
+
+
+
 
