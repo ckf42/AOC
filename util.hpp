@@ -96,15 +96,21 @@ inline std::vector<std::vector<T>> getInts(const std::vector<std::string> &lines
     return res;
 }
 
-inline bool inRange(int x, int a, int b){
-    return x >= a && x < b;
+inline bool inRange(int x, int s, int e){
+    return x >= s && x < e;
 }
 
-inline bool in2DRange(int x, int y, int a, int b){
-    return inRange(x, 0, a) && inRange(y, 0, b);
+inline bool in2DRange(int x, int y, int ex, int ey){
+    return inRange(x, 0, ex) && inRange(y, 0, ey);
 }
-inline bool in2DRange(const std::pair<int, int> &x, int a, int b){
-    return in2DRange(x.first, x.second, a, b);
+inline bool in2DRange(const std::pair<int, int> &x, int ex, int ey){
+    return in2DRange(x.first, x.second, ex, ey);
+}
+inline bool in2DRange(int x, int y, int sx, int ex, int sy, int ey){
+    return inRange(x, sx, ex) && inRange(y, sy, ey);
+}
+inline bool in2DRange(const std::pair<int, int> &x, int sx, int ex, int sy, int ey){
+    return in2DRange(x.first, x.second, sx, ex, sy, ey);
 }
 
 // starting from downward, then rotate anticlockwise
@@ -115,9 +121,16 @@ constexpr int EIGHT_DIRECTIONS[8][2] = {
     {1, 0}, {1, 1}, {0, 1}, {-1, 1},
     {-1, 0}, {-1, -1}, {0, -1}, {1, -1}
 };
+constexpr int DIAG_DIRECTIONS[4][2] = {
+    {1, 1}, {-1, 1}, {-1, -1}, {1, -1}
+};
 
 template <class T>
-std::vector<std::pair<T, T>> neighbourGridPoint(T x, T y, T n, T m, bool isFourDir = true){
+inline std::vector<std::pair<T, T>> neighbourGridPoint(
+        T x, T y,
+        T sx, T ex, T sy, T ey,
+        bool isFourDir = true
+        ){
     std::vector<std::pair<T, T>> res;
     T xx, yy;
     // TODO: can these two branches be merged into one?
@@ -125,7 +138,7 @@ std::vector<std::pair<T, T>> neighbourGridPoint(T x, T y, T n, T m, bool isFourD
         for (const auto &offset : FOUR_DIRECTIONS){
             xx = x + static_cast<T>(offset[0]);
             yy = y + static_cast<T>(offset[1]);
-            if (util::in2DRange(xx, yy, n, m)){
+            if (util::in2DRange(xx, yy, sx, ex, sy, ey)){
                 res.push_back({xx, yy});
             }
         }
@@ -133,12 +146,20 @@ std::vector<std::pair<T, T>> neighbourGridPoint(T x, T y, T n, T m, bool isFourD
         for (const auto &offset : EIGHT_DIRECTIONS){
             xx = x + static_cast<T>(offset[0]);
             yy = y + static_cast<T>(offset[1]);
-            if (util::in2DRange(xx, yy, n, m)){
+            if (util::in2DRange(xx, yy, sx, ex, sy, ey)){
                 res.push_back({xx, yy});
             }
         }
     }
     return res;
+}
+template <class T>
+inline std::vector<std::pair<T, T>> neighbourGridPoint(
+        T x, T y,
+        T ex, T ey,
+        bool isFourDir = true
+        ){
+    return neighbourGridPoint<T>(x, y, 0, ex, 0, ey, isFourDir);
 }
 
 // C++20 comp
@@ -157,6 +178,14 @@ template <class T>
 inline void output(const T &x){
     using std::to_string;
     std::cout << to_string(x) << std::endl;
+}
+template <>
+inline void output<char>(const char &x){
+    std::cout << x << std::endl;
+}
+template <>
+inline void output<std::string>(const std::string &x){
+    std::cout << x << std::endl;
 }
 
 template <class T>
