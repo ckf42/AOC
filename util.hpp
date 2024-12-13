@@ -52,16 +52,59 @@ inline std::vector<std::string> splitline(std::stringstream &inputStream){
     return res;
 }
 
-inline std::vector<std::string> splitline(const std::string &s){
+inline std::vector<std::string> splitline(
+        const std::string &s,
+        const std::string &sepChars = "\n\r"
+        ){
     std::vector<std::string> res;
     auto n = s.size();
     decltype(n) ptr = 0, idx;
     while (ptr != n){
-        ptr = s.find_first_not_of('\n', ptr);
+        ptr = s.find_first_not_of(sepChars, ptr);
         if (ptr == std::string::npos){
             break;
         }
-        idx = s.find_first_of('\n', ptr);
+        idx = s.find_first_of(sepChars, ptr);
+        if (idx == std::string::npos){
+            idx = n;
+        }
+        res.push_back(s.substr(ptr, idx - ptr));
+        ptr = idx;
+    }
+    return res;
+}
+
+inline std::vector<std::string> split(
+        const std::string &s,
+        const std::string &sep = "\n"
+        ){
+    std::vector<std::string> res;
+    auto n = s.size(), l = sep.size();
+    decltype(n) ptr = 0, idx;
+    while (ptr < n){
+        idx = s.find(sep, ptr);
+        if (idx == std::string::npos){
+            idx = n;
+        }
+        res.push_back(s.substr(ptr, idx - ptr));
+        ptr = idx + (idx != n ? l : 0);
+    }
+    return res;
+}
+
+inline std::vector<std::string> string_extract_of(
+        const std::string &s,
+        const std::string &takeChars
+        ){
+    std::vector<std::string> res;
+    auto n = s.size();
+    decltype(n) ptr = 0, idx;
+    while (ptr != n){
+        ptr = s.find_first_of(takeChars, ptr);
+        if (ptr == std::string::npos){
+            break;
+        }
+        idx = s.find_first_not_of(takeChars, ptr);
         if (idx == std::string::npos){
             idx = n;
         }
@@ -92,6 +135,14 @@ inline std::vector<std::vector<T>> getInts(const std::vector<std::string> &lines
     std::vector<std::vector<T>> res;
     for (const std::string &line : lines){
         res.push_back(getInts<T>(line));
+    }
+    return res;
+}
+
+inline std::vector<int> extract_int(const std::string &s){
+    std::vector<int> res;
+    for (const std::string &digitSeq : string_extract_of(s, "0123456789")){
+        res.push_back(std::stoi(digitSeq));
     }
     return res;
 }
