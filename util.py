@@ -3651,5 +3651,38 @@ def gridCompGeometry(
     return tuple(compList)
 
 
+def compressionRatio(data: str | bytes, level: int = -1, wbits: int = 15) -> float:
+    """
+    Compute the compress ratio using zlib.
+    Can be used to detect (visual) regularity
+
+    Parameters
+    -----
+    data: str or bytes
+        the input data
+        if str, will be converted to bytes with utf-8 encoding
+
+    level, wbits: int, optional
+        parameters to pass to zlib.compress
+        see corresponding doc for detail
+        level accepts only int in range(-1, 9 + 1)
+            defaults to -1
+        wbits accepts only int in range(-15, -9 + 1), range(9, 15 + 1) or range(25, 31 + 1)
+            defaults to 15
+
+    Returns
+    -----
+    a float number that represents the compresss ratio with given config
+
+    Note
+    -----
+    Only meaningful when compared to a ground noise compression ratio
+    """
+    assert -1 <= level <= 9 , f"{level=} is not supported"
+    assert 9 <= abs(wbits) <= 15 or 25 <= wbits <= 31, f"{wbits=} is not supported"
+    from zlib import compress as _compress
+    if isinstance(data, str):
+        data = data.encode(encoding='utf-8')
+    return len(data) / len(_compress(data, level, wbits))
 
 
