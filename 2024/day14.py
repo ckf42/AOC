@@ -1,6 +1,5 @@
 import AOCInit
 import util
-import time
 
 if __name__ != '__main__':
     exit()
@@ -29,44 +28,35 @@ print(util.prod(quadCount))
 
 
 # part 2
-def countConnected(gridmap):
-    visited = set()
-    counter = 0
-    for i in range(w):
-        for j in range(h):
-            if not gridmap[i][j] or (i, j) in visited:
-                continue
-            counter += 1
-            buff = [(i, j)]
-            while len(buff) != 0:
-                x, y = buff.pop()
-                visited.add((x, y))
-                for xx, yy in util.nearby2DGridPts((x, y), (w, h), False):
-                    if gridmap[xx][yy] and (xx, yy) not in visited:
-                        buff.append((xx, yy))
-    return counter
-
-jmpForward = 6000
 n = len(robots)
 locs = [
-        [
-            (bot[0] + jmpForward * bot[2]) % w,
-            (bot[1] + jmpForward * bot[3]) % h
-        ]
+        list(bot[:2])
         for bot in robots
 ]
-recs = []
-for i in range(jmpForward + 1, 7000 + 1):
+ratios = []
+sampleN = 100
+for i in range(1, sampleN + 1):
     grid = [[False] * h for _ in range(w)]
     for idx in range(n):
         locs[idx][0] = (locs[idx][0] + robots[idx][2]) % w
         locs[idx][1] = (locs[idx][1] + robots[idx][3]) % h
         grid[locs[idx][0]][locs[idx][1]] = True
-    cc = countConnected(grid)
-    if cc <= n // 3:
-        recs.append('\n'.join(''.join((util.consoleChar(x) for x in r)) for r in util.transpose(grid)))
+    consoleStr = '\n'.join(''.join(util.consoleChar(x) for x in r) for r in util.transpose(grid))
+    ratios.append(util.compressionRatio(consoleStr))
+mean = sum(ratios) / sampleN
+secondMoment = sum(x ** 2 for x in ratios) / sampleN
+for i in range(sampleN + 1, 10000 + 1):
+    grid = [[False] * h for _ in range(w)]
+    for idx in range(n):
+        locs[idx][0] = (locs[idx][0] + robots[idx][2]) % w
+        locs[idx][1] = (locs[idx][1] + robots[idx][3]) % h
+        grid[locs[idx][0]][locs[idx][1]] = True
+    consoleStr = '\n'.join(''.join(util.consoleChar(x) for x in r) for r in util.transpose(grid))
+    r = util.compressionRatio(consoleStr)
+    if r > mean + (secondMoment - mean ** 2) ** 0.5 * 10:
+        print(consoleStr)
         print(i)
-        print(recs[-1])
-        print(('-' * 10 + '\n') * 3)
-        time.sleep(0.20)
+        break
+    mean = (mean * (i - 1) + r) / i
+    secondMoment = (secondMoment * (i - 1) + r ** 2) / i
 
