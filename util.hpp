@@ -141,7 +141,7 @@ inline std::vector<std::vector<T>> getInts(const std::vector<std::string> &lines
 
 inline std::vector<int> extract_int(const std::string &s){
     std::vector<int> res;
-    for (const std::string &digitSeq : string_extract_of(s, "0123456789")){
+    for (const std::string &digitSeq : string_extract_of(s, "-0123456789")){
         res.push_back(std::stoi(digitSeq));
     }
     return res;
@@ -243,9 +243,29 @@ template <class T>
 inline void printVec(const std::vector<T> &vec, const std::string &sep = ", "){
     using std::to_string;
     auto n = vec.size();
+    if (n == 0){
+        std::cout << std::endl;
+        return;
+    }
     std::cout << to_string(vec[0]);
     for (decltype(n) i = 1; i < n; ++i){
         std::cout << sep << to_string(vec[i]);
+    }
+    std::cout << std::endl;
+}
+
+inline void print2DStr(const std::vector<std::string> &vec){
+    for (const std::string &s : vec){
+        std::cout << s << std::endl;
+    }
+}
+
+template <class T>
+inline void printVec(const T *begin, const T *end, const std::string &sep = ", "){
+    using std::to_string;
+    std::cout << to_string(*(begin++));
+    while (begin != end){
+        std::cout << sep << to_string(*(begin++));
     }
     std::cout << std::endl;
 }
