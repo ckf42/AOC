@@ -225,18 +225,26 @@ inline void extendVec(std::vector<T> &target, const std::vector<U> &src){
     target.insert(target.end(), src.cbegin(), src.cend());
 }
 
-template <class T>
-inline void output(const T &x){
+template <class Arg, class... Args>
+inline void output(const Arg &x, const Args &... y){
     using std::to_string;
-    std::cout << to_string(x) << std::endl;
+    std::cout << to_string(x);
+    ((std::cout << ", " << y), ...);
+    std::cout << std::endl;
 }
-template <>
-inline void output<char>(const char &x){
-    std::cout << x << std::endl;
+template <class... Args>
+inline void output(const char &x, const Args &... y){
+    using std::to_string;
+    std::cout << x;
+    ((std::cout << ", " << y), ...);
+    std::cout << std::endl;
 }
-template <>
-inline void output<std::string>(const std::string &x){
-    std::cout << x << std::endl;
+template <class... Args>
+inline void output(const std::string &x, const Args &... y){
+    using std::to_string;
+    std::cout << x;
+    ((std::cout << ", " << y), ...);
+    std::cout << std::endl;
 }
 
 template <class T>
