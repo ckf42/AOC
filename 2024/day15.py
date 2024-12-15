@@ -40,7 +40,8 @@ for c in inst:
             break
     while len(moveStack) != 0:
         pt = moveStack.pop()
-        warehouse[xx][yy], warehouse[pt[0]][pt[1]] = warehouse[pt[0]][pt[1]], warehouse[xx][yy]
+        warehouse[xx][yy], warehouse[pt[0]][pt[1]] \
+                = warehouse[pt[0]][pt[1]], warehouse[xx][yy]
         x, y = xx, yy
         xx, yy = pt
 gpss = 0
@@ -62,43 +63,25 @@ newWarehouse = list(
 x, y = divmod(warehouseLines.index('@'), m + 1)
 y *= 2
 n = len(newWarehouse)
-m = len(newWarehouse[0])
+m *= 2
 newWarehouse[x][y] = '.'
-
-def canMove(pt: tuple[int, int], d: tuple[int, int]) -> bool:
-    x, y = pt
-    xx = x + d[0]
-    yy = y + d[1]
-    obs = newWarehouse[xx][yy]
-    if obs == '.':
-        return True
-    if obs == '#':
-        return False
-    # box
-    if d[0] == 0:
-        # hori
-        return canMove((xx, yy), d)
-    else:
-        # vert
-        oX, oY = xx, yy
-        oY += 1 if obs == '[' else -1
-        return canMove((xx, yy), d) and canMove((oX, oY), d)
 
 for c in inst:
     d = dirs[c]
-    if not canMove((x, y), d):
-        continue
     toMove = deque([(x, y)])
     moveBuff = []
-    willMove = set()
+    willMove = set()  # TODO: can we enum better to avoid this?
     while len(toMove) != 0:
         xx, yy = toMove.popleft()
         if (xx, yy) in willMove:
             continue
         willMove.add((xx, yy))
         newX, newY = xx + d[0], yy + d[1]
-        moveBuff.append(((xx, yy), (newX, newY)))
+        moveBuff.append((xx, yy))
         obs = newWarehouse[newX][newY]
+        if obs == '#':
+            moveBuff.clear()
+            break
         if obs == '.':
             continue
         if d[0] != 0:
@@ -108,11 +91,11 @@ for c in inst:
             toMove.append((oX, oY))
         toMove.append((newX, newY))
     while len(moveBuff) != 0:
-        pt1, pt2 = moveBuff.pop()
-        newWarehouse[pt1[0]][pt1[1]], newWarehouse[pt2[0]][pt2[1]] \
-            = newWarehouse[pt2[0]][pt2[1]], newWarehouse[pt1[0]][pt1[1]]
-    x += d[0]
-    y += d[1]
+        xx, yy = moveBuff.pop()
+        x = xx + d[0]
+        y = yy + d[1]
+        newWarehouse[xx][yy], newWarehouse[x][y] \
+                = newWarehouse[x][y], newWarehouse[xx][yy]
 gpss = 0
 for i in range(n):
     for j in range(m):
