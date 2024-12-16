@@ -7,6 +7,7 @@
 #include <sstream>
 #include <stdexcept>
 #include <string>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 
@@ -219,6 +220,20 @@ inline bool contains(const T &x, const Container &container){
     return container.find(x) != container.end();
 }
 
+template <class Key, class T>
+inline const T& getWithDefault(
+        const Key &key,
+        const std::unordered_map<Key, T> &umap,
+        const T &defaultVal
+        ){
+    auto it = umap.find(key);
+    if (it == umap.end()){
+        return defaultVal;
+    } else {
+        return it->second;
+    }
+}
+
 template <class T, class U>
 inline void extendVec(std::vector<T> &target, const std::vector<U> &src){
     target.reserve(target.size() + src.size());
@@ -261,6 +276,14 @@ inline void printVec(const T *begin, const T *end, const std::string &sep = ", "
         std::cout << sep << to_string(*(begin++));
     }
     std::cout << std::endl;
+}
+
+template <class ResType, class Container>
+inline ResType sum(const Container &vec, ResType init = ResType()){
+    for (const auto &x : vec){
+        init += static_cast<ResType>(x);
+    }
+    return init;
 }
 
 };  // namespace util
