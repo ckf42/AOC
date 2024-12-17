@@ -286,6 +286,42 @@ inline ResType sum(const Container &vec, ResType init = ResType()){
     return init;
 }
 
+template <class T>
+inline std::string joinStr(
+        const std::vector<T> &vec,
+        const std::string &sep = ", "
+        ){
+    using std::to_string;
+    auto n = vec.size();
+    std::string res;
+    if (n == 0){
+        return res;
+    }
+    res += to_string(vec[0]);
+    for (decltype(n) i = 1; i < n; ++i){
+        res += sep;
+        res += to_string(vec[i]);
+    }
+    return res;
+}
+template <>
+inline std::string joinStr(
+        const std::vector<std::string> &vec,
+        const std::string &sep
+        ){
+    auto n = vec.size();
+    std::string res;
+    if (n == 0){
+        return res;
+    }
+    res += vec[0];
+    for (decltype(n) i = 1; i < n; ++i){
+        res += sep;
+        res += vec[i];
+    }
+    return res;
+}
+
 };  // namespace util
 
 #endif

@@ -59,11 +59,7 @@ std::string runProg(int a, int b, int c, const std::vector<int> &prog){
         }
         ptr += 2;
     }
-    std::string res = std::to_string(output[0]);
-    for (int i = 1; i < output.size(); ++i){
-        res += "," + std::to_string(output[i]);
-    }
-    return res;
+    return util::joinStr(output, ",");
 }
 
 int main(int, char**){
@@ -80,7 +76,7 @@ int main(int, char**){
         newAList.clear();
         for (ulli aPref : aList){
             for (int r = 0; r < 8; ++r){
-                ulli a = aPref * 8 + r;
+                ulli a = ((aPref << 3) | r);
                 ulli c = (a >> (r ^ 7));
                 if (((r ^ c) & 7) == prog[i]){
                     newAList.push_back(a);
