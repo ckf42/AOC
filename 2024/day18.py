@@ -1,7 +1,7 @@
 import AOCInit
 import util
 
-import heapq as hq
+import bisect
 
 if __name__ != '__main__':
     exit()
@@ -28,9 +28,7 @@ print(util.dijkstra(
 )
 
 # part 2
-corrupted = set()
-for pt in (tuple(util.getInts(line)) for line in inp.splitlines()):
-    corrupted.add(pt)
+def isDisconnected(blocks: set[tuple[int, int]]) -> bool:
     buff = [(0, 0)]
     visited = set()
     while len(buff) != 0:
@@ -41,9 +39,19 @@ for pt in (tuple(util.getInts(line)) for line in inp.splitlines()):
         if (x, y) == goal:
             break
         for nb in util.nearby2DGridPts((x, y), (w, h)):
-            if nb not in corrupted and nb not in visited:
+            if nb not in blocks and nb not in visited:
                 buff.append(nb)
-    if goal not in visited:
-        print(','.join(str(idx) for idx in pt))
-        break
+    return goal not in visited
+
+allCorrupted = tuple(
+        util.getInts(line)
+        for line in inp.splitlines()
+)
+n = len(allCorrupted)
+breakIdx = bisect.bisect_left(
+    range(n),
+    True,
+    key=lambda idx: isDisconnected(set(allCorrupted[:idx + 1]))
+)
+print(','.join(str(x) for x in allCorrupted[breakIdx]))
 
