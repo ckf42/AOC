@@ -4,7 +4,6 @@
 #include <vector>
 #include <queue>
 
-
 #include "../util.hpp"
 
 constexpr int blkSize = 70 + 1;
@@ -75,12 +74,7 @@ int main(int, char**){
             s = m + 1;
         }
     }
-    util::output(std::to_string(allCorrupted[s] / blkSize) + "," + std::to_string(allCorrupted[s] % blkSize));
-    
-
-
-
-
+    util::printVec({allCorrupted[s] / blkSize, allCorrupted[s] % blkSize}, ",");
 
     return 0;
 }

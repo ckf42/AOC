@@ -20,29 +20,28 @@ int main(int, char**){
     std::vector<std::string> graph = util::splitline(inp);
     int n = graph.size(), m = graph[0].size();
     int sidx = inp.find('S'), eidx = inp.find('E');
-    sidx = sidx / (m + 1) * m + sidx % (m + 1);
-    eidx = eidx / (m + 1) * m + eidx % (m + 1);
+    sidx = (sidx / (m + 1)) * m + (sidx % (m + 1));
+    eidx = (eidx / (m + 1)) * m + (eidx % (m + 1));
 
     // part 1
     int minCost = -1;
     std::priority_queue<pr, std::vector<pr>, std::greater<pr>> pq;
     pq.push({0, sidx * 4 * 4});
-    std::unordered_map<int, int> visited, prevStates;
+    std::unordered_map<int, int> visited, prevActions;
     std::vector<int> buff;
     while (!pq.empty()){
         auto [cost, x] = pq.top();
         pq.pop();
         int lastAct = x % 4;
         x /= 4;
-        int currState = x;
-        int d = x % 4;
+        int currState = x, d = x % 4;
         x /= 4;
         int y = x % m;
         x /= m;
         if (util::getWithDefault(currState, visited, cost) == cost){
-            prevStates[currState] |= (1 << lastAct);
+            prevActions[currState] |= (1 << lastAct);
         }
-        if ((currState / 4) == eidx){
+        if (currState / 4 == eidx){
             if (minCost == -1){
                 util::output(cost);
                 minCost = cost;
@@ -84,7 +83,7 @@ int main(int, char**){
             int d = state % 4, coor = state / 4;
             int y = coor % m, x = coor / m;
             for (int i = 1; i <= 3; ++i){
-                if (prevStates[state] & (1 << i)){
+                if ((prevActions[state] & (1 << i)) == 0){
                     continue;
                 }
                 switch (i){

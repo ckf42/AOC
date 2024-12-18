@@ -3,6 +3,7 @@
 
 #include <filesystem>
 #include <fstream>
+#include <initializer_list>
 #include <iostream>
 #include <sstream>
 #include <stdexcept>
@@ -247,6 +248,12 @@ inline void output(const Arg &x, const Args &... y){
     std::cout << std::endl;
 }
 
+inline void print2DStr(const std::vector<std::string> &vec){
+    for (const std::string &s : vec){
+        std::cout << s << std::endl;
+    }
+}
+
 template <class T>
 inline void printVec(const std::vector<T> &vec, const std::string &sep = ", "){
     using std::to_string;
@@ -261,16 +268,19 @@ inline void printVec(const std::vector<T> &vec, const std::string &sep = ", "){
     }
     std::cout << std::endl;
 }
-
-inline void print2DStr(const std::vector<std::string> &vec){
-    for (const std::string &s : vec){
-        std::cout << s << std::endl;
-    }
-}
-
 template <class T>
 inline void printVec(const T *begin, const T *end, const std::string &sep = ", "){
     using std::to_string;
+    std::cout << to_string(*(begin++));
+    while (begin != end){
+        std::cout << sep << to_string(*(begin++));
+    }
+    std::cout << std::endl;
+}
+template <class T>
+inline void printVec(const std::initializer_list<T> &il, const std::string &sep = ", "){
+    using std::to_string;
+    auto begin = il.begin(), end = il.end();
     std::cout << to_string(*(begin++));
     while (begin != end){
         std::cout << sep << to_string(*(begin++));
@@ -282,6 +292,15 @@ template <class ResType, class Container>
 inline ResType sum(const Container &vec, ResType init = ResType()){
     for (const auto &x : vec){
         init += static_cast<ResType>(x);
+    }
+    return init;
+}
+
+// ranges::accumulate substitute
+template <class ResType, class Container, class BinOp>
+inline ResType accumulate(const Container &vec, ResType init, BinOp op){
+    for (const auto &x : vec){
+        init = op(init, x);
     }
     return init;
 }
