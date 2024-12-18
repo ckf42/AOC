@@ -49,32 +49,34 @@ print(','.join(str(x) for x in runProg(initReg)))
 
 # part 2
 
-# def getComboOpName(oper):
-#     assert oper != 7
-#     if oper <= 3:
-#         return oper
-#     return chr(oper - 4 + ord('A'))
-#
-# def getInstName(inst, oper):
-#     if inst == 0:
-#         return f"adv: A >> {getComboOpName(oper)} -> A"
-#     elif inst == 1:
-#         return f"bxl: B ^ {oper} -> B"
-#     elif inst == 2:
-#         return f"bst: {getComboOpName(oper)} % 8 -> B"
-#     elif inst == 3:
-#         return f"jnz: A != 0 => jmp {oper}"
-#     elif inst == 4:
-#         return "bxc: B ^ C -> B"
-#     elif inst == 5:
-#         return f"out: {getComboOpName(oper)} % 8 -> out"
-#     elif inst == 6:
-#         return f"bdv: A >> {getComboOpName(oper)} -> B"
-#     elif inst == 7:
-#         return f"cdv: A >> {getComboOpName(oper)} -> C"
-#
+def getComboOpName(oper):
+    assert oper != 7
+    if oper <= 3:
+        return oper
+    return chr(oper - 4 + ord('A'))
+
+def getInstName(inst, oper):
+    if inst == 0:
+        return f"adv: A >> {getComboOpName(oper)} -> A"
+    elif inst == 1:
+        return f"bxl: B ^ {oper} -> B"
+    elif inst == 2:
+        return f"bst: {getComboOpName(oper)} % 8 -> B"
+    elif inst == 3:
+        return f"jnz: A != 0 => jmp {oper}"
+    elif inst == 4:
+        return "bxc: B ^ C -> B"
+    elif inst == 5:
+        return f"out: {getComboOpName(oper)} % 8 -> out"
+    elif inst == 6:
+        return f"bdv: A >> {getComboOpName(oper)} -> B"
+    elif inst == 7:
+        return f"cdv: A >> {getComboOpName(oper)} -> C"
+
 # for i in range(0, n, 2):
-#     print(str(i).ljust(len(str(n - 2))), getInstName(prog[i], prog[i + 1]))
+#     print(str(i).ljust(len(str(n - 2))),
+#           prog[i], prog[i + 1],
+#           getInstName(prog[i], prog[i + 1]))
 
 # manually analyzing my input, the prog is equivalent to the following python code
 # while a != 0:
@@ -82,15 +84,18 @@ print(','.join(str(x) for x in runProg(initReg)))
 #     c = (a >> (r ^ 7))
 #     print((r ^ c) & 7)
 #     a >>= 3
+# NOTE: this is not generic: will break on https://redd.it/1hggduo
+# TODO: analyze code structure automatically
 
 aList = [0]
 for i in range(n - 1, -1, -1):
     newAList = []
     for aPrefix in aList:
         for r in range(8):
-            a = (aPrefix << 3) | r
-            c = (a >> (r ^ 7))
-            if ((r ^ c) & 7) == prog[i]:
+            a = ((aPrefix << 3) | r)
+            b = (r ^ 7)
+            c = (a >> b)
+            if ((b ^ 7 ^ c) & 7) == prog[i]:
                 newAList.append(a)
     aList = newAList
 print(min(aList))
