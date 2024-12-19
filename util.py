@@ -3651,7 +3651,7 @@ def gridCompGeometry(
     return tuple(compList)
 
 
-def compressionRatio(data: str | bytes, level: int = -1, wbits: int = 15) -> float:
+def compressionRatio(data: str | bytes, level: int = -1) -> float:
     """
     Compute the compress ratio using zlib.
     Can be used to detect (visual) regularity
@@ -3662,13 +3662,11 @@ def compressionRatio(data: str | bytes, level: int = -1, wbits: int = 15) -> flo
         the input data
         if str, will be converted to bytes with utf-8 encoding
 
-    level, wbits: int, optional
-        parameters to pass to zlib.compress
+    level: int, optional
+        the same parameter as in zlib.compress
         see corresponding doc for detail
-        level accepts only int in range(-1, 9 + 1)
+        accepts only int in range(-1, 9 + 1)
             defaults to -1
-        wbits accepts only int in range(-15, -9 + 1), range(9, 15 + 1) or range(25, 31 + 1)
-            defaults to 15
 
     Returns
     -----
@@ -3679,10 +3677,117 @@ def compressionRatio(data: str | bytes, level: int = -1, wbits: int = 15) -> flo
     Only meaningful when compared to a ground noise compression ratio
     """
     assert -1 <= level <= 9 , f"{level=} is not supported"
-    assert 9 <= abs(wbits) <= 15 or 25 <= wbits <= 31, f"{wbits=} is not supported"
     from zlib import compress as _compress
     if isinstance(data, str):
         data = data.encode(encoding='utf-8')
-    return len(data) / len(_compress(data, level, wbits))
+    return len(data) / len(_compress(data, level=level))
+
+
+class Trie:
+    """
+    A simple implementation of the trie structure
+
+    init parameter
+    -----
+    initItems: Iterable[Iterable[T]], optional
+        the initial iterable of items to insert
+        if given, will insert each item to the trie
+            if such item is an iteraor, will be consumed
+    """
+    @_dc.dataclass
+    class TrieNode(_tp.Generic[_T]):
+        name: _T | None = None
+        hasItem: bool = False
+        child: dict[_T, int] = _dc.field(default_factory=dict)
+
+    def __init__(self, initItems: _tp.Iterable[_tp.Iterable[_T]] | None = None) -> None:
+        self.items: list[Trie.TrieNode] = [self.TrieNode()]
+        if initItems is not None:
+            for ele in initItems:
+                self.insertElement(ele)
+
+    def insertElement(self, ele: _tp.Iterable[_T]) -> int:
+        """
+        insert the item in the trie
+
+        parameter
+        -----
+        ele: Iterable[T]
+            the item to insert
+
+        return
+        -----
+        the index of the inserted item in the trie.
+        This index may be used as a unique identifier of the node in the trie
+
+        note
+        -----
+        if `ele` is an iterator, it will be consumed
+        """
+        ptr = 0
+        for x in ele:
+            if x not in self.items[ptr].child:
+                self.items[ptr].child[x] = len(self.items)
+                self.items.append(self.TrieNode(x))
+            ptr = self.items[ptr].child[x]
+        self.items[ptr].hasItem = True
+        return ptr
+
+    def advance(self, nextItem: _T, ptr: int = 0) -> int | None:
+        """
+        move to the next position from the given identifier according to the instruction
+
+        parameter
+        -----
+        nextItem: T
+            the next location to move to
+
+        ptr: int, optional
+            the identifier of original position to move from
+            defaults to 0 (the root)
+
+        return
+        -----
+        an integer as the identifier of the new position, or None if there is no position to move to
+        if `ptr` does not indicate a valid node in the trie, also returns None
+        """
+        if ptr >= len(self.items):
+            return None
+        return self.items[ptr].child.get(nextItem, None)
+
+    def hasItemAt(self, ptr: int) -> bool:
+        """
+        determine if there exists an item at the given node identifier
+        """
+        return 0 <= ptr < len(self.items) and self.items[ptr].hasItem
+
+    def contains(self, ele: _tp.Iterable[_T]) -> bool:
+        """
+        Determine if a given element has been inserted into the trie
+
+        parameter
+        -----
+        ele: Iterable[T]
+            the element to check
+
+        return
+        -----
+        a bool indicating whether the element has been inserted into the trie
+
+        note
+        -----
+        if `ele` is an iterator, it will be consumed
+        """
+        ptr = 0
+        for x in ele:
+            ptr = self.items[ptr].child.get(x, -1)
+            if ptr == -1:
+                return False
+        return self.items[ptr].hasItem
+
+
+
+
+
 
 
