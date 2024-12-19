@@ -26,26 +26,8 @@ for towel in available:
     ptr[''] = True
 
 
-# part 1
-counter = 0
-for d in demand:
-    buff = [trie]
-    for c in d:
-        newBuff = list()
-        for ptr in buff:
-            if c in ptr:
-                if ptr[c] not in newBuff:
-                    newBuff.append(ptr[c])
-                if '' in ptr[c] and trie not in newBuff:
-                    newBuff.append(trie)
-        buff = newBuff
-    if trie in buff:
-        counter += 1
-print(counter)
-
-
-# part 2
-counter = 0
+part1Counter = 0
+part2Counter = 0
 for d in demand:
     buffDict = defaultdict(int)
     buffDict[""] = 1
@@ -58,5 +40,8 @@ for d in demand:
                 if '' in ptr[c]:
                     newBuffDict[""] += freq
         buffDict = newBuffDict
-    counter += buffDict[""]
-print(counter)
+    part1Counter += "" in buffDict
+    part2Counter += buffDict[""]
+print(part1Counter)
+print(part2Counter)
+
