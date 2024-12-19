@@ -9,7 +9,7 @@
 constexpr int blkSize = 70 + 1;
 constexpr int count = 1024;
 
-using DijkState = std::pair<int, std::pair<int, int>>;
+using NodeState = std::pair<int, std::pair<int, int>>;
 
 bool isDisconnected(const std::unordered_set<int> &blocked){
     std::vector<int> buff(1, 0);
@@ -42,12 +42,12 @@ int main(int, char**){
     }
 
     // part 1
-    std::priority_queue<DijkState, std::vector<DijkState>, std::greater<DijkState>> pq;
+    std::queue<NodeState> q;
     std::unordered_set<int> corrupted(allCorrupted.cbegin(), allCorrupted.cbegin() + count), visited;
-    pq.push({0, {0, 0}});
-    while (!pq.empty()){
-        auto [cost, pt] = pq.top();
-        pq.pop();
+    q.push({0, {0, 0}});
+    while (!q.empty()){
+        auto [cost, pt] = q.front();
+        q.pop();
         if (pt.first == blkSize - 1 && pt.second == blkSize - 1){
             util::output(cost);
             break;
@@ -60,7 +60,7 @@ int main(int, char**){
             if (util::contains(nb.first * blkSize + nb.second, corrupted)){
                 continue;
             }
-            pq.push({cost + 1, nb});
+            q.push({cost + 1, nb});
         }
     }
 
