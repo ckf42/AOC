@@ -1,8 +1,6 @@
 import AOCInit
 import util
 
-import bisect
-
 if __name__ != '__main__':
     exit()
 
@@ -11,6 +9,8 @@ if __name__ != '__main__':
 # perhaps due to the target block being among the later half
 # more precisely, this takes about double the amount of time of binary search
 #     if we enumerate the whole seq of blocks
+# if we are using input from https://redd.it/1hgy6nb
+#    then this approach is much faster (~5 times) than binary search
 
 inp = util.getInput(d=18, y=2024)
 blkSize = 70
