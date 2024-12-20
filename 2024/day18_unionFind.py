@@ -9,7 +9,7 @@ if __name__ != '__main__':
 # NOTE:
 # this approach is marginally faster than the original binary search
 # perhaps due to the target block being among the later half
-# more precisely, this taks about doulbe the time of binary search
+# more precisely, this takes about double the amount of time of binary search
 #     if we enumerate the whole seq of blocks
 
 inp = util.getInput(d=18, y=2024)
