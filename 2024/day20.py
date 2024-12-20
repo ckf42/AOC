@@ -20,7 +20,6 @@ s = divmod(sCoor, m + 1)
 e = divmod(eCoor, m + 1)
 
 visitCostFromStart = dict()
-normalCost = -1
 q = deque([(0, s)])
 while len(q) != 0:
     cost, pt = q.popleft()
@@ -28,12 +27,13 @@ while len(q) != 0:
         continue
     visitCostFromStart[pt] = cost
     if pt == e:
-        if normalCost == -1:
-            normalCost = cost
         continue
-    for nb in util.nearby2DGridPts(pt, (n, m)):
-        if grid[nb[0]][nb[1]] != '#':
-            q.append((cost + 1, nb))
+    q.extend((
+        (cost + 1, nb)
+        for nb in util.nearby2DGridPts(pt, (n, m))
+        if grid[nb[0]][nb[1]] != '#'
+    ))
+normalCost = visitCostFromStart[e]
 
 
 visitCostFromEnd = dict()
@@ -45,32 +45,29 @@ while len(q) != 0:
     visitCostFromEnd[pt] = cost
     if pt == s:
         continue
-    for nb in util.nearby2DGridPts(pt, (n, m)):
-        if grid[nb[0]][nb[1]] != '#':
-            q.append((cost + 1, nb))
+    q.extend((
+        (cost + 1, nb)
+        for nb in util.nearby2DGridPts(pt, (n, m))
+        if grid[nb[0]][nb[1]] != '#'
+    ))
 
 # part 1
-count = 0
-for pt1, cost1 in visitCostFromStart.items():
-    for offset in util.integerLattice(2, 2):
-        pt2 = (pt1[0] + offset[0], pt1[1] + offset[1])
-        if pt2 not in visitCostFromEnd:
-            continue
-        newCost = cost1 + visitCostFromEnd[pt2] + abs(offset[0]) + abs(offset[1])
-        if normalCost - newCost >= timeSaveLimit:
-            count += 1
+count = sum(
+    1
+    for pt1, cost1 in visitCostFromStart.items()
+    for offset in util.integerLattice(2, 2)
+    if cost1 + visitCostFromEnd.get((pt1[0] + offset[0], pt1[1] + offset[1]), normalCost) \
+                + abs(offset[0]) + abs(offset[1]) <= normalCost - timeSaveLimit
+)
 print(count)
 
-
 # part 2
-count = 0
-for pt1, cost1 in visitCostFromStart.items():
-    for offset in util.integerLattice(2, 20):
-        pt2 = (pt1[0] + offset[0], pt1[1] + offset[1])
-        if pt2 not in visitCostFromEnd:
-            continue
-        newCost = cost1 + visitCostFromEnd[pt2] + abs(offset[0]) + abs(offset[1])
-        if normalCost - newCost >= timeSaveLimit:
-            count += 1
+count = sum(
+    1
+    for pt1, cost1 in visitCostFromStart.items()
+    for offset in util.integerLattice(2, 20)
+    if cost1 + visitCostFromEnd.get((pt1[0] + offset[0], pt1[1] + offset[1]), normalCost) \
+                + abs(offset[0]) + abs(offset[1]) <= normalCost - timeSaveLimit
+)
 print(count)
 
