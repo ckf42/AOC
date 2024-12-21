@@ -17,10 +17,6 @@ moveSig = {
         (0, 1): '>',
         (0, -1): '<'
 }
-moveDir = {
-        v: k
-        for k, v in moveSig.items()
-}
 
 numpadMap = """\
 789
@@ -28,140 +24,102 @@ numpadMap = """\
 123
  0A
 """.splitlines()
-numpadEdges = {
-        numpadMap[i][j]: {
-            moveSig[(ni - i, nj - j)]: numpadMap[ni][nj]
-            for ni, nj in util.nearby2DGridPts((i, j), (4, 3))
-            if numpadMap[ni][nj] != ' '
-        }
-        for i in range(4)
-        for j in range(3)
-        if numpadMap[i][j] != ' '
-}
-numpadKeys = tuple(numpadEdges.keys())
-
 controllerMap = """\
  ^A
 <v>
 """.splitlines()
-controllerEdges = {
-        controllerMap[i][j]: {
-            moveSig[(ni - i, nj - j)]: controllerMap[ni][nj]
-            for ni, nj in util.nearby2DGridPts((i, j), (2, 3))
-            if controllerMap[ni][nj] != ' '
+
+def getEdges(splittedMap: list[str]) -> dict[str, dict[str, str]]:
+    n = len(splittedMap)
+    m = len(splittedMap[0])
+    return {
+            splittedMap[i][j]: {
+                moveSig[(ni - i, nj - j)]: splittedMap[ni][nj]
+                for ni, nj in util.nearby2DGridPts((i, j), (n, m))
+                if splittedMap[ni][nj] != ' '
+            }
+            for i in range(n)
+            for j in range(m)
+            if splittedMap[i][j] != ' '
+    }
+
+numpadEdges = getEdges(numpadMap)
+controllerEdges = getEdges(controllerMap)
+
+def getMoveSeq(
+        edges: dict[str, dict[str, str]]
+        ) -> dict[str, defaultdict[str, list[str]]]:
+    moveSeq: dict[str, defaultdict[str, list[str]]] = dict()
+    for startKey in edges:
+        moveSeq[startKey] = defaultdict(list)
+        h = [(0, "", startKey)]
+        costDict: dict[str, int] = dict()
+        while len(h) != 0:
+            cost, seq, key = hq.heappop(h)
+            if costDict.get(key, cost + 1) < cost:
+                continue
+            costDict[key] = cost
+            moveSeq[startKey][key].append(seq + 'A')
+            for move, nextKey in edges[key].items():
+                hq.heappush(h, (
+                    cost + (10 if len(seq) == 0 or move != seq[-1] else 1),
+                    seq + move,
+                    nextKey
+                ))
+    return moveSeq
+
+numpadMoveSeq = getMoveSeq(numpadEdges)
+controllerMoveSeq = getMoveSeq(controllerEdges)
+
+def getFinalKeyPressDict(middleRobotCount):
+    controllerMoveLen = {
+        sKey: {
+            eKey: 1
+            for eKey in controllerEdges
         }
-        for i in range(2)
-        for j in range(3)
-        if controllerMap[i][j] != ' '
-}
-controllerKeys = tuple(controllerEdges.keys())
-
-numpadMoveSeq = dict()
-for startKey in numpadKeys:
-    numpadMoveSeq[startKey] = defaultdict(list)
-    h = [(0, "", startKey)]
-    costDict = dict()
-    while len(h) != 0:
-        cost, seq, key = hq.heappop(h)
-        if costDict.get(key, cost + 1) < cost:
-            continue
-        costDict[key] = cost
-        numpadMoveSeq[startKey][key].append(seq + 'A')
-        for move, nextKey in numpadEdges[key].items():
-            hq.heappush(h, (
-                cost + (10 if len(seq) == 0 or move != seq[-1] else 1),
-                seq + move,
-                nextKey
-            ))
-
-controllerMoveSeq = dict()
-for startKey in controllerKeys:
-    controllerMoveSeq[startKey] = defaultdict(list)
-    h = [(0, "", startKey)]
-    costDict = dict()
-    while len(h) != 0:
-        cost, seq, key = hq.heappop(h)
-        if costDict.get(key, cost + 1) < cost:
-            continue
-        costDict[key] = cost
-        controllerMoveSeq[startKey][key].append(seq + 'A')
-        for move, nextKey in controllerEdges[key].items():
-            hq.heappush(h, (
-                cost + (10 if len(seq) == 0 or move != seq[-1] else 1),
-                seq + move,
-                nextKey
-            ))
+        for sKey in controllerEdges
+    }
+    for _ in range(middleRobotCount):
+        controllerMoveLen = {
+            sKey: {
+                eKey: min(sum(
+                        controllerMoveLen[a][b]
+                        for a, b in zip('A' + seq[:-1], seq)
+                    ) for seq in seqs)
+                for eKey, seqs in v.items()
+            }
+            for sKey, v in controllerMoveSeq.items()
+        }
+    return {
+        sKey: {
+            eKey: min(sum(
+                    controllerMoveLen[a][b]
+                    for a, b in zip('A' + seq[:-1], seq)
+                ) for seq in seqs)
+            for eKey, seqs in v.items()
+        }
+        for sKey, v in numpadMoveSeq.items()
+    }
 
 # part 1
-
-controllerMoveLen = {
-    sKey: {
-        eKey: min(len(seq) for seq in seqs)
-        for eKey, seqs in v.items()
-    }
-    for sKey, v in controllerMoveSeq.items()
-}
-
-controllerMoveLen = {
-    sKey: {
-        eKey: min(sum(controllerMoveLen[a][b] for a, b in zip('A' + seq[:-1], seq)) for seq in seqs)
-        for eKey, seqs in v.items()
-    }
-    for sKey, v in controllerMoveSeq.items()
-}
-
-numpadMoveLen = {
-    sKey: {
-        eKey: min(sum(controllerMoveLen[a][b] for a, b in zip('A' + seq[:-1], seq)) for seq in seqs)
-        for eKey, seqs in v.items()
-    }
-    for sKey, v in numpadMoveSeq.items()
-}
-
 res = 0
+d = getFinalKeyPressDict(2)
 for inst in instLines:
     numVal = int(inst[:-1])
     counter = 0
     for a, b in zip('A' + inst[:-1], inst):
-        counter += numpadMoveLen[a][b]
+        counter += d[a][b]
     res += numVal * counter
 print(res)
 
 # part 2
-
-controllerMoveLen = {
-    sKey: {
-        eKey: min(len(seq) for seq in seqs)
-        for eKey, seqs in v.items()
-    }
-    for sKey, v in controllerMoveSeq.items()
-}
-
-for _ in range(25 - 1):
-    controllerMoveLen = {
-        sKey: {
-            eKey: min(sum(controllerMoveLen[a][b] for a, b in zip('A' + seq[:-1], seq)) for seq in seqs)
-            for eKey, seqs in v.items()
-        }
-        for sKey, v in controllerMoveSeq.items()
-    }
-
-numpadMoveLen = {
-    sKey: {
-        eKey: min(sum(controllerMoveLen[a][b] for a, b in zip('A' + seq[:-1], seq)) for seq in seqs)
-        for eKey, seqs in v.items()
-    }
-    for sKey, v in numpadMoveSeq.items()
-}
-
 res = 0
+d = getFinalKeyPressDict(25)
 for inst in instLines:
     numVal = int(inst[:-1])
     counter = 0
     for a, b in zip('A' + inst[:-1], inst):
-        counter += numpadMoveLen[a][b]
+        counter += d[a][b]
     res += numVal * counter
 print(res)
-
-
 

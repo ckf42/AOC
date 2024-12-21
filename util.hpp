@@ -170,6 +170,9 @@ inline bool in2DRange(const std::pair<int, int> &x, int sx, int ex, int sy, int 
 constexpr int FOUR_DIRECTIONS[4][2] = {
     {1, 0}, {0, 1}, {-1, 0}, {0, -1}
 };
+constexpr char FOUR_DIRECTIONS_SYM[4] = {
+    'v', '>', '^', '<'
+};
 constexpr int EIGHT_DIRECTIONS[8][2] = {
     {1, 0}, {1, 1}, {0, 1}, {-1, 1},
     {-1, 0}, {-1, -1}, {0, -1}, {1, -1}
