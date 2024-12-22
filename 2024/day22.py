@@ -18,22 +18,24 @@ def getNextSecret(x):
     x = (x ^ (x << 11)) & pruneMask
     return x
 
+N = 19 ** 4
+M = 19 ** 3
 part1Sum = 0
-totalCounter: Counter[int] = Counter()
+totalCounter: list[int] = [0] * N
 for s in initSecrets:
-    counter: Counter[int] = Counter()
     oldPrice = s % 10
     coor = 0
+    seen = [False] * N
     for i in range(2000):
         ss = getNextSecret(s)
         price = ss % 10
-        coor = coor // 19 + (price - oldPrice + 9) * (19 ** 3)
-        if i >= 3 and coor not in counter:
-            counter[coor] = price
+        coor = coor // 19 + (price - oldPrice + 9) * M
+        if i >= 3 and not seen[coor]:
+            totalCounter[coor] += price
+            seen[coor] = True
         s = ss
         oldPrice = price
     part1Sum += s
-    totalCounter += counter
 print(part1Sum)
-print(totalCounter.most_common(1)[0][1])
+print(max(totalCounter))
 

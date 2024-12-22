@@ -1,6 +1,8 @@
+#include <algorithm>
 #include <string>
 #include <vector>
-#include <unordered_map>
+#include <array>
+#include <bitset>
 
 #include "../util.hpp"
 
@@ -11,35 +13,32 @@ inline int getNextSecret(int x){
     return x;
 }
 
+constexpr int M = 19 * 19 * 19;
+constexpr int N = M * 19;
+
 int main(int, char**){
     std::vector<int> initSecrets = util::getInts(util::getInput(2024, 22));
     unsigned long long int part1Sum = 0;
-    std::unordered_map<int, int> totalCounter, counter;
+    std::array<int, N> totalCounter;
+    totalCounter.fill(0);
     for (int s : initSecrets){
-        counter.clear();
+        std::bitset<N> seen;
         int coor = 0, oldPrice = s % 10;
         for (int c = 1; c <= 2000; ++c){
             int ss = getNextSecret(s);
             int price = ss % 10;
-            coor = coor / 19 + (price - oldPrice + 9) * 6859;  // 19 ** 3 == 6859
-            if (c >= 4 && !util::contains(coor, counter)){
-                counter[coor] = price;
+            coor = coor / 19 + (price - oldPrice + 9) * M;
+            if (c >= 4 && !seen[coor]){
+                seen[coor] = true;
+                totalCounter[coor] += price;
             }
             oldPrice = price;
             s = ss;
         }
         part1Sum += s;
-        for (auto [coor, val] : counter){
-            totalCounter[coor] += val;
-        }
     }
     util::output(part1Sum);
-    int maxval = -1;
-    for (auto [coor, val] : totalCounter){
-        if (val > maxval){
-            maxval = val;
-        }
-    }
+    int maxval = *std::max_element(totalCounter.cbegin(), totalCounter.cend());
     util::output(maxval);
 
     return 0;
