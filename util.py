@@ -3748,7 +3748,8 @@ class Trie:
 
         return
         -----
-        an integer as the identifier of the new position, or None if there is no position to move to
+        an integer as the identifier of the new position,
+            or None if there is no position to move to
         if `ptr` does not indicate a valid node in the trie, also returns None
         """
         if ptr >= len(self.items):
@@ -3786,31 +3787,86 @@ class Trie:
         return self.items[ptr].hasItem
 
 
-def findMaxCliques(edges: _coll.defaultdict[_T, _tp.Sequence[_T]]) -> tuple[tuple[_T, ...], ...]:
-    res: list[tuple[_T, ...]] = []
-    p: set[_T] = set(edges.keys())
-    x: set[_T] = set()
-    def _bronKerbosch(rr: set[_T], pp: set[_T], xx: set[_T]):
-        if len(pp) == 0 == len(xx):
-            res.append(tuple(rr))
-            return
-        pivot = next(iter(pp.union(xx)))
-        pList = tuple(pp.difference(edges[pivot]))
+def findMaxCliques(edges: dict[_T, _tp.Sequence[_T]]) -> _tp.Iterator[tuple[_T, ...]]:
+    """
+    Find the maximal cliques in a graph
+
+    parameter
+    -----
+    edges: dict[T, Sequence[T]]
+        the adjacent list of the graph recording the edges
+
+    return
+    -----
+    an iterator yielding the nodes of all maximal cliques stored in a tuple
+
+    NOTE
+    -----
+    uses Bron-Kerbosch algo
+    max clique problem is NP and runtime of this algo is exponential
+    """
+    buff: list[tuple[set[_T], set[_T], set[_T]]] = []
+    p: set[_T] = set()
+    x: set[_T] = set(edges.keys())
+    for v in sorted(edges.keys(), key=lambda x: len(edges[x]), reverse=True):
+        p.add(v)
+        x.remove(v)
+        buff.append(({v}, p.intersection(edges[v]), x.intersection(edges[v])))
+    while len(buff) != 0:
+        r, p, x = buff.pop()
+        if len(p) == 0 == len(x):
+            yield tuple(r)
+            continue
+        pivot = next(iter(p.union(x)))
+        pList = tuple(p.difference(edges[pivot]))
         for v in pList:
-            _bronKerbosch(
-                    rr.union((v,)),
-                    pp.intersection(edges[v]),
-                    xx.intersection(edges[v])
-            )
-            pp.difference_update((v,))
-            xx.add(v)
-    for v in sorted(edges.keys(), key=lambda x: len(edges[x])):
-        _bronKerbosch({v}, p.intersection(edges[v]), x.intersection(edges[v]))
-        p.difference_update((v,))
-        x.add(v)
-    return tuple(res)
+            buff.append((
+                r.union((v,)),
+                p.intersection(edges[v]),
+                x.intersection(edges[v])
+            ))
+            p.remove(v)
+            x.add(v)
 
 
+def findMaxCliqueContaining(
+        edges: dict[_T, _tp.Sequence[_T]],
+        nodes: _tp.Iterable[_T] | None = None
+        ) -> tuple[_T, ...]:
+    """
+    Find the maximal clique in a graph containing given nodes
+
+    parameter
+    -----
+    edges: dict[T, Sequence[T]]
+        the adjacent list of the graph recording the edges
+
+    nodes: Iterable[T] or None, optional
+        the nodes to consider
+        if None, will pick an arbitrary node in the graph (so output some clique)
+        defaults to None
+
+    return
+    -----
+    a tuple of nodes of the maximal clique that contains all given nodes
+    If the given nodes does not form a clique, return a empty tuple
+    """
+    feasibleNodes = set(edges.keys())
+    if nodes is None:
+        nodes = (next(iter(feasibleNodes)),)
+    chosenNodes = []
+    for x in nodes:
+        if x not in edges:
+            return tuple()
+        chosenNodes.append(x)
+        feasibleNodes.intersection_update(edges[x])
+    if len(feasibleNodes) == 0:
+        return tuple()
+    while len(feasibleNodes) != 0:
+        x = next(iter(feasibleNodes))
+        chosenNodes.append(x)
+        feasibleNodes.intersection_update(edges[x])
+    return tuple(chosenNodes)
 
 
 
