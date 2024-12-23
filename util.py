@@ -3786,6 +3786,29 @@ class Trie:
         return self.items[ptr].hasItem
 
 
+def findMaxCliques(edges: _coll.defaultdict[_T, _tp.Sequence[_T]]) -> tuple[tuple[_T, ...], ...]:
+    res: list[tuple[_T, ...]] = []
+    p: set[_T] = set(edges.keys())
+    x: set[_T] = set()
+    def _bronKerbosch(rr: set[_T], pp: set[_T], xx: set[_T]):
+        if len(pp) == 0 == len(xx):
+            res.append(tuple(rr))
+            return
+        pivot = next(iter(pp.union(xx)))
+        pList = tuple(pp.difference(edges[pivot]))
+        for v in pList:
+            _bronKerbosch(
+                    rr.union((v,)),
+                    pp.intersection(edges[v]),
+                    xx.intersection(edges[v])
+            )
+            pp.difference_update((v,))
+            xx.add(v)
+    for v in sorted(edges.keys(), key=lambda x: len(edges[x])):
+        _bronKerbosch({v}, p.intersection(edges[v]), x.intersection(edges[v]))
+        p.difference_update((v,))
+        x.add(v)
+    return tuple(res)
 
 
 
