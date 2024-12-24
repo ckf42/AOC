@@ -1,17 +1,28 @@
 import argparse
+import datetime
 import pathlib
 
 BASE_PATH = pathlib.Path(__file__).parent
 
 def getArgs():
     parser = argparse.ArgumentParser()
-    parser.add_argument('day',
-                        type=int,
-                        help="The day of the challenge")
-    parser.add_argument('--force', '-f',
-                        action='store_true',
-                        help="Overwrite if solution file already exists")
-    return parser.parse_args()
+    parser.add_argument(
+            'day',
+            nargs='?',
+            type=int,
+            help="The day of the challenge")
+    parser.add_argument(
+            '--force', '-f',
+            action='store_true',
+            help="Overwrite if solution file already exists")
+    args = parser.parse_args()
+    if args.day is None:
+        today = datetime.date.today()
+        if today.month == 12 and today.day < 26:
+            args.day = today.day
+        else:
+            parser.error("day not given. Cannot deduce from date")
+    return args
 
 def main():
     args = getArgs()
@@ -27,6 +38,8 @@ def main():
     fileContent = list()
     with solTempLoc.open(mode='r') as f:
         fileContent = f.readlines()
+    if args.day == 25:
+        fileContent[-2] = "# no part 2"
     with outputFilePath.open(mode='w') as f:
         for line in fileContent:
             print(line.rstrip()\
