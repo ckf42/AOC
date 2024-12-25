@@ -1,6 +1,7 @@
 #ifndef AOC_UTIL_HPP
 #define AOC_UTIL_HPP
 
+#include <algorithm>
 #include <filesystem>
 #include <fstream>
 #include <initializer_list>
@@ -9,6 +10,7 @@
 #include <stdexcept>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -223,6 +225,10 @@ template <class T, class Container>
 inline bool contains(const T &x, const Container &container){
     return container.find(x) != container.end();
 }
+template <class T>
+inline bool contains(const T &x, const std::vector<T> &container){
+    return std::find(container.cbegin(), container.cend(), x) != container.cend();
+}
 
 template <class Key, class T>
 inline const T& getWithDefault(
@@ -259,34 +265,31 @@ inline void print2DStr(const std::vector<std::string> &vec){
 
 template <class T>
 inline void printVec(const std::vector<T> &vec, const std::string &sep = ", "){
-    using std::to_string;
     auto n = vec.size();
     if (n == 0){
         std::cout << std::endl;
         return;
     }
-    std::cout << to_string(vec[0]);
+    std::cout << vec[0];
     for (decltype(n) i = 1; i < n; ++i){
-        std::cout << sep << to_string(vec[i]);
+        std::cout << sep << vec[i];
     }
     std::cout << std::endl;
 }
 template <class T>
 inline void printVec(const T *begin, const T *end, const std::string &sep = ", "){
-    using std::to_string;
-    std::cout << to_string(*(begin++));
+    std::cout << *(begin++);
     while (begin != end){
-        std::cout << sep << to_string(*(begin++));
+        std::cout << sep << *(begin++);
     }
     std::cout << std::endl;
 }
 template <class T>
 inline void printVec(const std::initializer_list<T> &il, const std::string &sep = ", "){
-    using std::to_string;
     auto begin = il.begin(), end = il.end();
-    std::cout << to_string(*(begin++));
+    std::cout << *(begin++);
     while (begin != end){
-        std::cout << sep << to_string(*(begin++));
+        std::cout << sep << *(begin++);
     }
     std::cout << std::endl;
 }
@@ -342,6 +345,58 @@ inline std::string joinStr(
         res += vec[i];
     }
     return res;
+}
+
+template <class T>
+inline void orderVars(T &a, T &b){
+    using std::swap;
+    if (a > b){
+        swap(a, b);
+    }
+}
+
+template <class T>
+inline void orderVars(T &a, T &b, T &c){
+    orderVars(a, b);
+    orderVars(b, c);
+    orderVars(a, b);
+}
+
+template <class T, class Container>
+inline std::unordered_set<T> setIntersection(
+        const std::unordered_set<T> &set1,
+        const Container &set2
+        ){
+    std::unordered_set<T> res;
+    for (const T &ele : set2){
+        if (contains(ele, set1)){
+            res.insert(ele);
+        }
+    }
+    return res;
+}
+
+template <class T, class Container>
+inline std::unordered_set<T> setUnion(
+        const std::unordered_set<T> &set1,
+        const Container &set2
+        ){
+    std::unordered_set<T> res(set1);
+    res.insert(set2.cbegin(), set2.cend());
+    return res;
+}
+
+template <class T, class Container>
+inline std::unordered_set<T> setDifference(
+        std::unordered_set<T> set1,
+        const Container &set2
+        ){
+    for (const T &ele : set2){
+        if (contains(ele, set1)){
+            set1.erase(ele);
+        }
+    }
+    return set1;
 }
 
 };  // namespace util

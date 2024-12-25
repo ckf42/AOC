@@ -3818,8 +3818,7 @@ def findMaxCliques(edges: dict[_T, _tp.Sequence[_T]]) -> _tp.Iterator[tuple[_T, 
             yield tuple(r)
             continue
         pivot = next(iter(p.union(x)))
-        pList = tuple(p.difference(edges[pivot]))
-        for v in pList:
+        for v in p.difference(edges[pivot]):
             buff.append((
                 r.union((v,)),
                 p.intersection(edges[v]),
