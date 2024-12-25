@@ -1,4 +1,5 @@
 #include <string>
+#include <tuple>
 #include <unordered_set>
 #include <utility>
 #include <vector>
@@ -9,7 +10,7 @@
 constexpr int blkSize = 70 + 1;
 constexpr int count = 1024;
 
-using NodeState = std::pair<int, std::pair<int, int>>;
+using NodeState = std::tuple<int, int, int>;
 
 bool isDisconnected(const std::unordered_set<int> &blocked){
     std::vector<int> buff(1, 0);
@@ -44,23 +45,23 @@ int main(int, char**){
     // part 1
     std::queue<NodeState> q;
     std::unordered_set<int> corrupted(allCorrupted.cbegin(), allCorrupted.cbegin() + count), visited;
-    q.push({0, {0, 0}});
+    q.push({0, 0, 0});
     while (!q.empty()){
-        auto [cost, pt] = q.front();
+        auto [cost, x, y] = q.front();
         q.pop();
-        if (pt.first == blkSize - 1 && pt.second == blkSize - 1){
+        if (x == blkSize - 1 && y == blkSize - 1){
             util::output(cost);
             break;
         }
-        if (util::contains(pt.first * blkSize + pt.second, visited)){
+        if (util::contains(x * blkSize + y, visited)){
             continue;
         }
-        visited.insert(pt.first * blkSize + pt.second);
-        for (const auto &nb : util::neighbourGridPoint(pt.first, pt.second, blkSize, blkSize)){
+        visited.insert(x * blkSize + y);
+        for (const auto &nb : util::neighbourGridPoint(x, y, blkSize, blkSize)){
             if (util::contains(nb.first * blkSize + nb.second, corrupted)){
                 continue;
             }
-            q.push({cost + 1, nb});
+            q.push({cost + 1, nb.first, nb.second});
         }
     }
 

@@ -51,7 +51,7 @@ int main(int, char**){
     util::output(cliques.size());
 
     // part 2
-    std::vector<std::tuple<seti, std::tuple<seti, seti>>> buff;
+    std::vector<std::tuple<seti, seti, seti>> buff;
     seti p, x;
     for (int i = 0; i < N; ++i){
         x.insert(i);
@@ -61,16 +61,13 @@ int main(int, char**){
         x.erase(v);
         buff.push_back({
                 {v},
-                {
-                    util::setIntersection(p, edges[v]),
-                    util::setIntersection(x, edges[v])
-                }
+                util::setIntersection(p, edges[v]),
+                util::setIntersection(x, edges[v])
         });
     }
     seti maxClique;
     while (!buff.empty()){
-        auto [rr, pr] = buff.back();
-        auto [pp, xx] = pr;
+        auto [rr, pp, xx] = buff.back();
         buff.pop_back();
         if (pp.empty() && xx.empty()){
             if (rr.size() > maxClique.size()){
@@ -82,10 +79,8 @@ int main(int, char**){
         for (int v : util::setDifference(pp, edges[pivot])){
             buff.push_back({
                     util::setUnion(rr, std::vector<int>{v}),
-                    {
-                        util::setIntersection(pp, edges[v]),
-                        util::setIntersection(xx, edges[v])
-                    }
+                    util::setIntersection(pp, edges[v]),
+                    util::setIntersection(xx, edges[v])
             });
             pp.erase(v);
             xx.insert(v);
