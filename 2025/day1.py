@@ -7,41 +7,38 @@ if __name__ != "__main__":
 inp = util.getInput(d=1, y=2025)
 
 # part 1
-init = 50
+pos = 50
 count = 0
 for l in inp.splitlines():
+    move = int(l[1:]) % 100
     if l[0] == "L":
-        init -= int(l[1:])
+        pos = (pos + 100 - move) % 100
     else:
-        init += int(l[1:])
-    init = ((init % 100) + 100) % 100
-    if init == 0:
+        pos = (pos + move) % 100
+    if pos == 0:
         count += 1
 print(count)
 
 
 # part 2
-init = 50
+pos = 50
 count = 0
-atZero = False
 for l in inp.splitlines():
     q, r = divmod(int(l[1:]), 100)
+    count += q
     if l[0] == "L":
-        count += q
-        init -= r
-        if init < 0:
-            init += 100
-            count += 1
-        if init == 0:
-            count += 1
-        if atZero:
+        if pos == 0:
             count -= 1
-    else:
-        count += q
-        init += r
-        if init >= 100:
-            init -= 100
+        pos -= r
+        if pos < 0:
+            pos += 100
             count += 1
-    atZero = init == 0
+        elif pos == 0:
+            count += 1
+    else:
+        pos += r
+        if pos >= 100:
+            pos -= 100
+            count += 1
 print(count)
 
