@@ -101,6 +101,26 @@ def getInput(d: int,
                 raise RuntimeError(f"Failed to fetch input: {e.reason}\n"
                                    f"Detail: {detail}") from e
 
+def asGrid(inp: str) -> tuple[list[str], int, int]:
+    """
+    Split the input as grid and return also its dimension
+
+    Parameters
+    -----
+    inp: str
+        the input, typically from getInput()
+
+    Returns
+    -----
+    A tuple containing list of str (the grid itself), the number of rows, and the number of cols.
+
+    Note
+    -----
+    Does not check if the input is really a 2D grid.
+    Leading and trailing whitespaces of inp will be removed BUT NOT for the lines itself
+    """
+    grid = inp.strip().splitlines()
+    return grid, len(grid), len(grid[0])
 
 def firstSuchThat(
         arr: _tp.Iterable[_T],

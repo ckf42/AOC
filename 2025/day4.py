@@ -6,8 +6,7 @@ if __name__ != "__main__":
 
 inp = util.getInput(d=4, y=2025)
 
-grid = list(line.strip() for line in inp.splitlines())
-n, m = len(grid), len(grid[0])
+grid, n, m = util.asGrid(inp)
 rollLocs = set((i, j) for i in range(n) for j in range(m) if grid[i][j] == "@")
 
 # part 1
