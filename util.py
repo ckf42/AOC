@@ -3685,3 +3685,13 @@ def findMaxCliqueContaining(edges: dict[_T, _tp.Sequence[_T]], nodes: _tp.Iterab
         chosenNodes.append(x)
         feasibleNodes.intersection_update(edges[x])
     return tuple(chosenNodes)
+
+
+def findMaxK(k: int, items: _tp.Iterable[_T]) -> tuple[_T, ...]:
+    h: list[_T] = []
+    for x in items:
+        _hq.heappush(h, x)
+        if len(h) > k:
+            _hq.heappop(h)
+    return tuple(h)
+

@@ -16,15 +16,17 @@ def d(x, y):
     return sum((a - b) ** 2 for a, b in zip(x, y))
 
 
-prs = sorted((d(pts[i], pts[j]), i, j) for i in range(n) for j in range(i + 1, n))
-for idx, (_, i, j) in enumerate(prs):
+for idx, (i, j) in enumerate(
+    sorted(
+        ((i, j) for i in range(n) for j in range(i + 1, n)),
+        key=lambda pr: d(pts[pr[0]], pts[pr[1]]),
+    )
+):
     if not djs.isSameGroup(i, j):
         djs.union(i, j)
     # part 1
     if idx == 1000 - 1:
-        sizes = [len(gp) for gp in djs.getGroups()]
-        sizes.sort(reverse=True)
-        print(util.prod(sizes[:3]))
+        print(util.prod(util.findMaxK(3, (len(gp) for gp in djs.getGroups()))))
     # part 2
     if len(next(djs.getGroups())) == n:
         print(pts[i][0] * pts[j][0])
