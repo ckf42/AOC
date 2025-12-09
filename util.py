@@ -2934,25 +2934,40 @@ def segmentIntersection(ps: Point, pe: Point, qs: Point, qe: Point) -> _tp.Union
     if rxs == 0:
         if pqxr == 0:
             # case 1
-            t0 = (qs - ps).innerProd(r) / rr
-            t1 = t0 + r.innerProd(s) / rr
+            t0 = (qs - ps).innerProd(r)
+            t1 = t0 + r.innerProd(s)
             if t0 > t1:
                 t0, t1 = t1, t0
             t0 = max(0, t0)
-            t1 = min(1, t1)
+            t1 = min(rr, t1)
             if t0 > t1:
                 return None
             else:
-                return (ps + t0 * r, ps + t1 * r)
+                return (ps + t0 * r / rr, ps + t1 * r / rr)
         else:
             # case 2
             return None
-    elif 0 <= (t := -crossProd(qs - ps, s) / rxs) <= 1 and 0 <= -pqxr / rxs <= 1:
-        # case 3
-        return ps + t * r
     else:
-        # case 4
-        return None
+        tt = crossProd(qs - ps, s)
+        if (rxs > 0 and 0 <= tt <= rxs and 0 <= -pqxr <= rxs) or (rxs < 0 and 0 >= tt >= rxs and 0 >= -pqxr >= rxs):
+            # case 3
+            return ps + tt * r / rxs
+        else:
+            # case 4
+            return None
+
+def pointOnSegment(pt: Point, p: Point, q: Point) -> bool:
+    assert all(point.dim == 2 for point in (pt, p, q))
+    if pt == p or pt == q:
+        return True
+    if p == q:
+        return False
+    a, b = pt - p, q - p
+
+    def crossProd(pt1: Point, pt2: Point) -> float:
+        return pt1[0] * pt2[1] - pt1[1] * pt2[0]
+
+    return crossProd(a, b) == 0 and a.innerProd(b) > 0
 
 
 def polygonArea(vertices: _tp.Sequence[Point]) -> float:
@@ -3694,4 +3709,3 @@ def findMaxK(k: int, items: _tp.Iterable[_T]) -> tuple[_T, ...]:
         if len(h) > k:
             _hq.heappop(h)
     return tuple(h)
-
