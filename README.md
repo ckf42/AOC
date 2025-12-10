@@ -14,6 +14,7 @@ Third party python libraries:
 * [numpy](https://numpy.org/)
 * [scipy](https://scipy.org/)
 * [sympy](https://www.sympy.org/)
+* [z3](https://github.com/Z3Prover/z3)
 
 Third party c++ libraries:
 * [re2](https://github.com/google/re2)

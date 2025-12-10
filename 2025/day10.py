@@ -1,5 +1,6 @@
 import AOCInit
 import util
+from functools import cache
 import z3
 
 if __name__ != '__main__':
@@ -17,33 +18,26 @@ for line in inp.splitlines():
     machineSpec.append((target, btns, jolt))
 
 # part 1
+@cache
+def mask(n):
+    return 1 << n
 
 def applyBtn(state, btn):
-    state = list(state)
-    for i in btn:
-        state[i] = not state[i]
-    return tuple(state)
+    return state ^ sum(mask(i) for i in btn)
 
 count = 0
 for target, btns, _ in machineSpec:
-    states = {(False,) * len(target): 0}
+    targetVal = applyBtn(0, [i for i, v in enumerate(target) if v])
+    states = {0: 0}
     for btn in btns:
-        oldStates = states.copy()
-        for state, presses in oldStates.items():
+        for state, presses in states.copy().items():
             newState = applyBtn(state, btn)
             states[newState] = min(states.get(newState, len(btns) + 1), presses + 1)
-    count += states[target]
+    count += states[targetVal]
 print(count)
 
 
 # part 2
-
-def applyBtnJolt(state, jolt):
-    state = list(state)
-    for i in jolt:
-        state[i] += 1
-    return tuple(state)
-
 count = 0
 for _, btns, target in machineSpec:
     btnVars = [z3.Int(f'x{i}') for i in range(len(btns))]
