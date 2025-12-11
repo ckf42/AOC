@@ -1,6 +1,7 @@
 import AOCInit
 import util
 from collections import defaultdict
+from graphlib import TopologicalSorter
 
 if __name__ != "__main__":
     exit()
@@ -9,85 +10,36 @@ if __name__ != "__main__":
 inp = util.getInput(d=11, y=2025)
 
 edges = defaultdict(list)
-backEdges = defaultdict(list)
 for line in inp.splitlines():
     dev = line.split(":", maxsplit=1)[0]
     outs = line.split(":", maxsplit=1)[1].strip().split()
     for o in outs:
         edges[dev].append(o)
-        backEdges[o].append(dev)
 
+ordering = list(TopologicalSorter(edges).static_order())[::-1]
+nameToIdx = {v: i for i, v in enumerate(ordering)}
 
 # part 1
-def countPaths(source, target):
-    def dfs(node, count):
-        count[node] += 1
-        if node == target:
-            return
-        for o in edges[node]:
-            dfs(o, count)
-
+def countPaths(sourceIdx, targetIdx):
     count = defaultdict(int)
-    dfs(source, count)
-    return count[target]
+    count[sourceIdx] = 1
+    for idx in range(sourceIdx, targetIdx):
+        for nb in edges[ordering[idx]]:
+            count[nameToIdx[nb]] += count[idx]
+    return count[targetIdx]
 
 
-print(countPaths("you", "out"))
+print(countPaths(nameToIdx["you"], nameToIdx["out"]))
 
 # part 2
 
+firstIdx = ordering.index('dac')
+secondIdx = ordering.index('fft')
+if firstIdx > secondIdx:
+    firstIdx, secondIdx = secondIdx, firstIdx
+print(util.prod([
+    countPaths(nameToIdx['svr'], firstIdx),
+    countPaths(firstIdx, secondIdx),
+    countPaths(secondIdx, nameToIdx['out']),
+]))
 
-def canReach(source, target):
-    visited = set()
-    buff = [source]
-    while len(buff) != 0:
-        node = buff.pop()
-        if node == target:
-            return True
-        if node in visited:
-            continue
-        visited.add(node)
-        for o in edges[node]:
-            buff.append(o)
-    return False
-
-
-def canReachTo(target):
-    visited = set()
-    buff = [target]
-    while len(buff) != 0:
-        node = buff.pop()
-        if node in visited:
-            continue
-        visited.add(node)
-        for o in backEdges[node]:
-            buff.append(o)
-    return visited
-
-
-canReachToFFT = canReachTo("fft")
-canReachToDAC = canReachTo("dac")
-
-assert "fft" in canReachToDAC
-assert "dac" not in canReachToFFT
-
-
-def countPathsPermit(source, target, permitSet):
-    def dfs(node, count):
-        count[node] += 1
-        if node == target:
-            return
-        for o in edges[node]:
-            if o in permitSet:
-                dfs(o, count)
-
-    count = defaultdict(int)
-    dfs(source, count)
-    return count[target]
-
-
-print(
-    countPathsPermit("svr", "fft", canReachToFFT)
-    * countPathsPermit("fft", "dac", canReachToDAC)
-    * countPathsPermit("dac", "out", set(edges) | set(["out"]))
-)
