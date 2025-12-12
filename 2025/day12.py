@@ -4,6 +4,8 @@ import util
 if __name__ != "__main__":
     exit()
 
+# NOTE: this assumes every shape fits in 3x3
+
 inp = """\
 0:
 ###
@@ -64,31 +66,30 @@ def flipV(isFillLst: tuple[bool, ...]) -> tuple[bool, ...]:
     return tuple(isFillLst[i] for i in [2, 1, 0, 5, 4, 3, 8, 7, 6])
 
 
-shapePts = dict()
+shapeVariants: dict[int, tuple[tuple[int, ...], ...]] = dict()
 for idx, graph in shapes.items():
     r = tuple(c == "#" for c in "".join(graph.splitlines()))
-    shapePts[idx] = set()
+    buff = set()
     for _ in range(4):
         r = rotate(r)
-        shapePts[idx].add(r)
-        shapePts[idx].add(flipH(r))
-        shapePts[idx].add(flipV(r))
-for k in shapePts:
-    shapePts[k] = tuple(shapePts[k])
+        buff.add(r)
+        buff.add(flipH(r))
+        buff.add(flipV(r))
+    shapeVariants[idx] = tuple(buff)
 
 
 offset = [(i, j) for i in range(3) for j in range(3)]
 
 # part 1
 count = 0
-for lidx, ((x, y), spec) in enumerate(regions):
+for (x, y), spec in regions:
     grid = [[False] * y for _ in range(x)]
     specExpanded = [idx for idx, count in enumerate(spec) for _ in range(count)]
     n = len(specExpanded)
 
-    failedPlacements = set()
+    failedPlacements: set[tuple[tuple[int, ...], ...]] = set()
 
-    def fill(idx, currPlacement: set) -> bool:
+    def fill(idx: int, currPlacement: set[tuple[int, ...]]) -> bool:
         if idx == n:
             return True
         currPlacementSerialized = tuple(sorted(currPlacement))
@@ -97,7 +98,7 @@ for lidx, ((x, y), spec) in enumerate(regions):
         shapeIdx = specExpanded[idx]
         for i in range(x - 2):
             for j in range(y - 2):
-                for vidx, variant in enumerate(shapePts[shapeIdx]):
+                for vidx, variant in enumerate(shapeVariants[shapeIdx]):
                     if not any(grid[i + offset[k][0]][j + offset[k][1]] for k in range(9) if variant[k]):
                         point = (i, j, shapeIdx, vidx)
                         for k in range(9):
@@ -113,12 +114,9 @@ for lidx, ((x, y), spec) in enumerate(regions):
         failedPlacements.add(currPlacementSerialized)
         return False
 
-    # print(lidx)
-    if sum(area[gidx] for gidx in specExpanded) <= x * y and fill(0, set()):
-        # print("filled")
+    # if fill(0, set()):
+    if sum(area[gidx] for gidx in specExpanded) <= x * y and ((x // 3) * (y // 3) >= sum(spec) or fill(0, set())):  # cheeky optimization
         count += 1
-    # else:
-    #     print("fail")
 
 print(count)
 
