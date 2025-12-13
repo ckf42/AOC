@@ -1,11 +1,9 @@
 import AOCInit
 import util
 from functools import cache
-import z3
 
 if __name__ != '__main__':
     exit()
-
 
 inp = util.getInput(d=10, y=2025)
 
@@ -38,24 +36,33 @@ print(count)
 
 
 # part 2
+# using idea by [u/tenthmascot](https://redd.it/1pk87hl)
 count = 0
 for _, btns, target in machineSpec:
-    btnVars = [z3.Int(f'x{i}') for i in range(len(btns))]
-    equs = [v >= 0 for v in btnVars]
-    for i, targetVal in enumerate(target):
-        equPart = 0
-        for bVar, btn in zip(btnVars, btns):
-            if i in btn:
-                equPart += bVar
-        equs.append(equPart == targetVal)
-    opt = z3.Optimize()
-    opt.add(equs)
-    cost = sum(btnVars)
-    opt.minimize(cost)
-    opt.check()
-    count += opt.model().eval(cost).as_long()
+    states = {0: [tuple()]}
+    for bidx, btn in enumerate(btns):
+        for state, lst in states.copy().items():
+            newState = applyBtn(state, btn)
+            if newState not in states:
+                states[newState] = list()
+            for choice in lst:
+                states[newState].append(choice + (bidx,))
+    @cache
+    def solve(values):
+        if all(x == 0 for x in values):
+            return 0
+        res = float('inf')
+        for btnChoice in states.get(sum(mask(i) for i, x in enumerate(values) if x % 2 != 0), list()):
+            valLst = list(values)
+            for bidx in btnChoice:
+                for i in btns[bidx]:
+                    valLst[i] -= 1
+            if any(x < 0 for x in valLst):
+                continue
+            res = min(res, solve(tuple(x // 2 for x in valLst)) * 2 + len(btnChoice))
+        return res
+    count += solve(target)
 print(count)
-
 
 
 
